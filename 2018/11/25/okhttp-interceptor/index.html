@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="interceptor,okhttp," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前年的这个时候我们项目将网络框架替换为`okhttp+retrofit` ，然后我对 `retrofit` 源码进行了学习和分享，写了几篇相关的文章同时更新了项目的网络框架。需求是推动任何事物向前发展的动力，这次我们项目需要对网络接口进行加密了，开发过程涉及到了okhttp的网路层的处理，所以我又将其源码翻了一番。">
+<meta name="keywords" content="interceptor,okhttp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Okhttp拦截器Interceptor学习和使用">
+<meta property="og:url" content="http://yoursite.com/2018/11/25/okhttp-interceptor/index.html">
+<meta property="og:site_name" content="下雨天要逛街">
+<meta property="og:description" content="前年的这个时候我们项目将网络框架替换为`okhttp+retrofit` ，然后我对 `retrofit` 源码进行了学习和分享，写了几篇相关的文章同时更新了项目的网络框架。需求是推动任何事物向前发展的动力，这次我们项目需要对网络接口进行加密了，开发过程涉及到了okhttp的网路层的处理，所以我又将其源码翻了一番。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20181125171234514.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center">
+<meta property="og:updated_time" content="2019-12-27T01:02:16.253Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Okhttp拦截器Interceptor学习和使用">
+<meta name="twitter:description" content="前年的这个时候我们项目将网络框架替换为`okhttp+retrofit` ，然后我对 `retrofit` 源码进行了学习和分享，写了几篇相关的文章同时更新了项目的网络框架。需求是推动任何事物向前发展的动力，这次我们项目需要对网络接口进行加密了，开发过程涉及到了okhttp的网路层的处理，所以我又将其源码翻了一番。">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20181125171234514.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/11/25/okhttp-interceptor/"/>
+
+
+
+
+
+  <title>Okhttp拦截器Interceptor学习和使用 | 下雨天要逛街</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1055a4e1d37a3a4dcb3a3e1c4f32f147";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/stven0king" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">下雨天要逛街</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/11/25/okhttp-interceptor/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="振兴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/jay.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="下雨天要逛街">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Okhttp拦截器Interceptor学习和使用</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-11-25T18:24:43+08:00">
+                2018-11-25
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  前年的这个时候我们项目将网络框架替换为`okhttp+retrofit` ，然后我对 `retrofit` 源码进行了学习和分享，写了几篇相关的文章同时更新了项目的网络框架。需求是推动任何事物向前发展的动力，这次我们项目需要对网络接口进行加密了，开发过程涉及到了okhttp的网路层的处理，所以我又将其源码翻了一番。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>前年的这个时候我们项目将网络框架替换为<code>okhttp+retrofit</code> ，然后我对 <code>retrofit</code> 源码进行了学习和分享，写了几篇相关的文章同时更新了项目的网络框架。</p>
+<p> <a href="https://blog.csdn.net/stven_king/article/details/51839537" target="_blank" rel="noopener">Android网络之Retrofit2.0使用和解析</a><br> <a href="https://blog.csdn.net/stven_king/article/details/52372172" target="_blank" rel="noopener">Retrofit2.0中注解使用套路</a><br> <a href="https://blog.csdn.net/stven_king/article/details/52577248" target="_blank" rel="noopener">Retrofit2.0+Okhttp不依赖服务端的数据缓存</a></p>
+<p>需求是推动任何事物向前发展的动力，这次我们项目需要对网络接口进行加密了，开发过程涉及到了okhttp的网路层的处理，所以我又将其源码翻了一番。</p>
+<p>回顾一下我们曾经学习过的因特网五层协议栈：</p>
+<blockquote>
+<ul>
+<li>网络请求发出时：应用层-&gt;传输层-&gt;网络层-&gt;连接层-&gt;物理层 </li>
+<li>收到响应后：物理层-&gt;连接层-&gt;网络层-&gt;传输层-&gt;应用层</li>
+</ul>
+</blockquote>
+<p>这个很像我们这次要讲的 <code>okhttp</code> 中的<code>interceptor</code> 的责任链模式。</p>
+<h1 id="Interceptor"><a href="#Interceptor" class="headerlink" title="Interceptor"></a>Interceptor</h1><p><a href="https://github.com/square/okhttp/wiki/Interceptors" target="_blank" rel="noopener">Interceptor的wiki</a></p>
+<p>按照以往的惯例我们先上图，然后在对每个步骤进行详细的讲述。</p>
+<center><br><img src="https://img-blog.csdnimg.cn/20181125171234514.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70" alt="okhttp-interceptors"><br></center>
+
+<h2 id="为什么会有拦截器"><a href="#为什么会有拦截器" class="headerlink" title="为什么会有拦截器"></a>为什么会有拦截器</h2><p>我们在进行应用开发的时候都会在请求中增加一些我们应用需要和服务端交互的通用信息，比如在 <code>header</code> 中增加用户的登录态信息等等。或者像  <a href="https://blog.csdn.net/stven_king/article/details/52577248" target="_blank" rel="noopener">Retrofit2.0+Okhttp不依赖服务端的数据缓存</a> 这篇文章中不依赖服务端的缓存，在请求的过程中我们自己修改一些请求的 <code>request</code> 和 <code>response</code> 。</p>
+<p>这个时候拦截器就是我们的强大的助力。</p>
+<h2 id="okhttp中的拦截器"><a href="#okhttp中的拦截器" class="headerlink" title="okhttp中的拦截器"></a>okhttp中的拦截器</h2><p>我们从 <code>okhttp</code> 处理一条普通的url请求的代码执行过程中观察 <code>interceptors</code> 的工作。</p>
+<p>下边的代码是从 <a href="//http://square.github.io/okhttp/">okhttp官网</a> 摘的一段示例代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">OkHttpClient client = <span class="keyword">new</span> OkHttpClient();</span><br><span class="line"></span><br><span class="line"><span class="function">String <span class="title">run</span><span class="params">(String url)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  Request request = <span class="keyword">new</span> Request.Builder()</span><br><span class="line">      .url(url)</span><br><span class="line">      .build();</span><br><span class="line"></span><br><span class="line">  Response response = client.newCall(request).execute();</span><br><span class="line">  <span class="keyword">return</span> response.body().string();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们跟进 <code>okhttpclient.newcall</code> 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">OkHttpClient</span> <span class="keyword">implements</span> <span class="title">Cloneable</span>, <span class="title">Call</span>.<span class="title">Factory</span>, <span class="title">WebSocket</span>.<span class="title">Factory</span> </span>&#123;</span><br><span class="line">    <span class="comment">/***部分代码省略***/</span></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Prepares the &#123;<span class="doctag">@code</span> request&#125; to be executed at some point in the future.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span> </span><br><span class="line">    <span class="function"><span class="keyword">public</span> Call <span class="title">newCall</span><span class="params">(Request request)</span> </span>&#123;</span><br><span class="line">    	<span class="keyword">return</span> <span class="keyword">new</span> RealCall(<span class="keyword">this</span>, request, <span class="keyword">false</span> <span class="comment">/* for web socket */</span>);</span><br><span class="line">  	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>获取一个真正用来进行请求的Call <code>RealCall.execute</code> :</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">RealCall</span> <span class="keyword">implements</span> <span class="title">Call</span> </span>&#123;</span><br><span class="line">	<span class="keyword">final</span> RetryAndFollowUpInterceptor retryAndFollowUpInterceptor;</span><br><span class="line">	RealCall(OkHttpClient client, Request originalRequest, <span class="keyword">boolean</span> forWebSocket) &#123;</span><br><span class="line">	    <span class="keyword">final</span> EventListener.Factory eventListenerFactory = client.eventListenerFactory();</span><br><span class="line">	    <span class="keyword">this</span>.client = client;</span><br><span class="line">	    <span class="keyword">this</span>.originalRequest = originalRequest;</span><br><span class="line">	    <span class="keyword">this</span>.forWebSocket = forWebSocket;</span><br><span class="line">	    <span class="keyword">this</span>.retryAndFollowUpInterceptor = <span class="keyword">new</span> RetryAndFollowUpInterceptor(client, forWebSocket);</span><br><span class="line">	    <span class="comment">// TODO(jwilson): this is unsafe publication and not threadsafe.</span></span><br><span class="line">	    <span class="keyword">this</span>.eventListener = eventListenerFactory.create(<span class="keyword">this</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="meta">@Override</span> </span><br><span class="line">	<span class="function"><span class="keyword">public</span> Response <span class="title">execute</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">	    <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">	    	<span class="keyword">if</span> (executed) <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Already Executed"</span>);</span><br><span class="line">	      	executed = <span class="keyword">true</span>;</span><br><span class="line">	    &#125;</span><br><span class="line">	    captureCallStackTrace();</span><br><span class="line">	    <span class="keyword">try</span> &#123;</span><br><span class="line">	        <span class="comment">//进行网络请求</span></span><br><span class="line">	      	client.dispatcher().executed(<span class="keyword">this</span>);</span><br><span class="line">	      	<span class="comment">//经过一层层网络拦截器之后，获取网络请求的返回值</span></span><br><span class="line">	      	Response result = getResponseWithInterceptorChain();</span><br><span class="line">	      	<span class="keyword">if</span> (result == <span class="keyword">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> IOException(<span class="string">"Canceled"</span>);</span><br><span class="line">	      	<span class="keyword">return</span> result;</span><br><span class="line">	    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">	      	client.dispatcher().finished(<span class="keyword">this</span>);</span><br><span class="line">	    &#125;</span><br><span class="line">	  &#125;</span><br><span class="line">	  <span class="function">Response <span class="title">getResponseWithInterceptorChain</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">	    <span class="comment">// Build a full stack of interceptors.</span></span><br><span class="line">	    List&lt;Interceptor&gt; interceptors = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">	    <span class="comment">//Application拦截器</span></span><br><span class="line">	    interceptors.addAll(client.interceptors());</span><br><span class="line">	    <span class="comment">//重定向和失败后重新请求拦截器</span></span><br><span class="line">	    interceptors.add(retryAndFollowUpInterceptor);</span><br><span class="line">	    <span class="comment">//网桥拦截器，顾名思义client和Server之前的桥梁</span></span><br><span class="line">	    interceptors.add(<span class="keyword">new</span> BridgeInterceptor(client.cookieJar()));</span><br><span class="line">	    <span class="comment">//缓存处理拦截器</span></span><br><span class="line">	    interceptors.add(<span class="keyword">new</span> CacheInterceptor(client.internalCache()));</span><br><span class="line">	    <span class="comment">//Socket层的握手链接</span></span><br><span class="line">	    interceptors.add(<span class="keyword">new</span> ConnectInterceptor(client));</span><br><span class="line">	    <span class="keyword">if</span> (!forWebSocket) &#123;</span><br><span class="line">	    	<span class="comment">//网络烂拦截器</span></span><br><span class="line">	    	interceptors.addAll(client.networkInterceptors());</span><br><span class="line">	    &#125;</span><br><span class="line">	    <span class="comment">//client和Server之前的读写操作</span></span><br><span class="line">	    interceptors.add(<span class="keyword">new</span> CallServerInterceptor(forWebSocket));</span><br><span class="line">		<span class="comment">//责任链开始执行</span></span><br><span class="line">	    Interceptor.Chain chain = <span class="keyword">new</span> RealInterceptorChain(</span><br><span class="line">	        interceptors, <span class="keyword">null</span>, <span class="keyword">null</span>, <span class="keyword">null</span>, <span class="number">0</span>, originalRequest);</span><br><span class="line">	    <span class="keyword">return</span> chain.proceed(originalRequest);</span><br><span class="line">	  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Interceptor介绍"><a href="#Interceptor介绍" class="headerlink" title="Interceptor介绍"></a>Interceptor介绍</h2><p>我们先看拦截器的接口定义：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Interceptor</span> </span>&#123;</span><br><span class="line">	<span class="comment">//拦截处理</span></span><br><span class="line">	<span class="function">Response <span class="title">intercept</span><span class="params">(Chain chain)</span> <span class="keyword">throws</span> IOException</span>;</span><br><span class="line">	<span class="class"><span class="keyword">interface</span> <span class="title">Chain</span> </span>&#123;</span><br><span class="line">		<span class="comment">//获取请求的request</span></span><br><span class="line">	  	<span class="function">Request <span class="title">request</span><span class="params">()</span></span>;</span><br><span class="line">		<span class="comment">//处理request获取response</span></span><br><span class="line">	    <span class="function">Response <span class="title">proceed</span><span class="params">(Request request)</span> <span class="keyword">throws</span> IOException</span>;</span><br><span class="line">	</span><br><span class="line">	    <span class="comment">/**</span></span><br><span class="line"><span class="comment">	     * Returns the connection the request will be executed on. This is only available in the chains</span></span><br><span class="line"><span class="comment">	     * of network interceptors; for application interceptors this is always null.</span></span><br><span class="line"><span class="comment">	     */</span></span><br><span class="line">	    <span class="meta">@Nullable</span> <span class="function">Connection <span class="title">connection</span><span class="params">()</span></span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在我们跟踪源码的执行的过程我们回忆下最开始的时候的流程图，涉及到的拦截器以及他们各自的位置和在网络请求的作用。</p>
+<blockquote>
+<p>Application Interceptor</p>
+</blockquote>
+<p>我们可以自定义设置 <code>Okhttp</code> 的拦截器之一。</p>
+<p>从流程图中我们可以看到一次网络请求它只会执行一次拦截，而且它是第一个触发拦截的，这里拦截到的url请求的信息都是最原始的信息。所以我们可以在该拦截器中添加一些我们请求中需要的通用信息，打印一些我们需要的日志。</p>
+<p>当然我们可以定义多个这样的拦截器，一个处理 <code>header</code> 信息，一个处理 <code>接口请求的 加解密</code>  。</p>
+<blockquote>
+<p>NetwrokInterceptor</p>
+</blockquote>
+<p><code>NetwrokInterceptor</code> 也是我们可以自定义的拦截器之一。 </p>
+<p>它位于倒数第二层，会经过 <code>RetryAndFollowIntercptor</code> 进行重定向并且也会通过 <code>BridgeInterceptor</code> 进行 <code>request</code>请求头和 响应 <code>resposne</code> 的处理，因此这里可以得到的是更多的信息。在打印结果可以看到它内部重定向操作和失败重试，这里会有比 <code>Application Interceptor</code> 更多的日志。</p>
+<blockquote>
+<p>RetryAndFollowInterceptor</p>
+</blockquote>
+<p><code>RetryAndFollowUpInterceptor</code> 的作用，看到该拦截器的名称就知道，它就是一个负责失败重连的拦截器。它是 <code>Okhttp</code> 内置的第一个拦截器，通过 <code>while (true)</code> 的死循环来进行对异常结果或者响应结果判断是否要进行重新请求。</p>
+<blockquote>
+<p>BridgeInterceptor</p>
+</blockquote>
+<p><code>BridgeInterceptor</code> 为用户构建的一个 Request 请求转化为能够进行网络访问的请求，同时将网络请求回来的响应 Response 转化为用户可用的 Response。比如，涉及的网络文件的类型和网页的编码，返回的数据的解压处理等等。</p>
+<blockquote>
+<p>CacheInterceptor</p>
+</blockquote>
+<p><code>CacheInterceptor</code> 根据 <code>OkHttpClient</code> 对象的配置以及缓存策略对请求值进行缓存。</p>
+<blockquote>
+<p>ConnectInterceptor</p>
+</blockquote>
+<p><code>ConnectInterceptor</code> 在 OKHTTP 底层是通过 SOCKET 的方式于服务端进行连接的，并且在连接建立之后会通过 OKIO 获取通向 server 端的输入流 Source 和输出流 Sink。</p>
+<blockquote>
+<p>CallServerInterceptor</p>
+</blockquote>
+<p><code>CallServerInterceptor</code> 在 <code>ConnectInterceptor</code> 拦截器的功能就是负责与服务器建立 Socket 连接，并且创建了一个 HttpStream 它包括通向服务器的输入流和输出流。而接下来的 <code>CallServerInterceptor</code> 拦截器的功能使用 HttpStream 与服务器进行数据的读写操作的。</p>
+<p>有关每个拦截器的具体代码分析：<a href="https://www.jianshu.com/u/8173f323f5bb" target="_blank" rel="noopener">https://www.jianshu.com/u/8173f323f5bb</a></p>
+<h2 id="拦截器中的骚操作"><a href="#拦截器中的骚操作" class="headerlink" title="拦截器中的骚操作"></a>拦截器中的骚操作</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">HttpUrl httpurl = request.url();</span><br><span class="line"><span class="comment">//获取request中的原始url地址</span></span><br><span class="line">String requestUrl = httpurl.url().toString();</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 获取url中的参数</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> httpUrl</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> Map&lt;String, String&gt; <span class="title">getHttpUrlParams</span><span class="params">(HttpUrl httpUrl)</span> </span>&#123;</span><br><span class="line">    Set&lt;String&gt; paramsSet = httpUrl.queryParameterNames();</span><br><span class="line">    Map&lt;String, String&gt; paramMap = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">    <span class="keyword">if</span> (paramsSet != <span class="keyword">null</span> &amp;&amp; paramsSet.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (String s: paramsSet) &#123;</span><br><span class="line">            paramMap.put(s, httpUrl.queryParameter(s));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> paramMap;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//一般POST请求参数都是放在RequestBody中,使用时需要判断RequestBody是否为子类FormBody的实例</span></span><br><span class="line">RequestBody requestBody = request.body();</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 获取请求form中的参数</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> formBody</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> Map&lt;String, String&gt; <span class="title">getHttpUrlParams</span><span class="params">(FormBody formBody)</span> </span>&#123;</span><br><span class="line">    Map&lt;String, String&gt; paramMap = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">    <span class="keyword">if</span> (formBody != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; formBody.size(); i++) &#123;</span><br><span class="line">            paramMap.put(formBody.name(i), formBody.value(i));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> paramMap;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//构造新的POST表单</span></span><br><span class="line">FormBody.Builder formBuilder = <span class="keyword">new</span> FormBody.Builder();</span><br><span class="line"><span class="keyword">for</span> (String key: map.keySet()) &#123;</span><br><span class="line">    formBuilder.add(key, map.get(key));</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//构造新的HttpUrl，动态修改请求url地址</span></span><br><span class="line">HttpUrl httpUrl = HttpUrl.parse(requestUrlTrue);</span><br><span class="line"><span class="comment">//构造新的request请求</span></span><br><span class="line">request = request.newBuilder()</span><br><span class="line">        .method(POST, formBuilder.build())</span><br><span class="line">        .url(httpUrl)</span><br><span class="line">        .build();</span><br><span class="line"><span class="comment">//获取相应体对应的请求体，请求和返回一一对应</span></span><br><span class="line">Request request = response.request()</span><br><span class="line"><span class="comment">//获取请求的相应体</span></span><br><span class="line">ResponseBody responseBody = response.body();</span><br><span class="line"><span class="comment">//获取返回值类型</span></span><br><span class="line">MediaType mediaType = responseBody.contentType();</span><br><span class="line"><span class="comment">//获取相应体重的数据流，只能获取一次，在获取之后数据流会关闭，再次获取会有异常抛出</span></span><br><span class="line"><span class="keyword">byte</span>[] responseBytes = responseBytes = responseBody.bytes();</span><br><span class="line"><span class="comment">//利用修改后的返回值，构造新的相应体</span></span><br><span class="line">response = response.newBuilder()</span><br><span class="line">        .body(ResponseBody.create(mediaType, responseBytes))</span><br><span class="line">        .build();</span><br></pre></td></tr></table></figure>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+<p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：</p>
+<center><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center" alt="振兴书城"></center>
+
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/weixinpay.jpeg" alt="振兴 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpeg" alt="振兴 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    振兴
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2018/11/25/okhttp-interceptor/" title="Okhttp拦截器Interceptor学习和使用">http://yoursite.com/2018/11/25/okhttp-interceptor/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/interceptor/" rel="tag"><i class="fa fa-tag"></i> interceptor</a>
+          
+            <a href="/tags/okhttp/" rel="tag"><i class="fa fa-tag"></i> okhttp</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/10/27/hotfix-source/" rel="next" title="Android更新资源文件浅思考">
+                <i class="fa fa-chevron-left"></i> Android更新资源文件浅思考
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/07/rx_init/" rel="prev" title="关于RxJava的基础心法解析">
+                关于RxJava的基础心法解析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/jay.jpg"
+                alt="振兴" />
+            
+              <p class="site-author-name" itemprop="name">振兴</p>
+              <p class="site-description motion-element" itemprop="description">好好学习，天天向上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">74</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">96</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stven0king" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://me.csdn.net/stven_king" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-crosshairs"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/311540b7592b" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-book"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/56824a1900b01b9f2bd94ae8" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-spinner"></i>掘金</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/2520114671/profile?rightmod=1&wvr=6&mod=personinfo" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-weibo"></i>微博</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:stven0king@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                推荐阅读
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://gityuan.com/" title="Gityuan" target="_blank">Gityuan</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.wanandroid.com/index" title="玩Android" target="_blank">玩Android</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.wjdiankong.cn/" title="尼古拉斯.赵四" target="_blank">尼古拉斯.赵四</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Interceptor"><span class="nav-number">2.</span> <span class="nav-text">Interceptor</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么会有拦截器"><span class="nav-number">2.1.</span> <span class="nav-text">为什么会有拦截器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#okhttp中的拦截器"><span class="nav-number">2.2.</span> <span class="nav-text">okhttp中的拦截器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Interceptor介绍"><span class="nav-number">2.3.</span> <span class="nav-text">Interceptor介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#拦截器中的骚操作"><span class="nav-number">2.4.</span> <span class="nav-text">拦截器中的骚操作</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">振兴</span>
+
+  
+</div>
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+<!--
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+-->
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://billts.site/extra_css/gitment.css">
+        <script src="https://billts.site/js/gitment.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitment({
+            id: window.location.pathname, 
+            owner: 'stven0king',
+            repo: 'stven0king.github.io',
+            
+            oauth: {
+            
+            
+                client_secret: '2206c556bf3e1f5967962220c3439f458ed41c7f',
+            
+                client_id: '00c12e7601ea8004b339'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

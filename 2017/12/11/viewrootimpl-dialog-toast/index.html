@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="ViewRootImpl,Toast,Dialog," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="文章Activity中的Window的setContentView、遇见LayoutInflater&amp;Factory、ViewRootImpl的独白，我不是一个View(布局篇) 分别讲述了Activity的setContentView添加View、LayoutInflater布局解析以及添加Window。文章内容都是站在Activity的角度来进行代码解析的，因此我们不再对Dialog和Toas">
+<meta name="keywords" content="ViewRootImpl,Toast,Dialog">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dialog、Toast的Window和ViewRootImpl">
+<meta property="og:url" content="http://yoursite.com/2017/12/11/viewrootimpl-dialog-toast/index.html">
+<meta property="og:site_name" content="下雨天要逛街">
+<meta property="og:description" content="文章Activity中的Window的setContentView、遇见LayoutInflater&amp;Factory、ViewRootImpl的独白，我不是一个View(布局篇) 分别讲述了Activity的setContentView添加View、LayoutInflater布局解析以及添加Window。文章内容都是站在Activity的角度来进行代码解析的，因此我们不再对Dialog和Toas">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-c8eac3714d3721d5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2019-12-27T01:02:16.258Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Dialog、Toast的Window和ViewRootImpl">
+<meta name="twitter:description" content="文章Activity中的Window的setContentView、遇见LayoutInflater&amp;Factory、ViewRootImpl的独白，我不是一个View(布局篇) 分别讲述了Activity的setContentView添加View、LayoutInflater布局解析以及添加Window。文章内容都是站在Activity的角度来进行代码解析的，因此我们不再对Dialog和Toas">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/1319879-c8eac3714d3721d5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/12/11/viewrootimpl-dialog-toast/"/>
+
+
+
+
+
+  <title>Dialog、Toast的Window和ViewRootImpl | 下雨天要逛街</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1055a4e1d37a3a4dcb3a3e1c4f32f147";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/stven0king" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">下雨天要逛街</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/12/11/viewrootimpl-dialog-toast/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="振兴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/jay.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="下雨天要逛街">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Dialog、Toast的Window和ViewRootImpl</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-11T18:27:00+08:00">
+                2017-12-11
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  文章Activity中的Window的setContentView、遇见LayoutInflater&Factory、ViewRootImpl的独白，我不是一个View(布局篇) 分别讲述了Activity的setContentView添加View、LayoutInflater布局解析以及添加Window。文章内容都是站在Activity的角度来进行代码解析的，因此我们不再对Dialog和Toast与Activity做具体分析，主要来看看它们与Activity有什么不同之处。源码:android-22。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>文章<a href="http://dandanlove.com/2017/11/10/activity-setcontentview/" target="_blank" rel="noopener">Activity中的Window的setContentView</a>、<a href="http://dandanlove.com/2017/11/15/layoutinflater-factory/" target="_blank" rel="noopener">遇见LayoutInflater&amp;Factory</a>、<a href="http://dandanlove.com/2017/12/11/viewrootimpl-activity/" target="_blank" rel="noopener">ViewRootImpl的独白，我不是一个View(布局篇)</a> 分别讲述了Activity的<code>setContentView添加View</code>、<code>LayoutInflater布局解析</code>以及<code>添加Window</code>。文章内容都是站在Activity的角度来进行代码解析的，因此我们不再对Dialog和Toast与Activity做具体分析，主要来看看它们与Activity有什么不同之处<code>源码:android-22</code>。</p>
+<h1 id="Dialog"><a href="#Dialog" class="headerlink" title="Dialog"></a>Dialog</h1><h2 id="Dialog的构造"><a href="#Dialog的构造" class="headerlink" title="Dialog的构造"></a>Dialog的构造</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Dialog</span> <span class="keyword">implements</span> <span class="title">DialogInterface</span>, <span class="title">Window</span>.<span class="title">Callback</span>,</span></span><br><span class="line"><span class="class">        <span class="title">KeyEvent</span>.<span class="title">Callback</span>, <span class="title">OnCreateContextMenuListener</span>,<span class="title">Window</span>.<span class="title">OnWindowDismissedCallback</span></span>&#123;</span><br><span class="line">    <span class="comment">//只有Activity的Context可以启动Dialog，因为Dialog展示的时候需要主题资源也就是ContextThemeWrapper。</span></span><br><span class="line">    Dialog(Context context, <span class="keyword">int</span> theme, <span class="keyword">boolean</span> createContextThemeWrapper) &#123;</span><br><span class="line">        <span class="keyword">if</span> (createContextThemeWrapper) &#123;</span><br><span class="line">            <span class="keyword">if</span> (theme == <span class="number">0</span>) &#123;</span><br><span class="line">                TypedValue outValue = <span class="keyword">new</span> TypedValue();</span><br><span class="line">                context.getTheme().resolveAttribute(com.android.internal.R.attr.dialogTheme,</span><br><span class="line">                        outValue, <span class="keyword">true</span>);</span><br><span class="line">                theme = outValue.resourceId;</span><br><span class="line">            &#125;</span><br><span class="line">            mContext = <span class="keyword">new</span> ContextThemeWrapper(context, theme);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            mContext = context;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//因为每个上下文环境获取的系统服务都是相同的实例，这里获取的WindowManager是Activity的WindowManager。</span></span><br><span class="line">        mWindowManager = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);</span><br><span class="line">        <span class="comment">//创建Dialog的PhoneWindow对象。</span></span><br><span class="line">        Window w = PolicyManager.makeNewWindow(mContext);</span><br><span class="line">        mWindow = w;</span><br><span class="line">        w.setCallback(<span class="keyword">this</span>);</span><br><span class="line">        w.setOnWindowDismissedCallback(<span class="keyword">this</span>);</span><br><span class="line">        w.setWindowManager(mWindowManager, <span class="keyword">null</span>, <span class="keyword">null</span>);</span><br><span class="line">        w.setGravity(Gravity.CENTER);</span><br><span class="line">        mListenersHandler = <span class="keyword">new</span> ListenersHandler(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Dialog添加View"><a href="#Dialog添加View" class="headerlink" title="Dialog添加View"></a>Dialog添加View</h2><p>和Activity相同通过<code>setContentView</code>初始化Window中的DecorView，并对页面View进行add。详细讲述请移动到<a href="http://dandanlove.com/2017/11/10/activity-setcontentview/" target="_blank" rel="noopener">Activity中的Window的setContentView</a></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Dialog</span> <span class="keyword">implements</span> <span class="title">DialogInterface</span>, <span class="title">Window</span>.<span class="title">Callback</span>,</span></span><br><span class="line"><span class="class">        <span class="title">KeyEvent</span>.<span class="title">Callback</span>, <span class="title">OnCreateContextMenuListener</span>,<span class="title">Window</span>.<span class="title">OnWindowDismissedCallback</span></span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Set the screen content from a layout resource.  The resource will be</span></span><br><span class="line"><span class="comment">     * inflated, adding all top-level views to the screen.</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> layoutResID Resource ID to be inflated.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setContentView</span><span class="params">(<span class="keyword">int</span> layoutResID)</span> </span>&#123;</span><br><span class="line">        mWindow.setContentView(layoutResID);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Dialog的展现"><a href="#Dialog的展现" class="headerlink" title="Dialog的展现"></a>Dialog的展现</h2><p>Dialog的展现和Activity不同是因为两者的声明周期不同，Activity的声明周期是有AMS调用而Dialog是应用程序自己调用的。<code>ViewRootImpl</code>的初始化在Activity会在<code>onResume()</code>方法之后，而是Dialog被调用<code>show</code>方法时触发的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Dialog</span> <span class="keyword">implements</span> <span class="title">DialogInterface</span>, <span class="title">Window</span>.<span class="title">Callback</span>,</span></span><br><span class="line"><span class="class">        <span class="title">KeyEvent</span>.<span class="title">Callback</span>, <span class="title">OnCreateContextMenuListener</span>,<span class="title">Window</span>.<span class="title">OnWindowDismissedCallback</span></span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Start the dialog and display it on screen.  The window is placed in the</span></span><br><span class="line"><span class="comment">     * application layer and opaque.  Note that you should not override this</span></span><br><span class="line"><span class="comment">     * method to do initialization when the dialog is shown, instead implement</span></span><br><span class="line"><span class="comment">     * that in &#123;<span class="doctag">@link</span> #onStart&#125;.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">show</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (mShowing) &#123;</span><br><span class="line">            <span class="keyword">if</span> (mDecor != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (mWindow.hasFeature(Window.FEATURE_ACTION_BAR)) &#123;</span><br><span class="line">                    mWindow.invalidatePanelMenu(Window.FEATURE_ACTION_BAR);</span><br><span class="line">                &#125;</span><br><span class="line">                mDecor.setVisibility(View.VISIBLE);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        mCanceled = <span class="keyword">false</span>;</span><br><span class="line">        <span class="comment">//判断是否调用onCreate方法</span></span><br><span class="line">        <span class="keyword">if</span> (!mCreated) &#123;</span><br><span class="line">            dispatchOnCreate(<span class="keyword">null</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//调用onStart方法</span></span><br><span class="line">        onStart();</span><br><span class="line">        <span class="comment">//获取DecorView对象实例</span></span><br><span class="line">        mDecor = mWindow.getDecorView();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (mActionBar == <span class="keyword">null</span> &amp;&amp; mWindow.hasFeature(Window.FEATURE_ACTION_BAR)) &#123;</span><br><span class="line">            <span class="keyword">final</span> ApplicationInfo info = mContext.getApplicationInfo();</span><br><span class="line">            mWindow.setDefaultIcon(info.icon);</span><br><span class="line">            mWindow.setDefaultLogo(info.logo);</span><br><span class="line">            mActionBar = <span class="keyword">new</span> WindowDecorActionBar(<span class="keyword">this</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//更新Window属性参数</span></span><br><span class="line">        WindowManager.LayoutParams l = mWindow.getAttributes();</span><br><span class="line">        <span class="keyword">if</span> ((l.softInputMode</span><br><span class="line">                &amp; WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION) == <span class="number">0</span>) &#123;</span><br><span class="line">            WindowManager.LayoutParams nl = <span class="keyword">new</span> WindowManager.LayoutParams();</span><br><span class="line">            nl.copyFrom(l);</span><br><span class="line">            nl.softInputMode |=</span><br><span class="line">                    WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION;</span><br><span class="line">            l = nl;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//Windowmanger添加Window、ViewRootImpl初始化并绑定Window</span></span><br><span class="line">            mWindowManager.addView(mDecor, l);</span><br><span class="line">            mShowing = <span class="keyword">true</span>;</span><br><span class="line">            <span class="comment">//OnShowListener监听回调</span></span><br><span class="line">            sendShowMessage();</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="Toast"><a href="#Toast" class="headerlink" title="Toast"></a>Toast</h1><h2 id="Toast的构造"><a href="#Toast的构造" class="headerlink" title="Toast的构造"></a>Toast的构造</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Toast</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> Context mContext;</span><br><span class="line">    <span class="keyword">final</span> TN mTN;<span class="comment">//</span></span><br><span class="line">    <span class="keyword">int</span> mDuration;<span class="comment">//展示时间</span></span><br><span class="line">    View mNextView;<span class="comment">//所展示的View</span></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Construct an empty Toast object.  You must call &#123;<span class="doctag">@link</span> #setView&#125; before you</span></span><br><span class="line"><span class="comment">     * can call &#123;<span class="doctag">@link</span> #show&#125;.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> context  The context to use.  Usually your &#123;<span class="doctag">@link</span> android.app.Application&#125;</span></span><br><span class="line"><span class="comment">     *                 or &#123;<span class="doctag">@link</span> android.app.Activity&#125; object.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="comment">//Context可以为Application也可以为Activity，</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Toast</span><span class="params">(Context context)</span> </span>&#123;</span><br><span class="line">        mContext = context;</span><br><span class="line">        mTN = <span class="keyword">new</span> TN();</span><br><span class="line">        mTN.mY = context.getResources().getDimensionPixelSize(</span><br><span class="line">                com.android.internal.R.dimen.toast_y_offset);</span><br><span class="line">        mTN.mGravity = context.getResources().getInteger(</span><br><span class="line">                com.android.internal.R.integer.config_toastDefaultGravity);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//NotificationManagerService的客户端IBinder对</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> INotificationManager sService;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">TN</span> <span class="keyword">extends</span> <span class="title">ITransientNotification</span>.<span class="title">Stub</span> </span>&#123;</span><br><span class="line">        TN() &#123;</span><br><span class="line">            <span class="comment">// XXX This should be changed to use a Dialog, with a Theme.Toast</span></span><br><span class="line">            <span class="comment">// defined that sets up the layout params appropriately.</span></span><br><span class="line">            <span class="keyword">final</span> WindowManager.LayoutParams params = mParams;</span><br><span class="line">            params.height = WindowManager.LayoutParams.WRAP_CONTENT;</span><br><span class="line">            params.width = WindowManager.LayoutParams.WRAP_CONTENT;</span><br><span class="line">            params.format = PixelFormat.TRANSLUCENT;</span><br><span class="line">            params.windowAnimations = com.android.internal.R.style.Animation_Toast;</span><br><span class="line">            <span class="comment">//设置Window类型为Toast</span></span><br><span class="line">            params.type = WindowManager.LayoutParams.TYPE_TOAST;</span><br><span class="line">            params.setTitle(<span class="string">"Toast"</span>);</span><br><span class="line">            params.flags = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON</span><br><span class="line">                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE</span><br><span class="line">                    | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;   </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>transient_notification.xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">LinearLayout</span> <span class="attr">xmlns:android</span>=<span class="string">"http://schemas.android.com/apk/res/android"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_width</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_height</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:orientation</span>=<span class="string">"vertical"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:background</span>=<span class="string">"?android:attr/toastFrameBackground"</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">TextView</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:id</span>=<span class="string">"@android:id/message"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_width</span>=<span class="string">"wrap_content"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_height</span>=<span class="string">"wrap_content"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_weight</span>=<span class="string">"1"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_gravity</span>=<span class="string">"center_horizontal"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:textAppearance</span>=<span class="string">"@style/TextAppearance.Toast"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:textColor</span>=<span class="string">"@color/bright_foreground_dark"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:shadowColor</span>=<span class="string">"#BB000000"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:shadowRadius</span>=<span class="string">"2.75"</span></span></span><br><span class="line"><span class="tag">        /&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">LinearLayout</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="Toast添加View"><a href="#Toast添加View" class="headerlink" title="Toast添加View"></a>Toast添加View</h2><p>从Toast的调用我们开始分析<code>Toast.makeText(MainActivity.this , &quot;Hello World&quot; , Toast.LENGTH_SHORT);</code>我们主要看<code>makeText</code>方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Toast</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Make a standard toast that just contains a text view.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> context  The context to use.  Usually your &#123;<span class="doctag">@link</span> android.app.Application&#125;</span></span><br><span class="line"><span class="comment">     *                 or &#123;<span class="doctag">@link</span> android.app.Activity&#125; object.</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> text     The text to show.  Can be formatted text.</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> duration How long to display the message.  Either &#123;<span class="doctag">@link</span> #LENGTH_SHORT&#125; or</span></span><br><span class="line"><span class="comment">     *                 &#123;<span class="doctag">@link</span> #LENGTH_LONG&#125;</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Toast <span class="title">makeText</span><span class="params">(Context context, CharSequence text, @Duration <span class="keyword">int</span> duration)</span> </span>&#123;</span><br><span class="line">        Toast result = <span class="keyword">new</span> Toast(context);</span><br><span class="line">        <span class="comment">//获取布局解析器</span></span><br><span class="line">        LayoutInflater inflate = (LayoutInflater)</span><br><span class="line">                context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);</span><br><span class="line">        <span class="comment">//解析transient_notification.xml生成对应的View</span></span><br><span class="line">        View v = inflate.inflate(com.android.internal.R.layout.transient_notification, <span class="keyword">null</span>);</span><br><span class="line">        <span class="comment">//找到View中的id为message的TextView</span></span><br><span class="line">        TextView tv = (TextView)v.findViewById(com.android.internal.R.id.message);</span><br><span class="line">        <span class="comment">//对Textview进行文字赋值</span></span><br><span class="line">        tv.setText(text);</span><br><span class="line">        <span class="comment">//展示的Toast所用的View</span></span><br><span class="line">        result.mNextView = v;</span><br><span class="line">        <span class="comment">//设置间隔时间</span></span><br><span class="line">        result.mDuration = duration;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主要是对Toast内部成员变量<code>mNextView</code>和<code>mDuration</code>进行初始化。</p>
+<h2 id="Toast的展示"><a href="#Toast的展示" class="headerlink" title="Toast的展示"></a>Toast的展示</h2><center><img src="http://upload-images.jianshu.io/upload_images/1319879-c8eac3714d3721d5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="TOAST.png"></center>
+
+<p>将Toast内部的TN(ITransientNotification客户端对象)加入到INotificationManager服务端的Binder兑现的mToastQueue队列中。再由服务端循环遍历mToastQueue队列中<code>ToastRecord</code>对象，处理一个移除一个，每次处理的都是List的第一个<code>ToastRecord</code>对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Toast</span> </span>&#123;</span><br><span class="line">    <span class="comment">//INotificationManager的客户端的Binder对象</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> INotificationManager sService;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">private</span> INotificationManager <span class="title">getService</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (sService != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> sService;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//获取INotificationManager的客户端的Binder对象</span></span><br><span class="line">        sService = INotificationManager.Stub.asInterface(ServiceManager.getService(<span class="string">"notification"</span>));</span><br><span class="line">        <span class="keyword">return</span> sService;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Show the view for the specified duration.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">show</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">//mNextView不能为空</span></span><br><span class="line">        <span class="keyword">if</span> (mNextView == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">"setView must have been called"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//service初始哈</span></span><br><span class="line">        INotificationManager service = getService();</span><br><span class="line">        <span class="comment">//获取当前Context对应的包名</span></span><br><span class="line">        String pkg = mContext.getOpPackageName();</span><br><span class="line">        TN tn = mTN;</span><br><span class="line">        tn.mNextView = mNextView;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//将TN加入INotificationManager中的mToastQueue队列</span></span><br><span class="line">            service.enqueueToast(pkg, tn, mDuration);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">            <span class="comment">// Empty</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>NotificationManagerService</code>在服务端处理<code>ITransientNotification</code>客户端传过来的<code>enqueueToast</code>事件。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NotificationManagerService</span> <span class="keyword">extends</span> <span class="title">SystemService</span> </span>&#123;</span><br><span class="line">    <span class="comment">//是否是系统调用</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">isCallerSystem</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> isUidSystem(Binder.getCallingUid());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> IBinder mService = <span class="keyword">new</span> INotificationManager.Stub() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">enqueueToast</span><span class="params">(String pkg, ITransientNotification callback, <span class="keyword">int</span> duration)</span></span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (DBG) &#123;</span><br><span class="line">                Slog.i(TAG, <span class="string">"enqueueToast pkg="</span> + pkg + <span class="string">" callback="</span> + callback</span><br><span class="line">                        + <span class="string">" duration="</span> + duration);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (pkg == <span class="keyword">null</span> || callback == <span class="keyword">null</span>) &#123;</span><br><span class="line">                Slog.e(TAG, <span class="string">"Not doing toast. pkg="</span> + pkg + <span class="string">" callback="</span> + callback);</span><br><span class="line">                <span class="keyword">return</span> ;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//判断是否是系统调动或者是Android系统应用程序进行调用</span></span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">boolean</span> isSystemToast = isCallerSystem() || (<span class="string">"android"</span>.equals(pkg));</span><br><span class="line">            <span class="comment">//Toast或者通知权限被禁用</span></span><br><span class="line">            <span class="keyword">if</span> (ENABLE_BLOCKED_TOASTS &amp;&amp; !noteNotificationOp(pkg, Binder.getCallingUid())) &#123;</span><br><span class="line">                <span class="keyword">if</span> (!isSystemToast) &#123;</span><br><span class="line">                    Slog.e(TAG, <span class="string">"Suppressing toast from package "</span> + pkg + <span class="string">" by user request."</span>);</span><br><span class="line">                    <span class="keyword">return</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//mToastQueue加锁</span></span><br><span class="line">            <span class="keyword">synchronized</span> (mToastQueue) &#123;</span><br><span class="line">                <span class="keyword">int</span> callingPid = Binder.getCallingPid();</span><br><span class="line">                <span class="keyword">long</span> callingId = Binder.clearCallingIdentity();</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    ToastRecord record;</span><br><span class="line">                    <span class="comment">//寻找当前callback在mToastQueue中的索引，没找到则返回-1</span></span><br><span class="line">                    <span class="keyword">int</span> index = indexOfToastLocked(pkg, callback);</span><br><span class="line">                    <span class="comment">// If it's already in the queue, we update it in place, we don't</span></span><br><span class="line">                    <span class="comment">// move it to the end of the queue.</span></span><br><span class="line">                    <span class="comment">//index&gt;=0表示mToastQueue中有该callback的索引，record进行更新展示时间</span></span><br><span class="line">                    <span class="keyword">if</span> (index &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">                        record = mToastQueue.get(index);</span><br><span class="line">                        record.update(duration);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        <span class="comment">// Limit the number of toasts that any given package except the android</span></span><br><span class="line">                        <span class="comment">// package can enqueue.  Prevents DOS attacks and deals with leaks.</span></span><br><span class="line">                        <span class="comment">//不是系统的Toast</span></span><br><span class="line">                        <span class="keyword">if</span> (!isSystemToast) &#123;</span><br><span class="line">                            <span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line">                            <span class="keyword">final</span> <span class="keyword">int</span> N = mToastQueue.size();</span><br><span class="line">                            <span class="keyword">for</span> (<span class="keyword">int</span> i=<span class="number">0</span>; i&lt;N; i++) &#123;</span><br><span class="line">                                 <span class="keyword">final</span> ToastRecord r = mToastQueue.get(i);</span><br><span class="line">                                 <span class="comment">//判断当前的Toast是不是同一个包发出的</span></span><br><span class="line">                                 <span class="keyword">if</span> (r.pkg.equals(pkg)) &#123;</span><br><span class="line">                                     count++;</span><br><span class="line">                                     <span class="comment">//当前包的需要展示的Toast缓存数量&gt;=50</span></span><br><span class="line">                                     <span class="keyword">if</span> (count &gt;= MAX_PACKAGE_NOTIFICATIONS) &#123;</span><br><span class="line">                                         Slog.e(TAG, <span class="string">"Package has already posted "</span> + count</span><br><span class="line">                                                + <span class="string">" toasts. Not showing more. Package="</span> + pkg);</span><br><span class="line">                                         <span class="keyword">return</span>;</span><br><span class="line">                                     &#125;</span><br><span class="line">                                 &#125;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="comment">//根据callback等信息构造ToastRecord对象</span></span><br><span class="line">                        record = <span class="keyword">new</span> ToastRecord(callingPid, pkg, callback, duration);</span><br><span class="line">                        <span class="comment">//将新的ToastRecord对象加入到队列总</span></span><br><span class="line">                        mToastQueue.add(record);</span><br><span class="line">                        <span class="comment">//加入之后当前的索引是lenth-1</span></span><br><span class="line">                        index = mToastQueue.size() - <span class="number">1</span>;</span><br><span class="line">                        <span class="comment">//将当前包对应的线程切换为前台线程</span></span><br><span class="line">                        keepProcessAliveLocked(callingPid);</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">// If it's at index 0, it's the current toast.  It doesn't matter if it's</span></span><br><span class="line">                    <span class="comment">// new or just been updated.  Call back and tell it to show itself.</span></span><br><span class="line">                    <span class="comment">// If the callback fails, this will remove it from the list, so don't</span></span><br><span class="line">                    <span class="comment">// assume that it's valid after this.</span></span><br><span class="line">                    <span class="comment">//如果之前队列中没有正在处理的消息，那么处理当前这个ToastRecord</span></span><br><span class="line">                    <span class="keyword">if</span> (index == <span class="number">0</span>) &#123;</span><br><span class="line">                        showNextToastLocked();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                    Binder.restoreCallingIdentity(callingId);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>NotificationManagerService</code>使用先进先出（FIFO）的方式处理<code>mToastQueue</code>队列中的消息。</p>
+<ul>
+<li><p>服务端的处理</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NotificationManagerService</span> <span class="keyword">extends</span> <span class="title">SystemService</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">showNextToastLocked</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">//获取队列第一个ToastRecord</span></span><br><span class="line">        ToastRecord record = mToastQueue.get(<span class="number">0</span>);</span><br><span class="line">        <span class="keyword">while</span> (record != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (DBG) Slog.d(TAG, <span class="string">"Show pkg="</span> + record.pkg + <span class="string">" callback="</span> + record.callback);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="comment">//调用客户端Binder对应的TN.show方法。</span></span><br><span class="line">                record.callback.show();</span><br><span class="line">                scheduleTimeoutLocked(record);</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">                Slog.w(TAG, <span class="string">"Object died trying to show notification "</span> + record.callback</span><br><span class="line">                        + <span class="string">" in package "</span> + record.pkg);</span><br><span class="line">                <span class="comment">// remove it from the list and let the process die</span></span><br><span class="line">                <span class="comment">//当前Toast客户端Binder方法调用抛出异常</span></span><br><span class="line">                <span class="comment">//移除当前ToastRecord</span></span><br><span class="line">                <span class="keyword">int</span> index = mToastQueue.indexOf(record);</span><br><span class="line">                <span class="keyword">if</span> (index &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">                    mToastQueue.remove(index);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">//切换当前ToastRecord进程</span></span><br><span class="line">                keepProcessAliveLocked(record.pid);</span><br><span class="line">                <span class="comment">//遍历对象变为列表下一个oastRecord对象</span></span><br><span class="line">                <span class="keyword">if</span> (mToastQueue.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    record = mToastQueue.get(<span class="number">0</span>);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    record = <span class="keyword">null</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>客户端的处理</p>
+</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">TN</span> <span class="keyword">extends</span> <span class="title">ITransientNotification</span>.<span class="title">Stub</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * schedule handleShow into the right thread</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">show</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (localLOGV) Log.v(TAG, <span class="string">"SHOW: "</span> + <span class="keyword">this</span>);</span><br><span class="line">        mHandler.post(mShow);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> Runnable mShow = <span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            handleShow();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="comment">//展示Toast</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleShow</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (localLOGV) Log.v(TAG, <span class="string">"HANDLE SHOW: "</span> + <span class="keyword">this</span> + <span class="string">" mView="</span> + mView</span><br><span class="line">                + <span class="string">" mNextView="</span> + mNextView);</span><br><span class="line">        <span class="comment">//判断mNextView是否展示过</span></span><br><span class="line">        <span class="keyword">if</span> (mView != mNextView) &#123;</span><br><span class="line">            <span class="comment">// remove the old view if necessary</span></span><br><span class="line">            <span class="comment">//移除当前展示的Toast</span></span><br><span class="line">            handleHide();</span><br><span class="line">            mView = mNextView;</span><br><span class="line">            <span class="comment">//获取当前的应用程序的上下文环境</span></span><br><span class="line">            Context context = mView.getContext().getApplicationContext();</span><br><span class="line">            <span class="comment">//获取当前包名</span></span><br><span class="line">            String packageName = mView.getContext().getOpPackageName();</span><br><span class="line">            <span class="keyword">if</span> (context == <span class="keyword">null</span>) &#123;</span><br><span class="line">                context = mView.getContext();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//获取上下文环境的WindowManagerImpl</span></span><br><span class="line">            mWM = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);</span><br><span class="line">            <span class="comment">// We can resolve the Gravity here by using the Locale for getting</span></span><br><span class="line">            <span class="comment">// the layout direction</span></span><br><span class="line">            <span class="keyword">final</span> Configuration config = mView.getContext().getResources().getConfiguration();</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">int</span> gravity = Gravity.getAbsoluteGravity(mGravity, config.getLayoutDirection());</span><br><span class="line">            <span class="comment">//设置参数的重力防线</span></span><br><span class="line">            mParams.gravity = gravity;</span><br><span class="line">            <span class="keyword">if</span> ((gravity &amp; Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.FILL_HORIZONTAL) &#123;</span><br><span class="line">                mParams.horizontalWeight = <span class="number">1.0f</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> ((gravity &amp; Gravity.VERTICAL_GRAVITY_MASK) == Gravity.FILL_VERTICAL) &#123;</span><br><span class="line">                mParams.verticalWeight = <span class="number">1.0f</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//设置参数的坐标和偏移量</span></span><br><span class="line">            mParams.x = mX;</span><br><span class="line">            mParams.y = mY;</span><br><span class="line">            mParams.verticalMargin = mVerticalMargin;</span><br><span class="line">            mParams.horizontalMargin = mHorizontalMargin;</span><br><span class="line">            mParams.packageName = packageName;</span><br><span class="line">            <span class="comment">//如果mView添加过，那么先把mView从WindowManager中移除。</span></span><br><span class="line">            <span class="keyword">if</span> (mView.getParent() != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (localLOGV) Log.v(TAG, <span class="string">"REMOVE! "</span> + mView + <span class="string">" in "</span> + <span class="keyword">this</span>);</span><br><span class="line">                mWM.removeView(mView);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (localLOGV) Log.v(TAG, <span class="string">"ADD! "</span> + mView + <span class="string">" in "</span> + <span class="keyword">this</span>);</span><br><span class="line">            <span class="comment">//把需要展示的View添加在WindowManager中</span></span><br><span class="line">            mWM.addView(mView, mParams);</span><br><span class="line">            trySendAccessibilityEvent();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Toast的消失"><a href="#Toast的消失" class="headerlink" title="Toast的消失"></a>Toast的消失</h2><p>系统的Toast的hide都是在INotificationManager的服务端Binder中发起的，但最终的执行都是在INotificationManager的客户端Binder中执行的。</p>
+<ul>
+<li>服务端</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NotificationManagerService</span> <span class="keyword">extends</span> <span class="title">SystemService</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">WorkerHandler</span> <span class="keyword">extends</span> <span class="title">Handler</span></span>&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleMessage</span><span class="params">(Message msg)</span></span>&#123;</span><br><span class="line">            <span class="keyword">switch</span> (msg.what)&#123;</span><br><span class="line">                <span class="keyword">case</span> MESSAGE_TIMEOUT:</span><br><span class="line">                    <span class="comment">//调用当前的Toast的hide</span></span><br><span class="line">                    handleTimeout((ToastRecord)msg.obj);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> MESSAGE_SAVE_POLICY_FILE:</span><br><span class="line">                    handleSavePolicyFile();</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> MESSAGE_SEND_RANKING_UPDATE:</span><br><span class="line">                    handleSendRankingUpdate();</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> MESSAGE_LISTENER_HINTS_CHANGED:</span><br><span class="line">                    handleListenerHintsChanged(msg.arg1);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> MESSAGE_LISTENER_NOTIFICATION_FILTER_CHANGED:</span><br><span class="line">                    handleListenerInterruptionFilterChanged(msg.arg1);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//让当前Toast展示一段时间后消失</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">scheduleTimeoutLocked</span><span class="params">(ToastRecord r)</span></span>&#123;</span><br><span class="line">        <span class="comment">//移除mHandler关于这个TaostRecord的所有Message</span></span><br><span class="line">        mHandler.removeCallbacksAndMessages(r);</span><br><span class="line">        Message m = Message.obtain(mHandler, MESSAGE_TIMEOUT, r);</span><br><span class="line">        <span class="keyword">long</span> delay = r.duration == Toast.LENGTH_LONG ? LONG_DELAY : SHORT_DELAY;</span><br><span class="line">        <span class="comment">//发送一个delayed=duration的MESSAGE_TIMEOUT事件</span></span><br><span class="line">        mHandler.sendMessageDelayed(m, delay);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//使Toast消失</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">handleTimeout</span><span class="params">(ToastRecord record)</span></span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (DBG) Slog.d(TAG, <span class="string">"Timeout pkg="</span> + record.pkg + <span class="string">" callback="</span> + record.callback);</span><br><span class="line">        <span class="keyword">synchronized</span> (mToastQueue) &#123;</span><br><span class="line">            <span class="comment">//找当前ToastRecord在mToastQueue队列中的索引</span></span><br><span class="line">            <span class="keyword">int</span> index = indexOfToastLocked(record.pkg, record.callback);</span><br><span class="line">            <span class="keyword">if</span> (index &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">                cancelToastLocked(index);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//调用当前索引=index的ToastRecord.callback.hide</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">cancelToastLocked</span><span class="params">(<span class="keyword">int</span> index)</span> </span>&#123;</span><br><span class="line">        ToastRecord record = mToastQueue.get(index);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">////调用客户端Binder对应的TN.hide方法。</span></span><br><span class="line">            record.callback.hide();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">            Slog.w(TAG, <span class="string">"Object died trying to hide notification "</span> + record.callback</span><br><span class="line">                    + <span class="string">" in package "</span> + record.pkg);</span><br><span class="line">            <span class="comment">// don't worry about this, we're about to remove it from</span></span><br><span class="line">            <span class="comment">// the list anyway</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//移除处理完的ToastRecord</span></span><br><span class="line">        mToastQueue.remove(index);</span><br><span class="line">        keepProcessAliveLocked(record.pid);</span><br><span class="line">        <span class="keyword">if</span> (mToastQueue.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// Show the next one. If the callback fails, this will remove</span></span><br><span class="line">            <span class="comment">// it from the list, so don't assume that the list hasn't changed</span></span><br><span class="line">            <span class="comment">// after this point.</span></span><br><span class="line">            <span class="comment">//处理队列中的下一个ToastRecord</span></span><br><span class="line">            showNextToastLocked();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>客户端</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">TN</span> <span class="keyword">extends</span> <span class="title">ITransientNotification</span>.<span class="title">Stub</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * schedule handleHide into the right thread</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">hide</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (localLOGV) Log.v(TAG, <span class="string">"HIDE: "</span> + <span class="keyword">this</span>);</span><br><span class="line">        mHandler.post(mHide);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">final</span> Runnable mHide = <span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            handleHide();</span><br><span class="line">            <span class="comment">// Don't do this in handleHide() because it is also invoked by handleShow()</span></span><br><span class="line">            mNextView = <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">handleHide</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (localLOGV) Log.v(TAG, <span class="string">"HANDLE HIDE: "</span> + <span class="keyword">this</span> + <span class="string">" mView="</span> + mView);</span><br><span class="line">        <span class="keyword">if</span> (mView != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="comment">// note: checking parent() just to make sure the view has</span></span><br><span class="line">            <span class="comment">// been added...  i have seen cases where we get here when</span></span><br><span class="line">            <span class="comment">// the view isn't yet added, so let's try not to crash.</span></span><br><span class="line">            <span class="keyword">if</span> (mView.getParent() != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (localLOGV) Log.v(TAG, <span class="string">"REMOVE! "</span> + mView + <span class="string">" in "</span> + <span class="keyword">this</span>);</span><br><span class="line">                <span class="comment">//调用WindowManager的removeView移除mView</span></span><br><span class="line">                mWM.removeView(mView);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            mView = <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>通过分析<code>Activity</code>、<code>Dialog</code>、<code>Toast</code>通过对ViewRootImpl的更细节的分析，所有添加在窗口上的View都有一个ViewRootImpl作为它的Parent，处理View的布局、事件处理等。</p>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+<p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：</p>
+<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/weixinpay.jpeg" alt="振兴 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpeg" alt="振兴 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    振兴
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2017/12/11/viewrootimpl-dialog-toast/" title="Dialog、Toast的Window和ViewRootImpl">http://yoursite.com/2017/12/11/viewrootimpl-dialog-toast/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/ViewRootImpl/" rel="tag"><i class="fa fa-tag"></i> ViewRootImpl</a>
+          
+            <a href="/tags/Toast/" rel="tag"><i class="fa fa-tag"></i> Toast</a>
+          
+            <a href="/tags/Dialog/" rel="tag"><i class="fa fa-tag"></i> Dialog</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/12/11/viewrootimpl-activity/" rel="next" title="ViewRootImpl的独白，我不是一个View(布局篇)">
+                <i class="fa fa-chevron-left"></i> ViewRootImpl的独白，我不是一个View(布局篇)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/06/arouter-study/" rel="prev" title="Android项目解耦--路由框架ARouter的使用">
+                Android项目解耦--路由框架ARouter的使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/jay.jpg"
+                alt="振兴" />
+            
+              <p class="site-author-name" itemprop="name">振兴</p>
+              <p class="site-description motion-element" itemprop="description">好好学习，天天向上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">74</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">96</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stven0king" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://me.csdn.net/stven_king" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-crosshairs"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/311540b7592b" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-book"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/56824a1900b01b9f2bd94ae8" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-spinner"></i>掘金</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/2520114671/profile?rightmod=1&wvr=6&mod=personinfo" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-weibo"></i>微博</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:stven0king@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                推荐阅读
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://gityuan.com/" title="Gityuan" target="_blank">Gityuan</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.wanandroid.com/index" title="玩Android" target="_blank">玩Android</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.wjdiankong.cn/" title="尼古拉斯.赵四" target="_blank">尼古拉斯.赵四</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Dialog"><span class="nav-number">2.</span> <span class="nav-text">Dialog</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Dialog的构造"><span class="nav-number">2.1.</span> <span class="nav-text">Dialog的构造</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dialog添加View"><span class="nav-number">2.2.</span> <span class="nav-text">Dialog添加View</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dialog的展现"><span class="nav-number">2.3.</span> <span class="nav-text">Dialog的展现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Toast"><span class="nav-number">3.</span> <span class="nav-text">Toast</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Toast的构造"><span class="nav-number">3.1.</span> <span class="nav-text">Toast的构造</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Toast添加View"><span class="nav-number">3.2.</span> <span class="nav-text">Toast添加View</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Toast的展示"><span class="nav-number">3.3.</span> <span class="nav-text">Toast的展示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Toast的消失"><span class="nav-number">3.4.</span> <span class="nav-text">Toast的消失</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">振兴</span>
+
+  
+</div>
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+<!--
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+-->
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://billts.site/extra_css/gitment.css">
+        <script src="https://billts.site/js/gitment.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitment({
+            id: window.location.pathname, 
+            owner: 'stven0king',
+            repo: 'stven0king.github.io',
+            
+            oauth: {
+            
+            
+                client_secret: '2206c556bf3e1f5967962220c3439f458ed41c7f',
+            
+                client_id: '00c12e7601ea8004b339'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="数据库连接池," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="最近在看数据库相关的三方库的时候，我发现在Android应用开发的时候是可以并行操作数据库的读写，但Android默认的数据连接池中只有一个数据库链接。一个数据库连接能实现并发么？要是一个数据库链接可以实现并发，那么为什么需要数据库连接池？">
+<meta name="keywords" content="数据库连接池">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android中的数据库">
+<meta property="og:url" content="http://yoursite.com/2019/11/02/sqlconnectionpool/index.html">
+<meta property="og:site_name" content="下雨天要逛街">
+<meta property="og:description" content="最近在看数据库相关的三方库的时候，我发现在Android应用开发的时候是可以并行操作数据库的读写，但Android默认的数据连接池中只有一个数据库链接。一个数据库连接能实现并发么？要是一个数据库链接可以实现并发，那么为什么需要数据库连接池？">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191102201512480.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center">
+<meta property="og:updated_time" content="2019-12-27T01:02:16.256Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android中的数据库">
+<meta name="twitter:description" content="最近在看数据库相关的三方库的时候，我发现在Android应用开发的时候是可以并行操作数据库的读写，但Android默认的数据连接池中只有一个数据库链接。一个数据库连接能实现并发么？要是一个数据库链接可以实现并发，那么为什么需要数据库连接池？">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20191102201512480.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/11/02/sqlconnectionpool/"/>
+
+
+
+
+
+  <title>Android中的数据库 | 下雨天要逛街</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1055a4e1d37a3a4dcb3a3e1c4f32f147";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/stven0king" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">下雨天要逛街</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/02/sqlconnectionpool/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="振兴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/jay.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="下雨天要逛街">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android中的数据库</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-02T20:27:00+08:00">
+                2019-11-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据库/" itemprop="url" rel="index">
+                    <span itemprop="name">数据库</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  最近在看数据库相关的三方库的时候，我发现在Android应用开发的时候是可以并行操作数据库的读写，但Android默认的数据连接池中只有一个数据库链接。一个数据库连接能实现并发么？要是一个数据库链接可以实现并发，那么为什么需要数据库连接池？
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><img src="https://img-blog.csdnimg.cn/20191102201512480.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"><br>最近在看数据库相关的三方库的时候，我发现在Android应用开发的时候是可以并行操作数据库的读写，但Android默认的数据连接池中只有一个数据库链接。一个数据库连接能实现并发么？要是一个数据库链接可以实现并发，那么为什么需要数据库连接池？</p>
+<h1 id="数据库连接池介绍"><a href="#数据库连接池介绍" class="headerlink" title="数据库连接池介绍"></a>数据库连接池介绍</h1><p>每次提到<strong>连接池</strong>我们很快能想到<strong>线程池</strong>。线程池的创建可以减少了创建和销毁线程的次数，每个工作线程都可以被重复利用，可执行多个任务。</p>
+<p><strong>数据库连接</strong>是一种关键的有限的昂贵的资源，对数据库连接的管理能显著影响到整个应用程序的伸缩性和健壮性,影响到程序的性能指标。<strong>数据库连接池负责分配,管理和释放数据库连接,它允许应用程序重复使用一个现有的数据库连接，减少链接不断传销和销毁带来的资源浪费。</strong></p>
+<p><strong>数据库连接池</strong>在初始化时将创建一定数量的数据库连接放到连接池中,，这些数据库连接的数量是由最小数据库连接数来设定的。无论这些数据库连接是否被使用，连接池都将一直保证至少拥有这么多的连接数量。连接池的最大数据库连接数量限定了这个连接池能占有的最大连接数，当应用程序向连接池请求的连接数超过最大连接数量时，这些请求将被加入到等待队列中。</p>
+<blockquote>
+<p> 数据库连接池的最小连接数和最大连接数的设置要考虑到以下几个因素:</p>
+</blockquote>
+<ol>
+<li><p>最小连接数：是连接池一直保持的数据库连接，所以如果应用程序对数据库连接的使用量不大，将会有大量的数据库连接资源被浪费。</p>
+</li>
+<li><p>最大连接数:是连接池能申请的最大连接数,如果数据库连接请求超过次数,后面的数据库连接请求将被加入到等待队列中,这会影响以后的数据库操作</p>
+</li>
+<li><p>如果最小连接数与最大连接数相差很大：那么最先连接请求将会获利，之后超过最小连接数量的连接请求等价于建立一个新的数据库连接。不过，这些大于最小连接数的数据库连接在使用完不会马上被释放，他将被放到连接池中等待重复使用或是空间超时后被释放。</p>
+</li>
+</ol>
+<h1 id="Android数据库相关类介绍"><a href="#Android数据库相关类介绍" class="headerlink" title="Android数据库相关类介绍"></a>Android数据库相关类介绍</h1><ul>
+<li>SQLiteOpenHelper：管理SQLite的帮助类，提供获取SQLIteDatabase实例的方法，它会在第一次使用数据库时调用获取实例方法时创建SQLiteDatabase实例，并且处理数据库版本变化，开发人员在实现ContentProvider时都要实现一个自定义的SQLiteOpenHelper类，处理数据的创建、升级和降级。</li>
+<li>SQLiteDatabase：代表一个打开的SQLite数据库，提供了执行数据库操作的接口方法。如果不需要在进程之间共享数据，应用程序也可以自行创建这个类的实例来读写SQLite数据库。 </li>
+<li>SQLiteSession：SQLiteSession负责管理数据库连接和事务的生命周期，通过SQLiteConnectionPool获取数据库连接来执行具体的数据库操作。 </li>
+<li>SQLiteConnectionPool：数据库连接池，管理所有打开的数据库连接（Connection）。所有数据库连接都是通过它来打开，打开后会加入连接池，在读写数据库时需要从连接池中获取一个数据库连接来使用。 </li>
+<li>SQLiteConnection：代表了数据库连接，每个Connection封装了一个native层的sqlite3实例，通过JNI调用SQLite动态库的接口方法操作数据库，Connection要么被Session持有，要么被连接池持有。 </li>
+<li>CursorFactory：可选的Cursor工厂，可以提供自定义工厂来创建Cursor。 </li>
+<li>DatabaseErrorHandler：可选的数据库异常处理器（目前仅处理数据库Corruption），如果不提供，将会使用默认的异常处理器。 </li>
+<li>SQLiteDatabaseConfiguration：数据库配置，应用程序可以创建多个到SQLite数据库的连接，这个类用来保证每个连接的配置都是相同的。 </li>
+<li>SQLiteQuery和SQLiteStatement：从抽象类SQLiteProgram派生，封装了SQL语句的执行过程，在执行时自动组装待执行的SQL语句，并调用SQLiteSession来执行数据库操作。这两个类的实现应用了设计模式中的命令模式。 </li>
+</ul>
+<p>每个类的更加详细的介绍可以阅读 <a href="https://www.cnblogs.com/supersand/p/5560091.html" target="_blank" rel="noopener"><strong>SQLite</strong>数据库学习小结<strong>——Frameworks</strong>层实现</a> 这篇文章，我们这里主要学习 <code>SQLiteConnectionPool</code> 相关的知识。</p>
+<h1 id="SQLiteConnectionPool"><a href="#SQLiteConnectionPool" class="headerlink" title="SQLiteConnectionPool"></a>SQLiteConnectionPool</h1><p><strong>数据库连接池</strong>我们先看一下它的大小，每个链接的获取以及其他功能？</p>
+<h2 id="连接池大小"><a href="#连接池大小" class="headerlink" title="连接池大小"></a>连接池大小</h2><p>目前Android系统的实现中，如果以非WAL模式打开数据库，连接池中只会保持一个数据库连接，如果以WAL模式打开数据库，连接池中的最大连接数量则根据系统配置决定，默认配置是两个。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteConnectionPool.java</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">SQLiteConnectionPool</span><span class="params">(SQLiteDatabaseConfiguration configuration)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//数据库的配置信息</span></span><br><span class="line">    mConfiguration = <span class="keyword">new</span> SQLiteDatabaseConfiguration(configuration);</span><br><span class="line">    <span class="comment">//设置最大的数据库链接个数</span></span><br><span class="line">    setMaxConnectionPoolSizeLocked();</span><br><span class="line">    <span class="comment">//超时处理句柄设置，如果超时时间为MAX_VALUE，那么链接永远不关闭</span></span><br><span class="line">    <span class="comment">// If timeout is set, setup idle connection handler</span></span><br><span class="line">    <span class="comment">// In case of MAX_VALUE - idle connections are never closed</span></span><br><span class="line">    <span class="keyword">if</span> (mConfiguration.idleConnectionTimeoutMs != Long.MAX_VALUE) &#123;</span><br><span class="line">        setupIdleConnectionHandler(Looper.getMainLooper(),</span><br><span class="line">                mConfiguration.idleConnectionTimeoutMs);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">setMaxConnectionPoolSizeLocked</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (!mConfiguration.isInMemoryDb()</span><br><span class="line">            &amp;&amp; (mConfiguration.openFlags &amp; SQLiteDatabase.ENABLE_WRITE_AHEAD_LOGGING) != <span class="number">0</span>)&#123;</span><br><span class="line">        <span class="comment">//获取debug.sqlite.wal.poolsize配置的大小，默认值是com.android.internal.R.integer.db_connection_pool_size</span></span><br><span class="line">        <span class="comment">//最小值为2</span></span><br><span class="line">        mMaxConnectionPoolSize = SQLiteGlobal.getWALConnectionPoolSize();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// We don't actually need to always restrict the connection pool size to 1</span></span><br><span class="line">        <span class="comment">// for non-WAL databases.  There might be reasons to use connection pooling</span></span><br><span class="line">        <span class="comment">// with other journal modes. However, we should always keep pool size of 1 for in-memory</span></span><br><span class="line">        <span class="comment">// databases since every :memory: db is separate from another.</span></span><br><span class="line">        <span class="comment">// For now, enabling connection pooling and using WAL are the same thing in the API.</span></span><br><span class="line">        <span class="comment">//内存数据库和非WAL数据库时数据库连接池大小为1</span></span><br><span class="line">        mMaxConnectionPoolSize = <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>虽然名为连接池，但是从源码来看，目前实现的池中只有一个数据库连接（以后的Android版本可能会扩展），所以如果应用程序中有大量的并发数据库读和写操作的话，每个操作的时长都可能受到影响，所以数据库操作应放在工作线程中执行，以免影响UI响应。</p>
+<p><strong>这里有人可能产生疑问，我在进行Android应用开发的时候是可以并行操作数据库的读写，一个数据库连接能实现并发么？要是一个数据库链接可以实现并发，那么为什么需要数据库连接池？</strong></p>
+<p>这里说一下我自己的理解：一个<strong>数据库链接</strong>是一个<code>Socket</code> 通道，当这个<code>Connection</code> 被其它 <code>Session</code>占用的时候后续的<code>Session</code> 的操作必须等待这个 <code>Connection</code> 被释放，所以数据库的 <code>Connection</code> 的工作其实是串行的，这个在 <code>MySql</code> 和 <code>Oracle</code> 的文档中也能找到描述。所以在Android中默认的<strong>数据库连接池</strong>只有一个数据库链接的时候，所有在这个数据库上的操作都是串行的。我们平时在多线程中的数据库操作都是串行的。</p>
+<p>这些将会下下面代码分析的过程中一一体现出来^_^</p>
+<h2 id="数据库链接池的构造"><a href="#数据库链接池的构造" class="headerlink" title="数据库链接池的构造"></a>数据库链接池的构造</h2><p>这里主要讲数据库连接池的创建和池中的第一条链接的产生。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteConnectionPool.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">SQLiteConnectionPool</span> <span class="keyword">implements</span> <span class="title">Closeable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String TAG = <span class="string">"SQLiteConnectionPool"</span>;</span><br><span class="line">    <span class="comment">// Amount of time to wait in milliseconds before unblocking acquireConnection</span></span><br><span class="line">    <span class="comment">// and logging a message about the connection pool being busy.</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> CONNECTION_POOL_BUSY_MILLIS = <span class="number">30</span> * <span class="number">1000</span>; <span class="comment">// 30 seconds</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> CloseGuard mCloseGuard = CloseGuard.get();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Object mLock = <span class="keyword">new</span> Object();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> AtomicBoolean mConnectionLeaked = <span class="keyword">new</span> AtomicBoolean();</span><br><span class="line">    <span class="comment">//数据库的配置信息</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> SQLiteDatabaseConfiguration mConfiguration;</span><br><span class="line">    <span class="comment">//数据库连接池的最大链接数</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> mMaxConnectionPoolSize;</span><br><span class="line">    <span class="comment">//数据库是否打开</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> mIsOpen;</span><br><span class="line">    <span class="comment">//创建的链接id</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> mNextConnectionId;</span><br><span class="line">    <span class="comment">//连接等待池其实是由等待的连接组成的链</span></span><br><span class="line">    <span class="keyword">private</span> ConnectionWaiter mConnectionWaiterPool;</span><br><span class="line">    <span class="comment">//连接等待队列</span></span><br><span class="line">    <span class="keyword">private</span> ConnectionWaiter mConnectionWaiterQueue;</span><br><span class="line">    <span class="comment">//非主链接的引用，强引用需要主动回收</span></span><br><span class="line">    <span class="comment">// Strong references to all available connections.</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ArrayList&lt;SQLiteConnection&gt; mAvailableNonPrimaryConnections =</span><br><span class="line">            <span class="keyword">new</span> ArrayList&lt;SQLiteConnection&gt;();</span><br><span class="line">    <span class="comment">//主链接</span></span><br><span class="line">    <span class="keyword">private</span> SQLiteConnection mAvailablePrimaryConnection;</span><br><span class="line">    <span class="comment">/***部分代码省略***/</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="打开数据库"><a href="#打开数据库" class="headerlink" title="打开数据库"></a>打开数据库</h2><p>当我们在进行 <code>SQLiteOpenHelper.getWritableDatabase</code> 和 <code>SQLiteOpenHelper.getReadableDatabase</code> 的时候如果数据库没有打开那么会打开数据库，打开数据库也就是创建数据库链接。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteDatabase.java</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> SQLiteDatabase <span class="title">openDatabase</span><span class="params">(@NonNull String path,</span></span></span><br><span class="line"><span class="function"><span class="params">        @NonNull OpenParams openParams)</span> </span>&#123;</span><br><span class="line">    Preconditions.checkArgument(openParams != <span class="keyword">null</span>, <span class="string">"OpenParams cannot be null"</span>);</span><br><span class="line">    SQLiteDatabase db = <span class="keyword">new</span> SQLiteDatabase(path, openParams.mOpenFlags,</span><br><span class="line">            openParams.mCursorFactory, openParams.mErrorHandler,</span><br><span class="line">            openParams.mLookasideSlotSize, openParams.mLookasideSlotCount,</span><br><span class="line">            openParams.mIdleConnectionTimeout, openParams.mJournalMode, openParams.mSyncMode);</span><br><span class="line">    <span class="comment">//内部调用openInner</span></span><br><span class="line">    db.open();</span><br><span class="line">    <span class="keyword">return</span> db;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//打开数据库</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">openInner</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">        <span class="keyword">assert</span> mConnectionPoolLocked == <span class="keyword">null</span>;</span><br><span class="line">        mConnectionPoolLocked = SQLiteConnectionPool.open(mConfigurationLocked);</span><br><span class="line">        mCloseGuardLocked.open(<span class="string">"close"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">synchronized</span> (sActiveDatabases) &#123;</span><br><span class="line">        sActiveDatabases.put(<span class="keyword">this</span>, <span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这里我们看到了<code>SQLiteConnectionPoll</code> 的调用，这里由数据库链接池创建数据库链接从而打开数据库。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteConnectionPool.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> SQLiteConnectionPool <span class="title">open</span><span class="params">(SQLiteDatabaseConfiguration configuration)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//校验数据库信息</span></span><br><span class="line">    <span class="keyword">if</span> (configuration == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"configuration must not be null."</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Create the pool.创建连接池</span></span><br><span class="line">    SQLiteConnectionPool pool = <span class="keyword">new</span> SQLiteConnectionPool(configuration);</span><br><span class="line">    pool.open(); <span class="comment">// might throw</span></span><br><span class="line">    <span class="keyword">return</span> pool;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Might throw，打开数据库</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">open</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Open the primary connection.</span></span><br><span class="line">    <span class="comment">// This might throw if the database is corrupt.</span></span><br><span class="line">    <span class="comment">//获取主链接并打开数据库，如果数据库损坏可能抛出异常</span></span><br><span class="line">    mAvailablePrimaryConnection = openConnectionLocked(mConfiguration,</span><br><span class="line">            <span class="keyword">true</span> <span class="comment">/*primaryConnection*/</span>); <span class="comment">// might throw</span></span><br><span class="line">    <span class="comment">// Mark it released so it can be closed after idle timeout</span></span><br><span class="line">    <span class="comment">//释放当前链接，以便于被关闭或者被超时回收</span></span><br><span class="line">    <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mIdleConnectionHandler != <span class="keyword">null</span>) &#123;</span><br><span class="line">            mIdleConnectionHandler.connectionReleased(mAvailablePrimaryConnection);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Mark the pool as being open for business.</span></span><br><span class="line">    mIsOpen = <span class="keyword">true</span>;</span><br><span class="line">    mCloseGuard.open(<span class="string">"close"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Might throw.</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> SQLiteConnection <span class="title">openConnectionLocked</span><span class="params">(SQLiteDatabaseConfiguration configuration,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">boolean</span> primaryConnection)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//connectionId作为链接id，每次新创建一个数据库链接id自增1</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> connectionId = mNextConnectionId++;</span><br><span class="line">    <span class="keyword">return</span> SQLiteConnection.open(<span class="keyword">this</span>, configuration,connectionId, primaryConnection); <span class="comment">// might throw</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//SQLiteConnection.java</span></span><br><span class="line"><span class="comment">// Called by SQLiteConnectionPool only.</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> SQLiteConnection <span class="title">open</span><span class="params">(SQLiteConnectionPool pool, SQLiteDatabaseConfiguration configuration,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">int</span> connectionId, <span class="keyword">boolean</span> primaryConnection)</span> </span>&#123;</span><br><span class="line">    SQLiteConnection connection = <span class="keyword">new</span> SQLiteConnection(pool, configuration,connectionId, primaryConnection);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">//建立数据库链接</span></span><br><span class="line">        connection.open();</span><br><span class="line">        <span class="keyword">return</span> connection;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (SQLiteException ex) &#123;</span><br><span class="line">        connection.dispose(<span class="keyword">false</span>);</span><br><span class="line">        <span class="keyword">throw</span> ex;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这里我们能看到<strong>数据库连接池</strong>第一条链接的创建是在打开数据库的时候。</p>
+<h2 id="创建数据库链接"><a href="#创建数据库链接" class="headerlink" title="创建数据库链接"></a>创建数据库链接</h2><p>除过在打开数据的时候创建数据库链接，我们还会在一下情况下可能创建数据库链接。</p>
+<ul>
+<li>创建数据库，调用open</li>
+<li>重新加载数据库配置，调用reconfigure</li>
+<li>创建主链接，调用tryAcquirePrimaryConnectionLocked</li>
+<li>创建非主链接，调用tryAcquireNonPrimaryConnectionLocked</li>
+</ul>
+<p>这四种情况我们都可能会调用 <code>SQLiteConnectionPool.openConnectionLocked</code> 创建数据库链接，其中<strong>创建数据库</strong>和<strong>重新加载数据库配置</strong>都是创建的<strong>主链接</strong>。</p>
+<h2 id="数据库链接的使用"><a href="#数据库链接的使用" class="headerlink" title="数据库链接的使用"></a>数据库链接的使用</h2><p>在这之前我们先回想 <code>Connection</code> 和 <code>Session</code> 的概念：</p>
+<blockquote>
+<p>连接（Connection）：连接是从客户端到ORACLE实例的一条物理路径。连接可以在网络上建立，或者在本机通过IPC机制建立。通常会在客户端进程与一个专用服务器或一个调度器之间建立连接。</p>
+</blockquote>
+<blockquote>
+<p>会话(Session) 是和连接(Connection)是同时建立的，两者是对同一件事情不同层次的描述。简单讲，连接(Connection)是物理上的客户端同服务器的通信链路，会话(Session)是逻辑上的用户同服务器的通信交互。</p>
+</blockquote>
+<p>我们一般往数据库插入一条数据：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//创建数据库的help</span></span><br><span class="line">OpenHelper openHelper = <span class="keyword">new</span> OpenHelper(getApplicationContext(), <span class="string">"demo"</span>, <span class="keyword">null</span>, <span class="number">1</span>);</span><br><span class="line"><span class="comment">//打开数据库标识写操作</span></span><br><span class="line">SQLiteDatabase writableDatabase = tanzhenxing.getWritableDatabase();</span><br><span class="line">ContentValues contentValues = <span class="keyword">new</span> ContentValues();</span><br><span class="line">contentValues.put(<span class="string">"TIME"</span>, System.currentTimeMillis());</span><br><span class="line"><span class="comment">//向SYSTEM_MSG表插入一条数据，TIME的当时间戳</span></span><br><span class="line">writableDatabase.insert(<span class="string">"SYSTEM_MSG"</span>, <span class="keyword">null</span>, contentValues);</span><br></pre></td></tr></table></figure>
+<p>SQliteDatabase的内部调用：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteDatabase.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">insert</span><span class="params">(String table, String nullColumnHack, ContentValues values)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">//内部封装SQLiteStatement，调用statement.executeInsert();</span></span><br><span class="line">        <span class="keyword">return</span> insertWithOnConflict(table, nullColumnHack, values, CONFLICT_NONE);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (SQLException e) &#123;</span><br><span class="line">        Log.e(TAG, <span class="string">"Error inserting "</span> + values, e);</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//SQLiteStatement.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">executeInsert</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    acquireReference();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> getSession().executeForLastInsertedRowId(</span><br><span class="line">                getSql(), getBindArgs(), getConnectionFlags(), <span class="keyword">null</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (SQLiteDatabaseCorruptException ex) &#123;</span><br><span class="line">        onCorruption();</span><br><span class="line">        <span class="keyword">throw</span> ex;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        releaseReference();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//SQLiteStatement.java的父类SQLiteProgram的方法</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">final</span> SQLiteSession <span class="title">getSession</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> mDatabase.getThreadSession();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在这里我们能看到最终的执行是有 <code>Session</code> 进行操作的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteDatabase.java</span></span><br><span class="line"><span class="comment">// Thread-local for database sessions that belong to this database.</span></span><br><span class="line"><span class="comment">// Each thread has its own database session.</span></span><br><span class="line"><span class="comment">// INVARIANT: Immutable.</span></span><br><span class="line"><span class="comment">//属于当前数据库的会话，每个线程都有一会话，不可变。</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ThreadLocal&lt;SQLiteSession&gt; mThreadSession = ThreadLocal</span><br><span class="line">        .withInitial(<span class="keyword">this</span>::createSession);</span><br><span class="line"><span class="function">SQLiteSession <span class="title">createSession</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> SQLiteConnectionPool pool;</span><br><span class="line">    <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">        throwIfNotOpenLocked();</span><br><span class="line">        pool = mConnectionPoolLocked;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> SQLiteSession(pool);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function">SQLiteSession <span class="title">getThreadSession</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> mThreadSession.get(); <span class="comment">// initialValue() throws if database closed</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>好了扯了这么久到底什么时候使用 <code>Connection</code> 呢？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteSession.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">executeForLastInsertedRowId</span><span class="params">(String sql, Object[] bindArgs, <span class="keyword">int</span> connectionFlags,</span></span></span><br><span class="line"><span class="function"><span class="params">        CancellationSignal cancellationSignal)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//校验sql</span></span><br><span class="line">    <span class="keyword">if</span> (sql == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"sql must not be null."</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//对某些SQL语句（例如“ BEGIN”," COMMIT”和“ ROLLBACK”）执行特殊的重新解释,以确保事务状态不变式为保持。 </span></span><br><span class="line">    <span class="keyword">if</span> (executeSpecial(sql, bindArgs, connectionFlags, cancellationSignal)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//获取数据库链接</span></span><br><span class="line">    acquireConnection(sql, connectionFlags, cancellationSignal); <span class="comment">// might throw</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">//使用数据库链接进行数据库操作</span></span><br><span class="line">        <span class="keyword">return</span> mConnection.executeForLastInsertedRowId(sql, bindArgs,</span><br><span class="line">                cancellationSignal); <span class="comment">// might throw</span></span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="comment">//释放数据库链接</span></span><br><span class="line">        releaseConnection(); <span class="comment">// might throw</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//从数据库连接池中获取链接</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">acquireConnection</span><span class="params">(String sql, <span class="keyword">int</span> connectionFlags,</span></span></span><br><span class="line"><span class="function"><span class="params">        CancellationSignal cancellationSignal)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mConnection == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">assert</span> mConnectionUseCount == <span class="number">0</span>;</span><br><span class="line">        mConnection = mConnectionPool.acquireConnection(sql, connectionFlags,</span><br><span class="line">                cancellationSignal); <span class="comment">// might throw</span></span><br><span class="line">        mConnectionFlags = connectionFlags;</span><br><span class="line">    &#125;</span><br><span class="line">    mConnectionUseCount += <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们总结一下上述内容：我们进行数据库操作的时候每次操作都使用的<code>Session</code> ，多个线程执行数据库操作会有多个<code>Session</code> 。<code>Session</code> 的内部操作调用的是<code>Connection</code> ，<code>Connection</code> 是从<strong>数据库连接池</strong>中获取的。</p>
+<p>如果<strong>数据库连接池</strong>有多个数据库链接，那么数据库的殂谢操作可以并发，否则只能串行操作。</p>
+<h2 id="从连接池中获取数据库链接"><a href="#从连接池中获取数据库链接" class="headerlink" title="从连接池中获取数据库链接"></a>从连接池中获取数据库链接</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteConnectionPool.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> SQLiteConnection <span class="title">acquireConnection</span><span class="params">(String sql, <span class="keyword">int</span> connectionFlags,</span></span></span><br><span class="line"><span class="function"><span class="params">        CancellationSignal cancellationSignal)</span> </span>&#123;</span><br><span class="line">    SQLiteConnection con = waitForConnection(sql, connectionFlags, cancellationSignal);</span><br><span class="line">    <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mIdleConnectionHandler != <span class="keyword">null</span>) &#123;</span><br><span class="line">            mIdleConnectionHandler.connectionAcquired(con);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> con;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面的 <code>waitForConnection</code> 方法的名字我们可以猜测这个方法可能产生阻塞。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteConnectionPool.java</span></span><br><span class="line"><span class="comment">// Might throw.</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> SQLiteConnection <span class="title">waitForConnection</span><span class="params">(String sql, <span class="keyword">int</span> connectionFlags,</span></span></span><br><span class="line"><span class="function"><span class="params">        CancellationSignal cancellationSignal)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//是否需要主链接</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">boolean</span> wantPrimaryConnection =</span><br><span class="line">            (connectionFlags &amp; CONNECTION_FLAG_PRIMARY_CONNECTION_AFFINITY) != <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">final</span> ConnectionWaiter waiter;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> nonce;</span><br><span class="line">    <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">        throwIfClosedLocked();<span class="comment">//如果数据库关闭，那么抛出异常</span></span><br><span class="line">        <span class="comment">// Abort if canceled.</span></span><br><span class="line">        <span class="comment">//如果取消信号的回调不为空，那么执行回调检测是否需要取消</span></span><br><span class="line">        <span class="keyword">if</span> (cancellationSignal != <span class="keyword">null</span>) &#123;</span><br><span class="line">            cancellationSignal.throwIfCanceled();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// Try to acquire a connection.</span></span><br><span class="line">        <span class="comment">//尝试获得一个数据库链接</span></span><br><span class="line">        SQLiteConnection connection = <span class="keyword">null</span>;</span><br><span class="line">        <span class="comment">//如果不需要主链接，那么尝试获取非主链接</span></span><br><span class="line">        <span class="keyword">if</span> (!wantPrimaryConnection) &#123;</span><br><span class="line">            connection = tryAcquireNonPrimaryConnectionLocked(</span><br><span class="line">                    sql, connectionFlags); <span class="comment">// might throw</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//如果获取不到非链接，那么尝试获取主链接</span></span><br><span class="line">        <span class="keyword">if</span> (connection == <span class="keyword">null</span>) &#123;</span><br><span class="line">            connection = tryAcquirePrimaryConnectionLocked(connectionFlags); <span class="comment">// might throw</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (connection != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> connection;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// No connections available.  Enqueue a waiter in priority order.</span></span><br><span class="line">        <span class="comment">//没有可用的连接。按优先级排队服务员。</span></span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> priority = getPriority(connectionFlags);</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">long</span> startTime = SystemClock.uptimeMillis();</span><br><span class="line">        <span class="comment">//创建一个等待获取链接的对象</span></span><br><span class="line">        waiter = obtainConnectionWaiterLocked(Thread.currentThread(), startTime,</span><br><span class="line">                priority, wantPrimaryConnection, sql, connectionFlags);</span><br><span class="line">        ConnectionWaiter predecessor = <span class="keyword">null</span>;</span><br><span class="line">        ConnectionWaiter successor = mConnectionWaiterQueue;</span><br><span class="line">        <span class="comment">//按照优先级查找插入的位置</span></span><br><span class="line">        <span class="keyword">while</span> (successor != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (priority &gt; successor.mPriority) &#123;</span><br><span class="line">                waiter.mNext = successor;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            predecessor = successor;</span><br><span class="line">            successor = successor.mNext;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//插入等待队列</span></span><br><span class="line">        <span class="keyword">if</span> (predecessor != <span class="keyword">null</span>) &#123;</span><br><span class="line">            predecessor.mNext = waiter;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            mConnectionWaiterQueue = waiter;</span><br><span class="line">        &#125;</span><br><span class="line">        nonce = waiter.mNonce;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Set up the cancellation listener.</span></span><br><span class="line">    <span class="comment">//设置取消监听器，在等待的过程中如果取消等待那么执行cancelConnectionWaiterLocked</span></span><br><span class="line">    <span class="keyword">if</span> (cancellationSignal != <span class="keyword">null</span>) &#123;</span><br><span class="line">        cancellationSignal.setOnCancelListener(<span class="keyword">new</span> CancellationSignal.OnCancelListener() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCancel</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (waiter.mNonce == nonce) &#123;</span><br><span class="line">                        <span class="comment">//从等待队列中删除这个节点数据</span></span><br><span class="line">                        <span class="comment">//给waiter添加OperationCanceledException异常信息</span></span><br><span class="line">                        <span class="comment">//唤醒waiter对应线程的阻塞</span></span><br><span class="line">                        <span class="comment">//调用wakeConnectionWaitersLocked判断队列其他waiter是否状态有更新</span></span><br><span class="line">                        cancelConnectionWaiterLocked(waiter);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// Park the thread until a connection is assigned or the pool is closed.</span></span><br><span class="line">        <span class="comment">// Rethrow an exception from the wait, if we got one.</span></span><br><span class="line">        <span class="comment">//驻留线程，直到分配了连接或关闭了池。</span></span><br><span class="line">        <span class="comment">//如果有异常，则从等待中抛出异常。 </span></span><br><span class="line">        <span class="keyword">long</span> busyTimeoutMillis = CONNECTION_POOL_BUSY_MILLIS;</span><br><span class="line">        <span class="keyword">long</span> nextBusyTimeoutTime = waiter.mStartTime + busyTimeoutMillis;</span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="comment">// Detect and recover from connection leaks.</span></span><br><span class="line">            <span class="comment">//是否需要从泄露中进行恢复，之前被调用onConnectionLeaked</span></span><br><span class="line">            <span class="keyword">if</span> (mConnectionLeaked.compareAndSet(<span class="keyword">true</span>, <span class="keyword">false</span>)) &#123;</span><br><span class="line">                <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">                    <span class="comment">//为等待数据库链接队列进行链接赋值</span></span><br><span class="line">                    wakeConnectionWaitersLocked();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// Wait to be unparked (may already have happened), a timeout, or interruption.</span></span><br><span class="line">            <span class="comment">//阻塞busyTimeoutMillis毫秒，或者中间被执行LockSupport.unpark</span></span><br><span class="line">            <span class="comment">//被执行cancelConnectionWaiterLocked进行取消</span></span><br><span class="line">            <span class="comment">//或者被执行wakeConnectionWaitersLocked进行链接分配</span></span><br><span class="line">            LockSupport.parkNanos(<span class="keyword">this</span>, busyTimeoutMillis * <span class="number">1000000L</span>);</span><br><span class="line">            <span class="comment">// Clear the interrupted flag, just in case.</span></span><br><span class="line">            Thread.interrupted();<span class="comment">//重置当前线程的中断状态</span></span><br><span class="line">            <span class="comment">// Check whether we are done waiting yet.</span></span><br><span class="line">            <span class="comment">//检查我们是否已经完成等待。</span></span><br><span class="line">            <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">                throwIfClosedLocked();<span class="comment">//如果数据库关闭，那么抛出异常</span></span><br><span class="line">                <span class="keyword">final</span> SQLiteConnection connection = waiter.mAssignedConnection;</span><br><span class="line">                <span class="keyword">final</span> RuntimeException ex = waiter.mException;</span><br><span class="line">                <span class="comment">//如果已经分配链接，或者发送异常</span></span><br><span class="line">                <span class="keyword">if</span> (connection != <span class="keyword">null</span> || ex != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    recycleConnectionWaiterLocked(waiter);<span class="comment">//回收waiter</span></span><br><span class="line">                    <span class="keyword">if</span> (connection != <span class="keyword">null</span>) &#123;<span class="comment">//返回分配链接</span></span><br><span class="line">                        <span class="keyword">return</span> connection;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">throw</span> ex; <span class="comment">// rethrow!重新抛出异常</span></span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">final</span> <span class="keyword">long</span> now = SystemClock.uptimeMillis();</span><br><span class="line">                <span class="keyword">if</span> (now &lt; nextBusyTimeoutTime) &#123;</span><br><span class="line">                    <span class="comment">//parkNanos阻塞时间不够busyTimeoutMillis毫秒，被执行LockSupport.unpark</span></span><br><span class="line">                    busyTimeoutMillis = now - nextBusyTimeoutTime;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="comment">//输出日志</span></span><br><span class="line">                    logConnectionPoolBusyLocked(now - waiter.mStartTime, connectionFlags);</span><br><span class="line">                    <span class="comment">//重置下次阻塞时间</span></span><br><span class="line">                    busyTimeoutMillis = CONNECTION_POOL_BUSY_MILLIS;</span><br><span class="line">                    nextBusyTimeoutTime = now + busyTimeoutMillis;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="comment">// Remove the cancellation listener.</span></span><br><span class="line">        <span class="comment">//有异常，或者获取等到了分配的链接那么解绑回调信息</span></span><br><span class="line">        <span class="keyword">if</span> (cancellationSignal != <span class="keyword">null</span>) &#123;</span><br><span class="line">            cancellationSignal.setOnCancelListener(<span class="keyword">null</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里利用<code>LockSupport.parkNanos</code> 循环<strong>判断是否获得了数据库链接否则继续睡眠</strong>，直到这次操作被取消或者获得数据库链接。</p>
+<h3 id="主链接的获取"><a href="#主链接的获取" class="headerlink" title="主链接的获取"></a>主链接的获取</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteConnectionPool.java</span></span><br><span class="line"><span class="comment">// Might throw.</span></span><br><span class="line"><span class="meta">@GuardedBy</span>(<span class="string">"mLock"</span>)</span><br><span class="line"><span class="function"><span class="keyword">private</span> SQLiteConnection <span class="title">tryAcquirePrimaryConnectionLocked</span><span class="params">(<span class="keyword">int</span> connectionFlags)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// If the primary connection is available, acquire it now.</span></span><br><span class="line">    <span class="comment">//如果主要连接可用，请立即获取。</span></span><br><span class="line">    SQLiteConnection connection = mAvailablePrimaryConnection;</span><br><span class="line">    <span class="keyword">if</span> (connection != <span class="keyword">null</span>) &#123;</span><br><span class="line">        mAvailablePrimaryConnection = <span class="keyword">null</span>;</span><br><span class="line">        finishAcquireConnectionLocked(connection, connectionFlags); <span class="comment">// might throw</span></span><br><span class="line">        <span class="keyword">return</span> connection;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Make sure that the primary connection actually exists and has just been acquired.</span></span><br><span class="line">    <span class="comment">//确保主要连接确实存在并且刚刚被获取。</span></span><br><span class="line">    <span class="keyword">for</span> (SQLiteConnection acquiredConnection : mAcquiredConnections.keySet()) &#123;</span><br><span class="line">        <span class="keyword">if</span> (acquiredConnection.isPrimaryConnection()) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Uhoh.  No primary connection!  Either this is the first time we asked</span></span><br><span class="line">    <span class="comment">// for it, or maybe it leaked?</span></span><br><span class="line">    <span class="comment">//第一次创建数据库主链接，或者主链接被回收</span></span><br><span class="line">    connection = openConnectionLocked(mConfiguration,</span><br><span class="line">            <span class="keyword">true</span> <span class="comment">/*primaryConnection*/</span>); <span class="comment">// might throw</span></span><br><span class="line">    finishAcquireConnectionLocked(connection, connectionFlags); <span class="comment">// might throw</span></span><br><span class="line">    <span class="keyword">return</span> connection;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们可以看到<strong>主数据库链接</strong>只会有一个，如果被占用那么需要等待，如果没有那么就需要创建。</p>
+<h3 id="获取非主链接"><a href="#获取非主链接" class="headerlink" title="获取非主链接"></a>获取非主链接</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteConnectionPool.java</span></span><br><span class="line"><span class="comment">// Might throw.</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> SQLiteConnection <span class="title">tryAcquireNonPrimaryConnectionLocked</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">        String sql, <span class="keyword">int</span> connectionFlags)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Try to acquire the next connection in the queue.</span></span><br><span class="line">    SQLiteConnection connection;</span><br><span class="line">    <span class="comment">//尝试获取队列中的下一个连接。</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> availableCount = mAvailableNonPrimaryConnections.size();</span><br><span class="line">    <span class="keyword">if</span> (availableCount &gt; <span class="number">1</span> &amp;&amp; sql != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">// If we have a choice, then prefer a connection that has the</span></span><br><span class="line">        <span class="comment">// prepared statement in its cache.</span></span><br><span class="line">        <span class="comment">//检查我们是否可以在其缓存中选择具有prepare语句的连接。</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; availableCount; i++) &#123;</span><br><span class="line">            connection = mAvailableNonPrimaryConnections.get(i);</span><br><span class="line">            <span class="keyword">if</span> (connection.isPreparedStatementInCache(sql)) &#123;</span><br><span class="line">                mAvailableNonPrimaryConnections.remove(i);</span><br><span class="line">                finishAcquireConnectionLocked(connection, connectionFlags); <span class="comment">// might throw</span></span><br><span class="line">                <span class="keyword">return</span> connection;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//否则获取可以非用连接队列中的最后一个链接</span></span><br><span class="line">    <span class="keyword">if</span> (availableCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// Otherwise, just grab the next one.</span></span><br><span class="line">        connection = mAvailableNonPrimaryConnections.remove(availableCount - <span class="number">1</span>);</span><br><span class="line">        finishAcquireConnectionLocked(connection, connectionFlags); <span class="comment">// might throw</span></span><br><span class="line">        <span class="keyword">return</span> connection;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//如果没有可以的非主链接，那么就需要扩展数据库连接池</span></span><br><span class="line">    <span class="comment">// Expand the pool if needed.</span></span><br><span class="line">    <span class="keyword">int</span> openConnections = mAcquiredConnections.size();</span><br><span class="line">    <span class="keyword">if</span> (mAvailablePrimaryConnection != <span class="keyword">null</span>) &#123;</span><br><span class="line">        openConnections += <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//如果数据库连接池已经达到上限那么，返回null</span></span><br><span class="line">    <span class="keyword">if</span> (openConnections &gt;= mMaxConnectionPoolSize) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//否则创建新的非主链接</span></span><br><span class="line">    connection = openConnectionLocked(mConfiguration,</span><br><span class="line">            <span class="keyword">false</span> <span class="comment">/*primaryConnection*/</span>); <span class="comment">// might throw</span></span><br><span class="line">    finishAcquireConnectionLocked(connection, connectionFlags); <span class="comment">// might throw</span></span><br><span class="line">    <span class="keyword">return</span> connection;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>非主数据库链接</strong>数量的多少受限于数据库连接池的大小。</p>
+<h2 id="数据库链接释放"><a href="#数据库链接释放" class="headerlink" title="数据库链接释放"></a>数据库链接释放</h2><p>有创建获取就会有释放回收。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteConnectionPool.java</span></span><br><span class="line"><span class="comment">//释放数据库链接返回连接池</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">releaseConnection</span><span class="params">(SQLiteConnection connection)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">        <span class="comment">//idle链接句柄事件处理connectionReleased</span></span><br><span class="line">        <span class="keyword">if</span> (mIdleConnectionHandler != <span class="keyword">null</span>) &#123;</span><br><span class="line">            mIdleConnectionHandler.connectionReleased(connection);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//获取这个链接的状态</span></span><br><span class="line">        <span class="comment">//NORMAL,正常返回连接池</span></span><br><span class="line">        <span class="comment">//RECONFIGURE,必须先重新配置连接，然后才能返回。</span></span><br><span class="line">        <span class="comment">//DISCARD,连接必须关闭并丢弃。</span></span><br><span class="line">        AcquiredConnectionStatus status = mAcquiredConnections.remove(connection);</span><br><span class="line">        <span class="keyword">if</span> (status == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">"Cannot perform this operation "</span></span><br><span class="line">                    + <span class="string">"because the specified connection was not acquired "</span></span><br><span class="line">                    + <span class="string">"from this pool or has already been released."</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//简历是否已经关闭连接池</span></span><br><span class="line">        <span class="keyword">if</span> (!mIsOpen) &#123;</span><br><span class="line">            closeConnectionAndLogExceptionsLocked(connection);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (connection.isPrimaryConnection()) &#123;<span class="comment">//如果是主链接</span></span><br><span class="line">            <span class="comment">//判断这个数据库链接是否需要回收</span></span><br><span class="line">            <span class="keyword">if</span> (recycleConnectionLocked(connection, status)) &#123;</span><br><span class="line">                <span class="keyword">assert</span> mAvailablePrimaryConnection == <span class="keyword">null</span>;</span><br><span class="line">                mAvailablePrimaryConnection = connection;<span class="comment">//标识主链接可用，被占用的时候为null</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">////判断队列其他waiter是否状态有更新</span></span><br><span class="line">            wakeConnectionWaitersLocked();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (mAvailableNonPrimaryConnections.size() &gt;= mMaxConnectionPoolSize - <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="comment">//可用的非主链接数+主链接大于或等于数据库连接池的最大链接数的时候关闭这个链接</span></span><br><span class="line">            closeConnectionAndLogExceptionsLocked(connection);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">//判断这个数据库链接是否需要回收</span></span><br><span class="line">            <span class="keyword">if</span> (recycleConnectionLocked(connection, status)) &#123;</span><br><span class="line">                <span class="comment">//将这个链接添加到非主链接容器中</span></span><br><span class="line">                mAvailableNonPrimaryConnections.add(connection);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//判断队列其他waiter是否状态有更新</span></span><br><span class="line">            wakeConnectionWaitersLocked();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//取消所有具有我们可以满足的要求的waiter的park，即唤醒该waiter对应的线程</span></span><br><span class="line"><span class="comment">//这个方法并不会抛异常，而是将异常赋值给waiter进行抛出</span></span><br><span class="line"><span class="comment">// Can't throw.</span></span><br><span class="line"><span class="meta">@GuardedBy</span>(<span class="string">"mLock"</span>)</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">wakeConnectionWaitersLocked</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Unpark all waiters that have requests that we can fulfill.</span></span><br><span class="line">    <span class="comment">// This method is designed to not throw runtime exceptions, although we might send</span></span><br><span class="line">    <span class="comment">// a waiter an exception for it to rethrow.</span></span><br><span class="line">    ConnectionWaiter predecessor = <span class="keyword">null</span>;</span><br><span class="line">    <span class="comment">//链表的头结点</span></span><br><span class="line">    ConnectionWaiter waiter = mConnectionWaiterQueue;</span><br><span class="line">    <span class="keyword">boolean</span> primaryConnectionNotAvailable = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">boolean</span> nonPrimaryConnectionNotAvailable = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">while</span> (waiter != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">boolean</span> unpark = <span class="keyword">false</span>;</span><br><span class="line">        <span class="comment">//是否关闭了数据库，如果关闭了那么唤醒所有waiter的线程</span></span><br><span class="line">        <span class="keyword">if</span> (!mIsOpen) &#123;</span><br><span class="line">            unpark = <span class="keyword">true</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                SQLiteConnection connection = <span class="keyword">null</span>;</span><br><span class="line">                <span class="comment">//如果该waiter需要非主链接，而且现在有可用的非主链接</span></span><br><span class="line">                <span class="keyword">if</span> (!waiter.mWantPrimaryConnection &amp;&amp; !nonPrimaryConnectionNotAvailable) &#123;</span><br><span class="line">                    <span class="comment">//获取非主链接</span></span><br><span class="line">                    connection = tryAcquireNonPrimaryConnectionLocked(</span><br><span class="line">                            waiter.mSql, waiter.mConnectionFlags); <span class="comment">// might throw</span></span><br><span class="line">                    <span class="comment">//获取为空，标识现在没有可用的非主链接        </span></span><br><span class="line">                    <span class="keyword">if</span> (connection == <span class="keyword">null</span>) &#123;</span><br><span class="line">                        nonPrimaryConnectionNotAvailable = <span class="keyword">true</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">//主链接可以用</span></span><br><span class="line">                <span class="keyword">if</span> (connection == <span class="keyword">null</span> &amp;&amp; !primaryConnectionNotAvailable) &#123;</span><br><span class="line">                    <span class="comment">//尝试获取主链接</span></span><br><span class="line">                    connection = tryAcquirePrimaryConnectionLocked(</span><br><span class="line">                            waiter.mConnectionFlags); <span class="comment">// might throw</span></span><br><span class="line">                    <span class="comment">//获取为空，标识现在主链接不可用</span></span><br><span class="line">                    <span class="keyword">if</span> (connection == <span class="keyword">null</span>) &#123;</span><br><span class="line">                        primaryConnectionNotAvailable = <span class="keyword">true</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">//获取到了数据库链接</span></span><br><span class="line">                <span class="keyword">if</span> (connection != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    waiter.mAssignedConnection = connection;<span class="comment">//改waiter赋值链接</span></span><br><span class="line">                    unpark = <span class="keyword">true</span>;<span class="comment">//唤醒该waiter的对应线程</span></span><br><span class="line">                &#125; <span class="keyword">else</span> <span class="keyword">if</span> (nonPrimaryConnectionNotAvailable &amp;&amp; primaryConnectionNotAvailable) &#123;</span><br><span class="line">                    <span class="comment">// There are no connections available and the pool is still open.</span></span><br><span class="line">                    <span class="comment">// We cannot fulfill any more connection requests, so stop here.</span></span><br><span class="line">                    <span class="comment">//连接池任然可用，但是没有可用的链接没法对其他的waiter状态做更新直接返回</span></span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (RuntimeException ex) &#123;</span><br><span class="line">                <span class="comment">// Let the waiter handle the exception from acquiring a connection.</span></span><br><span class="line">                waiter.mException = ex;</span><br><span class="line">                unpark = <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">final</span> ConnectionWaiter successor = waiter.mNext;</span><br><span class="line">        <span class="comment">//如果需要唤醒，那么从链表中删除这个waiter，并进行对应线程唤醒操作</span></span><br><span class="line">        <span class="keyword">if</span> (unpark) &#123;</span><br><span class="line">            <span class="keyword">if</span> (predecessor != <span class="keyword">null</span>) &#123;</span><br><span class="line">                predecessor.mNext = successor;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                mConnectionWaiterQueue = successor;</span><br><span class="line">            &#125;</span><br><span class="line">            waiter.mNext = <span class="keyword">null</span>;</span><br><span class="line">            LockSupport.unpark(waiter.mThread);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            predecessor = waiter;</span><br><span class="line">        &#125;</span><br><span class="line">        waiter = successor;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>链接的释放有时候是为了回收，有时候为了重用。重用的时候还需要唤醒等待链接队列中获得这个链接的<code>waiter</code> 。</p>
+<h2 id="数据库链接池的关闭"><a href="#数据库链接池的关闭" class="headerlink" title="数据库链接池的关闭"></a>数据库链接池的关闭</h2><p>说到<strong>数据库连接池</strong>的关闭，我们会联想到<strong>数据库的关闭</strong>和<strong>数据库链接的关闭</strong>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteClosable.java，它是SQLiteDatabase的父类</span></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Releases a reference to the object, closing the object if the last reference</span></span><br><span class="line"><span class="comment"> * was released.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Calling this method is equivalent to calling &#123;<span class="doctag">@link</span> #releaseReference&#125;.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #releaseReference()</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@see</span> #onAllReferencesReleased()</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="comment">//释放引用的对象，直到所有的引用都被释放了那么关闭数据库</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    releaseReference();</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">releaseReference</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">boolean</span> refCountIsZero = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">synchronized</span>(<span class="keyword">this</span>) &#123;</span><br><span class="line">        refCountIsZero = --mReferenceCount == <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (refCountIsZero) &#123;</span><br><span class="line">        onAllReferencesReleased();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//SQLiteDatabase.java</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onAllReferencesReleased</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    dispose(<span class="keyword">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">dispose</span><span class="params">(<span class="keyword">boolean</span> finalized)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> SQLiteConnectionPool pool;</span><br><span class="line">    <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mCloseGuardLocked != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (finalized) &#123;</span><br><span class="line">                mCloseGuardLocked.warnIfOpen();</span><br><span class="line">            &#125;</span><br><span class="line">            mCloseGuardLocked.close();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//连接池置空，无法进行新操作</span></span><br><span class="line">        pool = mConnectionPoolLocked;</span><br><span class="line">        mConnectionPoolLocked = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!finalized) &#123;</span><br><span class="line">        <span class="comment">//删除当前数据库的引用</span></span><br><span class="line">        <span class="keyword">synchronized</span> (sActiveDatabases) &#123;</span><br><span class="line">            sActiveDatabases.remove(<span class="keyword">this</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//关闭数据库连接池</span></span><br><span class="line">        <span class="keyword">if</span> (pool != <span class="keyword">null</span>) &#123;</span><br><span class="line">            pool.close();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们可以看到<strong>数据库连接池的关闭</strong>是由<strong>数据库关闭</strong>引起的。</p>
+<h3 id="数据库连接池的关闭"><a href="#数据库连接池的关闭" class="headerlink" title="数据库连接池的关闭"></a>数据库连接池的关闭</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteConnectionPool.java</span></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Closes the connection pool.</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;</span></span><br><span class="line"><span class="comment"> * When the connection pool is closed, it will refuse all further requests</span></span><br><span class="line"><span class="comment"> * to acquire connections.  All connections that are currently available in</span></span><br><span class="line"><span class="comment"> * the pool are closed immediately.  Any connections that are still in use</span></span><br><span class="line"><span class="comment"> * will be closed as soon as they are returned to the pool.</span></span><br><span class="line"><span class="comment"> * &lt;/p&gt;</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> IllegalStateException if the pool has been closed.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="comment">//关闭数据库连接池，停止接受新的数据库链接的请求。</span></span><br><span class="line"><span class="comment">//链接池中的可用链接立即被关闭，其他正在使用的链接被归还到数据的时候关闭</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    dispose(<span class="keyword">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">dispose</span><span class="params">(<span class="keyword">boolean</span> finalized)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mCloseGuard != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (finalized) &#123;</span><br><span class="line">            mCloseGuard.warnIfOpen();</span><br><span class="line">        &#125;</span><br><span class="line">        mCloseGuard.close();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!finalized) &#123;</span><br><span class="line">        <span class="comment">// Close all connections.  We don't need (or want) to do this</span></span><br><span class="line">        <span class="comment">// when finalized because we don't know what state the connections</span></span><br><span class="line">        <span class="comment">// themselves will be in.  The finalizer is really just here for CloseGuard.</span></span><br><span class="line">        <span class="comment">// The connections will take care of themselves when their own finalizers run.</span></span><br><span class="line">        <span class="keyword">synchronized</span> (mLock) &#123;</span><br><span class="line">            throwIfClosedLocked();<span class="comment">//检测是否已经被关闭</span></span><br><span class="line">            mIsOpen = <span class="keyword">false</span>;<span class="comment">//标识数据库连接池关闭</span></span><br><span class="line">            <span class="comment">//关闭数据库连接池中目前可用的链接（空闲的数据库链接、包括空闲的主链接）</span></span><br><span class="line">            closeAvailableConnectionsAndLogExceptionsLocked();</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">int</span> pendingCount = mAcquiredConnections.size();</span><br><span class="line">            <span class="comment">//任然有链接正在使用中</span></span><br><span class="line">            <span class="keyword">if</span> (pendingCount != <span class="number">0</span>) &#123;</span><br><span class="line">                Log.i(TAG, <span class="string">"The connection pool for "</span> + mConfiguration.label</span><br><span class="line">                        + <span class="string">" has been closed but there are still "</span></span><br><span class="line">                        + pendingCount + <span class="string">" connections in use.  They will be closed "</span></span><br><span class="line">                        + <span class="string">"as they are released back to the pool."</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//判断队列其他waiter是否状态有更新</span></span><br><span class="line">            wakeConnectionWaitersLocked();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="关闭数据库链接"><a href="#关闭数据库链接" class="headerlink" title="关闭数据库链接"></a>关闭数据库链接</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//SQLiteConnectionPool.java</span></span><br><span class="line"><span class="comment">// Can't throw.</span></span><br><span class="line"><span class="meta">@GuardedBy</span>(<span class="string">"mLock"</span>)</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">closeAvailableConnectionsAndLogExceptionsLocked</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">//关闭可用的非主链接</span></span><br><span class="line">    closeAvailableNonPrimaryConnectionsAndLogExceptionsLocked();</span><br><span class="line">    <span class="comment">//如果主链接可用，那么关闭主链接</span></span><br><span class="line">    <span class="keyword">if</span> (mAvailablePrimaryConnection != <span class="keyword">null</span>) &#123;</span><br><span class="line">        closeConnectionAndLogExceptionsLocked(mAvailablePrimaryConnection);</span><br><span class="line">        mAvailablePrimaryConnection = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Can't throw.</span></span><br><span class="line"><span class="meta">@GuardedBy</span>(<span class="string">"mLock"</span>)</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">closeAvailableNonPrimaryConnectionsAndLogExceptionsLocked</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">//循环遍历可用的非主链接，进行数据库链接的关闭</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> count = mAvailableNonPrimaryConnections.size();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; count; i++) &#123;</span><br><span class="line">        closeConnectionAndLogExceptionsLocked(mAvailableNonPrimaryConnections.get(i));</span><br><span class="line">    &#125;</span><br><span class="line">    mAvailableNonPrimaryConnections.clear();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// Can't throw.</span></span><br><span class="line"><span class="meta">@GuardedBy</span>(<span class="string">"mLock"</span>)</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">closeConnectionAndLogExceptionsLocked</span><span class="params">(SQLiteConnection connection)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        connection.close(); <span class="comment">// might throw</span></span><br><span class="line">        <span class="keyword">if</span> (mIdleConnectionHandler != <span class="keyword">null</span>) &#123;</span><br><span class="line">            mIdleConnectionHandler.connectionClosed(connection);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RuntimeException ex) &#123;</span><br><span class="line">        Log.e(TAG, <span class="string">"Failed to close connection, its fate is now in the hands "</span></span><br><span class="line">                + <span class="string">"of the merciful GC: "</span> + connection, ex);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>数据库关闭的时候引用次数自减，若引用次数归零则真正执行关闭数据库；</li>
+<li>数据库关闭清楚引用后进行的是数据库连接池的关闭；</li>
+<li>数据库的关闭先状态，然后关闭所有的空闲链接，使用中的连接回归连接池后被关闭；</li>
+</ul>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+<p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center" alt="振兴书城"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/weixinpay.jpeg" alt="振兴 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpeg" alt="振兴 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    振兴
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2019/11/02/sqlconnectionpool/" title="Android中的数据库">http://yoursite.com/2019/11/02/sqlconnectionpool/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/数据库连接池/" rel="tag"><i class="fa fa-tag"></i> 数据库连接池</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/25/view-postDelayed/" rel="next" title="View的postDelayed方法深度思考">
+                <i class="fa fa-chevron-left"></i> View的postDelayed方法深度思考
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/11/06/sqlite-multithread/" rel="prev" title="Android数据库多线程并发操作异常">
+                Android数据库多线程并发操作异常 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/jay.jpg"
+                alt="振兴" />
+            
+              <p class="site-author-name" itemprop="name">振兴</p>
+              <p class="site-description motion-element" itemprop="description">好好学习，天天向上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">74</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">96</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stven0king" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://me.csdn.net/stven_king" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-crosshairs"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/311540b7592b" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-book"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/56824a1900b01b9f2bd94ae8" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-spinner"></i>掘金</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/2520114671/profile?rightmod=1&wvr=6&mod=personinfo" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-weibo"></i>微博</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:stven0king@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                推荐阅读
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://gityuan.com/" title="Gityuan" target="_blank">Gityuan</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.wanandroid.com/index" title="玩Android" target="_blank">玩Android</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.wjdiankong.cn/" title="尼古拉斯.赵四" target="_blank">尼古拉斯.赵四</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#数据库连接池介绍"><span class="nav-number">1.</span> <span class="nav-text">数据库连接池介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Android数据库相关类介绍"><span class="nav-number">2.</span> <span class="nav-text">Android数据库相关类介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#SQLiteConnectionPool"><span class="nav-number">3.</span> <span class="nav-text">SQLiteConnectionPool</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#连接池大小"><span class="nav-number">3.1.</span> <span class="nav-text">连接池大小</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库链接池的构造"><span class="nav-number">3.2.</span> <span class="nav-text">数据库链接池的构造</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#打开数据库"><span class="nav-number">3.3.</span> <span class="nav-text">打开数据库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#创建数据库链接"><span class="nav-number">3.4.</span> <span class="nav-text">创建数据库链接</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库链接的使用"><span class="nav-number">3.5.</span> <span class="nav-text">数据库链接的使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#从连接池中获取数据库链接"><span class="nav-number">3.6.</span> <span class="nav-text">从连接池中获取数据库链接</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#主链接的获取"><span class="nav-number">3.6.1.</span> <span class="nav-text">主链接的获取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#获取非主链接"><span class="nav-number">3.6.2.</span> <span class="nav-text">获取非主链接</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库链接释放"><span class="nav-number">3.7.</span> <span class="nav-text">数据库链接释放</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库链接池的关闭"><span class="nav-number">3.8.</span> <span class="nav-text">数据库链接池的关闭</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据库连接池的关闭"><span class="nav-number">3.8.1.</span> <span class="nav-text">数据库连接池的关闭</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#关闭数据库链接"><span class="nav-number">3.8.2.</span> <span class="nav-text">关闭数据库链接</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">振兴</span>
+
+  
+</div>
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+<!--
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+-->
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://billts.site/extra_css/gitment.css">
+        <script src="https://billts.site/js/gitment.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitment({
+            id: window.location.pathname, 
+            owner: 'stven0king',
+            repo: 'stven0king.github.io',
+            
+            oauth: {
+            
+            
+                client_secret: '2206c556bf3e1f5967962220c3439f458ed41c7f',
+            
+                client_id: '00c12e7601ea8004b339'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

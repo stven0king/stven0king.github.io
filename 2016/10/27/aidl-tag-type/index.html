@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="IPC,AIDL," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="为什么会想写这篇文章，只因为一个error idl.exe E  4928  5836 type_namespace.cpp:130]     &apos;Book&apos; can be an out type, so you must declare it as in, out or inout. 看过上一篇文章Android：IPC之AIDL的学习和总结的同学都知道这是因为在AIDL文件中使用非常规类型作为参">
+<meta name="keywords" content="IPC,AIDL">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AIDL源码解析in、out和inout">
+<meta property="og:url" content="http://yoursite.com/2016/10/27/aidl-tag-type/index.html">
+<meta property="og:site_name" content="下雨天要逛街">
+<meta property="og:description" content="为什么会想写这篇文章，只因为一个error idl.exe E  4928  5836 type_namespace.cpp:130]     &apos;Book&apos; can be an out type, so you must declare it as in, out or inout. 看过上一篇文章Android：IPC之AIDL的学习和总结的同学都知道这是因为在AIDL文件中使用非常规类型作为参">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://github.com/stven0king/aidl-study/raw/master/AIDLinout/aidlinout.gif">
+<meta property="og:image" content="https://raw.githubusercontent.com/stven0king/aidl-study/master/AIDLinout/aidl-tag-type.jpg">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2019-12-27T01:02:16.240Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="AIDL源码解析in、out和inout">
+<meta name="twitter:description" content="为什么会想写这篇文章，只因为一个error idl.exe E  4928  5836 type_namespace.cpp:130]     &apos;Book&apos; can be an out type, so you must declare it as in, out or inout. 看过上一篇文章Android：IPC之AIDL的学习和总结的同学都知道这是因为在AIDL文件中使用非常规类型作为参">
+<meta name="twitter:image" content="https://github.com/stven0king/aidl-study/raw/master/AIDLinout/aidlinout.gif">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/10/27/aidl-tag-type/"/>
+
+
+
+
+
+  <title>AIDL源码解析in、out和inout | 下雨天要逛街</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1055a4e1d37a3a4dcb3a3e1c4f32f147";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/stven0king" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">下雨天要逛街</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/10/27/aidl-tag-type/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="振兴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/jay.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="下雨天要逛街">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">AIDL源码解析in、out和inout</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-10-27T19:16:43+08:00">
+                2016-10-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  为什么会想写这篇文章，只因为一个error idl.exe E  4928  5836 type_namespace.cpp:130]     'Book' can be an out type, so you must declare it as in, out or inout. 看过上一篇文章Android：IPC之AIDL的学习和总结的同学都知道这是因为在AIDL文件中使用非常规类型作为参数传递的时候没有标记指向tag，那么到底为什么会是这样子的呢，作为一个好奇宝宝我想好好看看。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>为什么会想写这篇文章，只因为一个error。”aidl.exe E  4928  5836 type_namespace.cpp:130]     ‘Book’ can be an out type, so you must declare it as in, out or inout. “看过上一篇文章<a href="http://dandanlove.com/2016/10/27/aidl-study/" target="_blank" rel="noopener">Android：IPC之AIDL的学习和总结</a>的同学都知道这是因为在AIDL文件中使用非常规类型作为参数传递的时候没有标记指向tag，那么到底为什么会是这样子的呢，作为一个好奇宝宝我想好好看看。</p>
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p><a href="https://developer.android.com/guide/components/aidl.html" target="_blank" rel="noopener">官网介绍AIDL</a>的时候上有这么一段话</p>
+<blockquote>
+<ul>
+<li>All non-primitive parameters require a directional tag indicating which way the data goes. Either in, out, or inout (see the example below).</li>
+<li>Primitives are in by default, and cannot be otherwise.</li>
+<li>Caution: You should limit the direction to what is truly needed, because marshalling parameters is expensive.</li>
+</ul>
+</blockquote>
+<p>大概意思是非默认类型的参数都需要添加指向标签in，out或inout。根据自己的需求去添加，因为实现是有代价的。</p>
+<h2 id="已知结论"><a href="#已知结论" class="headerlink" title="已知结论"></a>已知结论</h2><p>看过我写的<a href="http://dandanlove.com/2016/10/27/aidl-study/" target="_blank" rel="noopener">Android：IPC之AIDL的学习和总结</a>的同学都知道：</p>
+<blockquote>
+<ul>
+<li>in表示输入型参数（Server可以获取到Client传递过去的数据，但是不能对Client端的数据进行修改）</li>
+<li>out表示输出型参数（Server获取不到Client传递过去的数据，但是能对Client端的数据进行修改）</li>
+<li>inout表示输入输出型参数（Server可以获取到Client传递过去的数据，但是能对Client端的数据进行修改）。</li>
+</ul>
+</blockquote>
+<h2 id="提出问题"><a href="#提出问题" class="headerlink" title="提出问题"></a>提出问题</h2><p>下边我们就研究一个in，out或inout为什么能代表不同的传输方式，为什么实现的代价不一样。</p>
+<h2 id="过程验证"><a href="#过程验证" class="headerlink" title="过程验证"></a>过程验证</h2><p>创建Book.aidl文件<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.tzx.aidldemo.aidl;</span><br><span class="line">parcelable Book;</span><br></pre></td></tr></table></figure></p>
+<p>创建Book.java文件<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.tzx.aidldemo.aidl;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Book</span> <span class="keyword">implements</span> <span class="title">Parcelable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> bookId;</span><br><span class="line">    <span class="keyword">public</span> String bookName;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Book</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Book</span><span class="params">(<span class="keyword">int</span> bookId, String bookName)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.bookId = bookId;</span><br><span class="line">        <span class="keyword">this</span>.bookName = bookName;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//从序列化后的对象中创建原始对象</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="title">Book</span><span class="params">(Parcel in)</span> </span>&#123;</span><br><span class="line">        bookId = in.readInt();</span><br><span class="line">        bookName = in.readString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Creator&lt;Book&gt; CREATOR = <span class="keyword">new</span> Creator&lt;Book&gt;() &#123;</span><br><span class="line">        <span class="comment">//从序列化后的对象中创建原始对象</span></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> Book <span class="title">createFromParcel</span><span class="params">(Parcel in)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Book(in);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//指定长度的原始对象数组</span></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> Book[] newArray(<span class="keyword">int</span> size) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Book[size];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="comment">//返回当前对象的内容描述。如果含有文件描述符，返回1，否则返回0，几乎所有情况都返回0</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">describeContents</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//将当前对象写入序列化结构中，其flags标识有两种（1|0）。</span></span><br><span class="line">    <span class="comment">//为1时标识当前对象需要作为返回值返回，不能立即释放资源，几乎所有情况下都为0.</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">writeToParcel</span><span class="params">(Parcel dest, <span class="keyword">int</span> flags)</span> </span>&#123;</span><br><span class="line">        dest.writeInt(bookId);</span><br><span class="line">        dest.writeString(bookName);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"[bookId="</span> + bookId + <span class="string">",bookName='"</span> + bookName + <span class="string">"']"</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>创建aidl接口文件IBookManager.aidl文件<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.tzx.aidlinout.aidl;</span><br><span class="line"><span class="keyword">import</span> com.tzx.aidlinout.aidl.Book;</span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">IBookManager</span> </span>&#123;</span><br><span class="line">    <span class="function">Book <span class="title">addInBook</span><span class="params">(in Book book)</span></span>;</span><br><span class="line">    <span class="function">Book <span class="title">addOutBook</span><span class="params">(out Book book)</span></span>;</span><br><span class="line">    <span class="function">Book <span class="title">addInoutBook</span><span class="params">(inout Book book)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>创建远程服务<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//将bookId都改为-1，在bookName后面都添加参数的tag标记</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BookManagerService</span> <span class="keyword">extends</span> <span class="title">Service</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> CopyOnWriteArrayList list = <span class="keyword">new</span> CopyOnWriteArrayList();</span><br><span class="line">    <span class="keyword">private</span> IBinder mBinder = <span class="keyword">new</span> IBookManager.Stub()&#123;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> Book <span class="title">addInBook</span><span class="params">(Book book)</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">            book.bookId = -<span class="number">1</span>;</span><br><span class="line">            book.bookName = book.bookName + <span class="string">"-in"</span>;</span><br><span class="line">            list.add(book);</span><br><span class="line">            <span class="keyword">return</span> book;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> Book <span class="title">addOutBook</span><span class="params">(Book book)</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">            book.bookId = -<span class="number">1</span>;</span><br><span class="line">            book.bookName = book.bookName + <span class="string">"-out"</span>;</span><br><span class="line">            list.add(book);</span><br><span class="line">            <span class="keyword">return</span> book;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> Book <span class="title">addInoutBook</span><span class="params">(Book book)</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">            book.bookId = -<span class="number">1</span>;</span><br><span class="line">            book.bookName = book.bookName + <span class="string">"-inout"</span>;</span><br><span class="line">            list.add(book);</span><br><span class="line">            <span class="keyword">return</span> book;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> List&lt;Book&gt; <span class="title">getBookList</span><span class="params">()</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> list;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> IBinder <span class="title">onBind</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> mBinder;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在创建上面的文件的过程中，遇到不太清楚的或者编译出现Error的，可以参考上一篇文章<a href="http://dandanlove.com/2016/10/27/aidl-study/" target="_blank" rel="noopener">Android：IPC之AIDL的学习和总结</a>。</p>
+<p>具体方法调用的Activity就不写全部代码了，我们看看三种方法的调用<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onClick</span><span class="params">(View v)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">switch</span> (v.getId()) &#123;</span><br><span class="line">            <span class="keyword">case</span> R.id.book_in:</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="keyword">int</span> bookId = Integer.parseInt(bookIdET.getText().toString());</span><br><span class="line">                    String bookName = bookNameET.getText().toString();</span><br><span class="line">                    <span class="keyword">if</span> (bookId &lt;= <span class="number">0</span> || TextUtils.isEmpty(bookName)) <span class="keyword">return</span>;</span><br><span class="line">                    StringBuilder builder = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">                    <span class="comment">//LogUtils.d("-----------book_in-----------------");</span></span><br><span class="line">                    Book book0 = <span class="keyword">new</span> Book(bookId, bookName);</span><br><span class="line">                    String source = <span class="string">"source:"</span> + book0.toString();</span><br><span class="line">                    <span class="comment">//LogUtils.d(source);</span></span><br><span class="line">                    builder.append(source);</span><br><span class="line">                    builder.append(<span class="string">'\n'</span>);</span><br><span class="line">                    String result = <span class="string">"result:"</span> + bookManager.addInBook(book0).toString();</span><br><span class="line">                    <span class="comment">//LogUtils.d(result);</span></span><br><span class="line">                    builder.append(result);</span><br><span class="line">                    builder.append(<span class="string">'\n'</span>);</span><br><span class="line">                    source = <span class="string">"source"</span> + book0.toString();</span><br><span class="line">                    <span class="comment">//LogUtils.d(source);</span></span><br><span class="line">                    builder.append(source);</span><br><span class="line">                    <span class="comment">//LogUtils.d("**************book_in****************");</span></span><br><span class="line">                    bookinfoTV.setText(builder.toString());</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> R.id.book_out:</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="keyword">int</span> bookId = Integer.parseInt(bookIdET.getText().toString());</span><br><span class="line">                    String bookName = bookNameET.getText().toString();</span><br><span class="line">                    <span class="keyword">if</span> (bookId &lt;= <span class="number">0</span> || TextUtils.isEmpty(bookName)) <span class="keyword">return</span>;</span><br><span class="line">                    StringBuilder builder = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">                    <span class="comment">//LogUtils.d("-----------book_out-----------------");</span></span><br><span class="line">                    Book book0 = <span class="keyword">new</span> Book(bookId, bookName);</span><br><span class="line">                    String source = <span class="string">"source:"</span> + book0.toString();</span><br><span class="line">                    <span class="comment">//LogUtils.d(source);</span></span><br><span class="line">                    builder.append(source);</span><br><span class="line">                    builder.append(<span class="string">'\n'</span>);</span><br><span class="line">                    String result = <span class="string">"result:"</span> + bookManager.addOutBook(book0).toString();</span><br><span class="line">                    <span class="comment">//LogUtils.d(result);</span></span><br><span class="line">                    builder.append(result);</span><br><span class="line">                    builder.append(<span class="string">'\n'</span>);</span><br><span class="line">                    source = <span class="string">"source"</span> + book0.toString();</span><br><span class="line">                    <span class="comment">//LogUtils.d(source);</span></span><br><span class="line">                    builder.append(source);</span><br><span class="line">                    <span class="comment">//LogUtils.d("**************book_out****************");</span></span><br><span class="line">                    bookinfoTV.setText(builder.toString());</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">case</span> R.id.book_inout:</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="keyword">int</span> bookId = Integer.parseInt(bookIdET.getText().toString());</span><br><span class="line">                    String bookName = bookNameET.getText().toString();</span><br><span class="line">                    <span class="keyword">if</span> (bookId &lt;= <span class="number">0</span> || TextUtils.isEmpty(bookName)) <span class="keyword">return</span>;</span><br><span class="line">                    StringBuilder builder = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">                    <span class="comment">//LogUtils.d("-----------book_inout-----------------");</span></span><br><span class="line">                    Book book0 = <span class="keyword">new</span> Book(bookId, bookName);</span><br><span class="line">                    String source = <span class="string">"source:"</span> + book0.toString();</span><br><span class="line">                    <span class="comment">//LogUtils.d(source);</span></span><br><span class="line">                    builder.append(source);</span><br><span class="line">                    builder.append(<span class="string">'\n'</span>);</span><br><span class="line">                    String result = <span class="string">"result:"</span> + bookManager.addInoutBook(book0).toString();</span><br><span class="line">                    <span class="comment">//LogUtils.d(result);</span></span><br><span class="line">                    builder.append(result);</span><br><span class="line">                    builder.append(<span class="string">'\n'</span>);</span><br><span class="line">                    source = <span class="string">"source"</span> + book0.toString();</span><br><span class="line">                    <span class="comment">//LogUtils.d(source);</span></span><br><span class="line">                    builder.append(source);</span><br><span class="line">                    <span class="comment">//LogUtils.d("**************book_inout****************");</span></span><br><span class="line">                    bookinfoTV.setText(builder.toString());</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>创建好上面三个文件后，我们编译整个项目工程（PS：生成aidl接口实现类）。</p>
+<p>运行结果<br><img src="https://github.com/stven0king/aidl-study/raw/master/AIDLinout/aidlinout.gif" alt="AIDLinout运行结果"></p>
+<p>下边是与结果相对应的Log输出<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: -----------book_in-----------------</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: source:[bookId=<span class="number">1212</span>,bookName=C++]</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: result:[bookId=-<span class="number">1</span>,bookName=C++-in]</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: source[bookId=<span class="number">1212</span>,bookName=C++]</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: **************book_in****************</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: -----------book_out-----------------</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: source:[bookId=<span class="number">1212</span>,bookName=C++]</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: result:[bookId=-<span class="number">1</span>,bookName=<span class="keyword">null</span>-out]</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: source[bookId=-<span class="number">1</span>,bookName=<span class="keyword">null</span>-out]</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: **************book_out****************</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: -----------book_inout-----------------</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: source:[bookId=<span class="number">1212</span>,bookName=C++]</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: result:[bookId=-<span class="number">1</span>,bookName=C++-inout]</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: source[bookId=-<span class="number">1</span>,bookName=C++-inout]</span><br><span class="line"><span class="number">14962</span>-<span class="number">14962</span>/com.tzx.aidlinout D/xxx: **************book_inout****************</span><br></pre></td></tr></table></figure></p>
+<p>实际结果与我们已知结论一致~！~！</p>
+<p>但问题我们还没有解决，我们继续看代码，其实所有的实现都是在改接口实现类中IBookManager.java</p>
+<h2 id="源码解析"><a href="#源码解析" class="headerlink" title="源码解析"></a>源码解析</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.tzx.aidlinout.aidl;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">IBookManager</span> <span class="keyword">extends</span> <span class="title">android</span>.<span class="title">os</span>.<span class="title">IInterface</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> com.tzx.aidlinout.aidl.<span class="function">Book <span class="title">addInBook</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">        com.tzx.aidlinout.aidl.Book book)</span> <span class="keyword">throws</span> android.os.RemoteException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> com.tzx.aidlinout.aidl.<span class="function">Book <span class="title">addOutBook</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">        com.tzx.aidlinout.aidl.Book book)</span> <span class="keyword">throws</span> android.os.RemoteException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> com.tzx.aidlinout.aidl.<span class="function">Book <span class="title">addInoutBook</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">        com.tzx.aidlinout.aidl.Book book)</span> <span class="keyword">throws</span> android.os.RemoteException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> java.util.List&lt;com.tzx.aidlinout.aidl.Book&gt; getBookList()</span><br><span class="line">        <span class="keyword">throws</span> android.os.RemoteException;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/** Local-side IPC implementation stub class. */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">Stub</span> <span class="keyword">extends</span> <span class="title">android</span>.<span class="title">os</span>.<span class="title">Binder</span> <span class="keyword">implements</span> <span class="title">com</span>.<span class="title">tzx</span>.<span class="title">aidlinout</span>.<span class="title">aidl</span>.<span class="title">IBookManager</span> </span>&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> java.lang.String DESCRIPTOR = <span class="string">"com.tzx.aidlinout.aidl.IBookManager"</span>;</span><br><span class="line">        <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> TRANSACTION_addInBook = (android.os.IBinder.FIRST_CALL_TRANSACTION +</span><br><span class="line">            <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> TRANSACTION_addOutBook = (android.os.IBinder.FIRST_CALL_TRANSACTION +</span><br><span class="line">            <span class="number">1</span>);</span><br><span class="line">        <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> TRANSACTION_addInoutBook = (android.os.IBinder.FIRST_CALL_TRANSACTION +</span><br><span class="line">            <span class="number">2</span>);</span><br><span class="line">        <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> TRANSACTION_getBookList = (android.os.IBinder.FIRST_CALL_TRANSACTION +</span><br><span class="line">            <span class="number">3</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">/** Construct the stub at attach it to the interface. */</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">Stub</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.attachInterface(<span class="keyword">this</span>, DESCRIPTOR);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * Cast an IBinder object into an com.tzx.aidlinout.aidl.IBookManager interface,</span></span><br><span class="line"><span class="comment">         * generating a proxy if needed.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">static</span> com.tzx.aidlinout.aidl.<span class="function">IBookManager <span class="title">asInterface</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">            android.os.IBinder obj)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">if</span> ((obj == <span class="keyword">null</span>)) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            android.os.IInterface iin = obj.queryLocalInterface(DESCRIPTOR);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (((iin != <span class="keyword">null</span>) &amp;&amp;</span><br><span class="line">                    (iin <span class="keyword">instanceof</span> com.tzx.aidlinout.aidl.IBookManager))) &#123;</span><br><span class="line">                <span class="keyword">return</span> ((com.tzx.aidlinout.aidl.IBookManager) iin);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> com.tzx.aidlinout.aidl.IBookManager.Stub.Proxy(obj);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="keyword">public</span> android.os.<span class="function">IBinder <span class="title">asBinder</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onTransact</span><span class="params">(<span class="keyword">int</span> code, android.os.Parcel data,</span></span></span><br><span class="line"><span class="function"><span class="params">            android.os.Parcel reply, <span class="keyword">int</span> flags)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> android.os.RemoteException </span>&#123;</span><br><span class="line">            <span class="keyword">switch</span> (code) &#123;</span><br><span class="line">            <span class="keyword">case</span> INTERFACE_TRANSACTION: &#123;</span><br><span class="line">                reply.writeString(DESCRIPTOR);</span><br><span class="line"></span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">case</span> TRANSACTION_addInBook: &#123;</span><br><span class="line">                data.enforceInterface(DESCRIPTOR);</span><br><span class="line">				<span class="comment">//声明输入的参数_arg0的引用</span></span><br><span class="line">                com.tzx.aidlinout.aidl.Book _arg0;</span><br><span class="line">				<span class="comment">//并根据输入的数据为其创建对象</span></span><br><span class="line">                <span class="keyword">if</span> ((<span class="number">0</span> != data.readInt())) &#123;</span><br><span class="line">                    _arg0 = com.tzx.aidlinout.aidl.Book.CREATOR.createFromParcel(data);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    _arg0 = <span class="keyword">null</span>;</span><br><span class="line">                &#125;</span><br><span class="line">				<span class="comment">//获取调用this.addInBook方法返回的_result</span></span><br><span class="line">                com.tzx.aidlinout.aidl.Book _result = <span class="keyword">this</span>.addInBook(_arg0);</span><br><span class="line">                reply.writeNoException();</span><br><span class="line">				<span class="comment">//并向reply中写入返回值_result</span></span><br><span class="line">                <span class="keyword">if</span> ((_result != <span class="keyword">null</span>)) &#123;</span><br><span class="line">                    reply.writeInt(<span class="number">1</span>);</span><br><span class="line">                    _result.writeToParcel(reply,</span><br><span class="line">                        android.os.Parcelable.PARCELABLE_WRITE_RETURN_VALUE);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    reply.writeInt(<span class="number">0</span>);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">case</span> TRANSACTION_addOutBook: &#123;</span><br><span class="line">                data.enforceInterface(DESCRIPTOR);</span><br><span class="line">				<span class="comment">//声明输入的参数_arg0的引用</span></span><br><span class="line">                com.tzx.aidlinout.aidl.Book _arg0;</span><br><span class="line">				<span class="comment">//并为其创建新的对象</span></span><br><span class="line">                _arg0 = <span class="keyword">new</span> com.tzx.aidlinout.aidl.Book();</span><br><span class="line">				<span class="comment">//获取调用this.addOutBook方法返回的_result</span></span><br><span class="line">                com.tzx.aidlinout.aidl.Book _result = <span class="keyword">this</span>.addOutBook(_arg0);</span><br><span class="line">                reply.writeNoException();</span><br><span class="line">				<span class="comment">//并向reply中写入返回值_result</span></span><br><span class="line">                <span class="keyword">if</span> ((_result != <span class="keyword">null</span>)) &#123;</span><br><span class="line">                    reply.writeInt(<span class="number">1</span>);</span><br><span class="line">                    _result.writeToParcel(reply,</span><br><span class="line">                        android.os.Parcelable.PARCELABLE_WRITE_RETURN_VALUE);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    reply.writeInt(<span class="number">0</span>);</span><br><span class="line">                &#125;</span><br><span class="line">				<span class="comment">//再将参数_arg0写入reply中，至于为什么写入，我们看看客户端Proxy中的读取</span></span><br><span class="line">                <span class="keyword">if</span> ((_arg0 != <span class="keyword">null</span>)) &#123;</span><br><span class="line">                    reply.writeInt(<span class="number">1</span>);</span><br><span class="line">                    _arg0.writeToParcel(reply,</span><br><span class="line">                        android.os.Parcelable.PARCELABLE_WRITE_RETURN_VALUE);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    reply.writeInt(<span class="number">0</span>);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">case</span> TRANSACTION_addInoutBook: &#123;</span><br><span class="line">                data.enforceInterface(DESCRIPTOR);</span><br><span class="line">				<span class="comment">//声明输入的参数_arg0的引用</span></span><br><span class="line">                com.tzx.aidlinout.aidl.Book _arg0;</span><br><span class="line">				<span class="comment">//并根据输入的数据为其创建对象</span></span><br><span class="line">                <span class="keyword">if</span> ((<span class="number">0</span> != data.readInt())) &#123;</span><br><span class="line">                    _arg0 = com.tzx.aidlinout.aidl.Book.CREATOR.createFromParcel(data);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    _arg0 = <span class="keyword">null</span>;</span><br><span class="line">                &#125;</span><br><span class="line">				<span class="comment">//获取调用this.addInoutBook方法返回的_result</span></span><br><span class="line">                com.tzx.aidlinout.aidl.Book _result = <span class="keyword">this</span>.addInoutBook(_arg0);</span><br><span class="line">                reply.writeNoException();</span><br><span class="line">				<span class="comment">//并向reply中写入返回值_result</span></span><br><span class="line">                <span class="keyword">if</span> ((_result != <span class="keyword">null</span>)) &#123;</span><br><span class="line">                    reply.writeInt(<span class="number">1</span>);</span><br><span class="line">                    _result.writeToParcel(reply,</span><br><span class="line">                        android.os.Parcelable.PARCELABLE_WRITE_RETURN_VALUE);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    reply.writeInt(<span class="number">0</span>);</span><br><span class="line">                &#125;</span><br><span class="line">				<span class="comment">//再将参数_arg0写入reply中，至于为什么写入，我们看看客户端Proxy中的读取</span></span><br><span class="line">                <span class="keyword">if</span> ((_arg0 != <span class="keyword">null</span>)) &#123;</span><br><span class="line">                    reply.writeInt(<span class="number">1</span>);</span><br><span class="line">                    _arg0.writeToParcel(reply,</span><br><span class="line">                        android.os.Parcelable.PARCELABLE_WRITE_RETURN_VALUE);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    reply.writeInt(<span class="number">0</span>);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">case</span> TRANSACTION_getBookList: &#123;</span><br><span class="line">                data.enforceInterface(DESCRIPTOR);</span><br><span class="line"></span><br><span class="line">                java.util.List&lt;com.tzx.aidlinout.aidl.Book&gt; _result = <span class="keyword">this</span>.getBookList();</span><br><span class="line">                reply.writeNoException();</span><br><span class="line">                reply.writeTypedList(_result);</span><br><span class="line"></span><br><span class="line">                <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">super</span>.onTransact(code, data, reply, flags);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Proxy</span> <span class="keyword">implements</span> <span class="title">com</span>.<span class="title">tzx</span>.<span class="title">aidlinout</span>.<span class="title">aidl</span>.<span class="title">IBookManager</span> </span>&#123;</span><br><span class="line">            <span class="keyword">private</span> android.os.IBinder mRemote;</span><br><span class="line"></span><br><span class="line">            Proxy(android.os.IBinder remote) &#123;</span><br><span class="line">                mRemote = remote;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> android.os.<span class="function">IBinder <span class="title">asBinder</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> mRemote;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">public</span> java.lang.<span class="function">String <span class="title">getInterfaceDescriptor</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> DESCRIPTOR;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> com.tzx.aidlinout.aidl.<span class="function">Book <span class="title">addInBook</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">                com.tzx.aidlinout.aidl.Book book)</span></span></span><br><span class="line"><span class="function">                <span class="keyword">throws</span> android.os.RemoteException </span>&#123;</span><br><span class="line">                android.os.Parcel _data = android.os.Parcel.obtain();</span><br><span class="line">                android.os.Parcel _reply = android.os.Parcel.obtain();</span><br><span class="line">                com.tzx.aidlinout.aidl.Book _result;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    _data.writeInterfaceToken(DESCRIPTOR);</span><br><span class="line">					<span class="comment">//将客户端调用时传入的参数写入_data中</span></span><br><span class="line">                    <span class="keyword">if</span> ((book != <span class="keyword">null</span>)) &#123;</span><br><span class="line">                        _data.writeInt(<span class="number">1</span>);</span><br><span class="line">                        book.writeToParcel(_data, <span class="number">0</span>);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        _data.writeInt(<span class="number">0</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">					<span class="comment">//将_data、_reply序列化对象和Stub.TRANSACTION_addInBook指令传递到Server端</span></span><br><span class="line">                    mRemote.transact(Stub.TRANSACTION_addInBook, _data, _reply,</span><br><span class="line">                        <span class="number">0</span>);</span><br><span class="line">                    _reply.readException();</span><br><span class="line">					<span class="comment">//读取Server端返回的序列化_reply中的对象</span></span><br><span class="line">                    <span class="keyword">if</span> ((<span class="number">0</span> != _reply.readInt())) &#123;</span><br><span class="line">                        _result = com.tzx.aidlinout.aidl.Book.CREATOR.createFromParcel(_reply);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        _result = <span class="keyword">null</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">					<span class="comment">//然后直接将_result返回</span></span><br><span class="line">					<span class="comment">//我们发现整个方法调用期间传入的对象book只是将数据写入到Server，它的值进行并没有任何修改。</span></span><br><span class="line">					<span class="comment">//总结：in类型的参数，它向服务端传入数据，但是却不接受Server返回的值。</span></span><br><span class="line">                &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                    _reply.recycle();</span><br><span class="line">                    _data.recycle();</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">return</span> _result;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> com.tzx.aidlinout.aidl.<span class="function">Book <span class="title">addOutBook</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">                com.tzx.aidlinout.aidl.Book book)</span></span></span><br><span class="line"><span class="function">                <span class="keyword">throws</span> android.os.RemoteException </span>&#123;</span><br><span class="line">                android.os.Parcel _data = android.os.Parcel.obtain();</span><br><span class="line">                android.os.Parcel _reply = android.os.Parcel.obtain();</span><br><span class="line">                com.tzx.aidlinout.aidl.Book _result;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    _data.writeInterfaceToken(DESCRIPTOR);</span><br><span class="line">					<span class="comment">//将_data、_reply序列化对象和Stub.TRANSACTION_addInBook指令传递到Server端</span></span><br><span class="line">					<span class="comment">//_data和_reply序列化对象并没有进行写入</span></span><br><span class="line">                    mRemote.transact(Stub.TRANSACTION_addOutBook, _data,</span><br><span class="line">                        _reply, <span class="number">0</span>);</span><br><span class="line">                    _reply.readException();</span><br><span class="line">					<span class="comment">//读取Server端返回的序列化_reply中的对象，写入到_result</span></span><br><span class="line">                    <span class="keyword">if</span> ((<span class="number">0</span> != _reply.readInt())) &#123;</span><br><span class="line">                        _result = com.tzx.aidlinout.aidl.Book.CREATOR.createFromParcel(_reply);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        _result = <span class="keyword">null</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">					<span class="comment">//读取Server端返回的序列化_reply中的对象，写入到传入的book对象中</span></span><br><span class="line">                    <span class="keyword">if</span> ((<span class="number">0</span> != _reply.readInt())) &#123;</span><br><span class="line">                        book.readFromParcel(_reply);</span><br><span class="line">                    &#125;</span><br><span class="line">					<span class="comment">//然后直接将_result返回</span></span><br><span class="line">					<span class="comment">//我们发现整个方法调用期间传入的对象book并没有将数据写入到Server，它的值确实是Server返回的。</span></span><br><span class="line">					<span class="comment">//总结：out类型的参数，它并不向服务端传入数据，但是却接受Server返回的值。</span></span><br><span class="line">                &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                    _reply.recycle();</span><br><span class="line">                    _data.recycle();</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">return</span> _result;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> com.tzx.aidlinout.aidl.<span class="function">Book <span class="title">addInoutBook</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">                com.tzx.aidlinout.aidl.Book book)</span></span></span><br><span class="line"><span class="function">                <span class="keyword">throws</span> android.os.RemoteException </span>&#123;</span><br><span class="line">                android.os.Parcel _data = android.os.Parcel.obtain();</span><br><span class="line">                android.os.Parcel _reply = android.os.Parcel.obtain();</span><br><span class="line">                com.tzx.aidlinout.aidl.Book _result;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    _data.writeInterfaceToken(DESCRIPTOR);</span><br><span class="line">					<span class="comment">//将客户端调用时传入的参数写入_data中</span></span><br><span class="line">                    <span class="keyword">if</span> ((book != <span class="keyword">null</span>)) &#123;</span><br><span class="line">                        _data.writeInt(<span class="number">1</span>);</span><br><span class="line">                        book.writeToParcel(_data, <span class="number">0</span>);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        _data.writeInt(<span class="number">0</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">					<span class="comment">//将_data、_reply序列化对象和Stub.TRANSACTION_addInoutBook指令传递到Server端</span></span><br><span class="line">                    mRemote.transact(Stub.TRANSACTION_addInoutBook, _data,</span><br><span class="line">                        _reply, <span class="number">0</span>);</span><br><span class="line">                    _reply.readException();</span><br><span class="line">					<span class="comment">//读取Server端返回的序列化_reply中的对象，写入到_result</span></span><br><span class="line">                    <span class="keyword">if</span> ((<span class="number">0</span> != _reply.readInt())) &#123;</span><br><span class="line">                        _result = com.tzx.aidlinout.aidl.Book.CREATOR.createFromParcel(_reply);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        _result = <span class="keyword">null</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">					<span class="comment">//读取Server端返回的序列化_reply中的对象，写入到传入的book对象中</span></span><br><span class="line">                    <span class="keyword">if</span> ((<span class="number">0</span> != _reply.readInt())) &#123;</span><br><span class="line">                        book.readFromParcel(_reply);</span><br><span class="line">                    &#125;</span><br><span class="line">					<span class="comment">//然后直接将_result返回</span></span><br><span class="line">					<span class="comment">//我们发现整个方法调用期间传入的对象book将其数据写入到Server，并且它的值被Server返回的数据修改。</span></span><br><span class="line">					<span class="comment">//总结：inout类型的参数，它既向服务端传入数据，也却接受Server返回的值。</span></span><br><span class="line">                &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                    _reply.recycle();</span><br><span class="line">                    _data.recycle();</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">return</span> _result;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> java.util.List&lt;com.tzx.aidlinout.aidl.Book&gt; getBookList()</span><br><span class="line">                <span class="keyword">throws</span> android.os.RemoteException &#123;</span><br><span class="line">                android.os.Parcel _data = android.os.Parcel.obtain();</span><br><span class="line">                android.os.Parcel _reply = android.os.Parcel.obtain();</span><br><span class="line">                java.util.List&lt;com.tzx.aidlinout.aidl.Book&gt; _result;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    _data.writeInterfaceToken(DESCRIPTOR);</span><br><span class="line">                    mRemote.transact(Stub.TRANSACTION_getBookList, _data,</span><br><span class="line">                        _reply, <span class="number">0</span>);</span><br><span class="line">                    _reply.readException();</span><br><span class="line">                    _result = _reply.createTypedArrayList(com.tzx.aidlinout.aidl.Book.CREATOR);</span><br><span class="line">                &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                    _reply.recycle();</span><br><span class="line">                    _data.recycle();</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">return</span> _result;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看了这么多代码是不是感觉脑袋大了，没事接下来一张图帮你理的清清楚楚的：<br><img src="https://raw.githubusercontent.com/stven0king/aidl-study/master/AIDLinout/aidl-tag-type.jpg" alt="aidl-tag-type"></p>
+<p>经过两篇文章对aidl的讲解，我想你已经把它理解的透透的了，如果还有什么问题可以给我留言哦~！</p>
+<p><a href="https://github.com/stven0king/aidl-study" target="_blank" rel="noopener">GitHubDemo地址</a></p>
+<p>想阅读作者的更多文章，可以查看我的公共号：</p>
+<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/weixinpay.jpeg" alt="振兴 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpeg" alt="振兴 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    振兴
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2016/10/27/aidl-tag-type/" title="AIDL源码解析in、out和inout">http://yoursite.com/2016/10/27/aidl-tag-type/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/IPC/" rel="tag"><i class="fa fa-tag"></i> IPC</a>
+          
+            <a href="/tags/AIDL/" rel="tag"><i class="fa fa-tag"></i> AIDL</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/10/27/aidl-study/" rel="next" title="Android：IPC之AIDL的学习和总结">
+                <i class="fa fa-chevron-left"></i> Android：IPC之AIDL的学习和总结
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/12/21/link-to-death/" rel="prev" title="linkToDeath机制了解和使用">
+                linkToDeath机制了解和使用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/jay.jpg"
+                alt="振兴" />
+            
+              <p class="site-author-name" itemprop="name">振兴</p>
+              <p class="site-description motion-element" itemprop="description">好好学习，天天向上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">74</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">96</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stven0king" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://me.csdn.net/stven_king" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-crosshairs"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/311540b7592b" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-book"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/56824a1900b01b9f2bd94ae8" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-spinner"></i>掘金</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/2520114671/profile?rightmod=1&wvr=6&mod=personinfo" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-weibo"></i>微博</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:stven0king@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                推荐阅读
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://gityuan.com/" title="Gityuan" target="_blank">Gityuan</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.wanandroid.com/index" title="玩Android" target="_blank">玩Android</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.wjdiankong.cn/" title="尼古拉斯.赵四" target="_blank">尼古拉斯.赵四</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#介绍"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#已知结论"><span class="nav-number">2.</span> <span class="nav-text">已知结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#提出问题"><span class="nav-number">3.</span> <span class="nav-text">提出问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#过程验证"><span class="nav-number">4.</span> <span class="nav-text">过程验证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#源码解析"><span class="nav-number">5.</span> <span class="nav-text">源码解析</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">振兴</span>
+
+  
+</div>
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+<!--
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+-->
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://billts.site/extra_css/gitment.css">
+        <script src="https://billts.site/js/gitment.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitment({
+            id: window.location.pathname, 
+            owner: 'stven0king',
+            repo: 'stven0king.github.io',
+            
+            oauth: {
+            
+            
+                client_secret: '2206c556bf3e1f5967962220c3439f458ed41c7f',
+            
+                client_id: '00c12e7601ea8004b339'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

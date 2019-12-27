@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="算法,红黑树," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="红黑树查找的最坏时间复杂度也是O(logN)。为了它这么高的性能，我感觉自己费了这么多脑细胞和时间来学习也是值得的(自己前前后后看了好多次)。这篇文章和插入图也是我自己用心根据自己的理解来做，希望大家能在学习红黑树的时候提高效率，不走弯路。">
+<meta name="keywords" content="算法,红黑树">
+<meta property="og:type" content="article">
+<meta property="og:title" content="寻找红黑树的操作手册">
+<meta property="og:url" content="http://yoursite.com/2018/03/18/red-black-tree/index.html">
+<meta property="og:site_name" content="下雨天要逛街">
+<meta property="og:description" content="红黑树查找的最坏时间复杂度也是O(logN)。为了它这么高的性能，我感觉自己费了这么多脑细胞和时间来学习也是值得的(自己前前后后看了好多次)。这篇文章和插入图也是我自己用心根据自己的理解来做，希望大家能在学习红黑树的时候提高效率，不走弯路。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktYzgyN2YwYjg2ZjUxNzk3ZS5wbmc?x-oss-process=image/format,png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224152901205.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224152932810.gif#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224153005170.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224153029893.gif#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224153143480.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224153215672.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224153238966.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224153433246.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224153500801.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224153536670.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191224153615785.png#pic_center">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center">
+<meta property="og:updated_time" content="2019-12-27T01:02:16.254Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="寻找红黑树的操作手册">
+<meta name="twitter:description" content="红黑树查找的最坏时间复杂度也是O(logN)。为了它这么高的性能，我感觉自己费了这么多脑细胞和时间来学习也是值得的(自己前前后后看了好多次)。这篇文章和插入图也是我自己用心根据自己的理解来做，希望大家能在学习红黑树的时候提高效率，不走弯路。">
+<meta name="twitter:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktYzgyN2YwYjg2ZjUxNzk3ZS5wbmc?x-oss-process=image/format,png#pic_center">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/18/red-black-tree/"/>
+
+
+
+
+
+  <title>寻找红黑树的操作手册 | 下雨天要逛街</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1055a4e1d37a3a4dcb3a3e1c4f32f147";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/stven0king" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">下雨天要逛街</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/18/red-black-tree/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="振兴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/jay.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="下雨天要逛街">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">寻找红黑树的操作手册</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-18T21:48:00+08:00">
+                2018-03-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据结构/" itemprop="url" rel="index">
+                    <span itemprop="name">数据结构</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  红黑树查找的最坏时间复杂度也是O(logN)。为了它这么高的性能，我感觉自己费了这么多脑细胞和时间来学习也是值得的(自己前前后后看了好多次)。这篇文章和插入图也是我自己用心根据自己的理解来做，希望大家能在学习红黑树的时候提高效率，不走弯路。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p><a href="http://dandanlove.com/2017/10/20/about-binary-tree/" target="_blank" rel="noopener">二叉树知识点回忆以及整理</a>这篇文章中我们说过“二叉树是一个简单的二分查找，但其性能取决于二叉树的层数”。</p>
+<ul>
+<li>最好的情况是O(logn),存在于完全二叉树情况下，其访问性能近似于折半查找；</li>
+<li>最差的情况是O(n),比如插入的元素所有节点都没有左子树（右子树），这种情况需要将二叉树的全部节点遍历一次。<br><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktYzgyN2YwYjg2ZjUxNzk3ZS5wbmc?x-oss-process=image/format,png#pic_center" alt="二叉排序树"></li>
+</ul>
+<p>红黑树本质上是一种二叉查找树，在节点类中添加类一个用来标识颜色的字段，同时具有一定的规则。同时具备这亮点使得红黑树的性能达到理想中的均衡状态（插入、删除、查找的最坏时间负责度为O(logn)）。</p>
+<p>在Java1.8中HashMap使用的就是链表和红黑树，<a href="http://dandanlove.com/2017/10/27/late-one-year-hashmap/" target="_blank" rel="noopener">迟到一年HashMap解读</a>。Java集合中的TreeSet和TreeMap，C++ STL中的set、map，以及Linux虚拟内存的管理，都是通过红黑树去实现的。</p>
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>红黑树（英语：Red–black tree）是一种自平衡二叉查找树，是在计算机科学中用到的一种数据结构，典型的用途是实现关联数组。它是在1972年由鲁道夫·贝尔发明的，他称之为”对称二叉B树”，它现代的名字是在Leo J. Guibas和Robert Sedgewick于1978年写的一篇论文中获得的。它是复杂的，但它的操作有着良好的最坏情况运行时间，并且在实践中是高效的：它可以在 O(logn)时间内做查找，插入和删除，这里的n是树中元素的数目，<a href="https://zh.wikipedia.org/wiki/%E7%BA%A2%E9%BB%91%E6%A0%91" target="_blank" rel="noopener">摘自：维基百科-红黑树</a>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RBTree</span>&lt;<span class="title">T</span> <span class="keyword">extends</span> <span class="title">Comparable</span>&lt;<span class="title">T</span>&gt;&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> RBNode&lt;T&gt; mRoot = <span class="keyword">null</span>;    <span class="comment">// 根结点</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> RED = <span class="keyword">true</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> BLACK = <span class="keyword">false</span>;</span><br><span class="line">    <span class="class"><span class="keyword">class</span> <span class="title">RBNode</span> &lt;<span class="title">T</span> <span class="keyword">extends</span> <span class="title">Comparable</span>&lt;<span class="title">T</span>&gt;&gt; </span>&#123;</span><br><span class="line">        <span class="comment">//颜色</span></span><br><span class="line">        <span class="keyword">boolean</span> color;</span><br><span class="line">        <span class="comment">//关键字（键值）</span></span><br><span class="line">        T key;</span><br><span class="line">        <span class="comment">//左子节点</span></span><br><span class="line">        RBNode&lt;T&gt; left;</span><br><span class="line">        <span class="comment">//右子节点</span></span><br><span class="line">        RBNode&lt;T&gt; right;</span><br><span class="line">        <span class="comment">//父节点</span></span><br><span class="line">        RBNode&lt;T&gt; parent;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">RBNode</span><span class="params">(T key, <span class="keyword">boolean</span> color, RBNode&lt;T&gt; parent, RBNode&lt;T&gt; left, RBNode&lt;T&gt; right)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.key = key;</span><br><span class="line">            <span class="keyword">this</span>.color = color;</span><br><span class="line">            <span class="keyword">this</span>.parent = parent;</span><br><span class="line">            <span class="keyword">this</span>.left = left;</span><br><span class="line">            <span class="keyword">this</span>.right = right;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> T <span class="title">getKey</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> key;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="string">""</span> + key + (<span class="keyword">this</span>.color == RED ? <span class="string">"RED"</span> : <span class="string">"BLACK"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="红黑树特点"><a href="#红黑树特点" class="headerlink" title="红黑树特点"></a>红黑树特点</h1><blockquote>
+<ul>
+<li>1、每个节点不是红色就是黑色的；</li>
+<li>2、根节点总是黑色的；</li>
+<li>3、所有的叶节点都是是黑色的（红黑树的叶子节点都是空节点（NIL或者NULL））；</li>
+<li>4、如果节点是红色的，则它的子节点必须是黑色的（反之不一定）；</li>
+<li>5、从根节点到叶节点或空子节点的每条路径，必须包含相同数目的黑色节点（即相同的黑色高度）。</li>
+</ul>
+</blockquote>
+<p>需要注意：</p>
+<blockquote>
+<p>特性3中的叶子节点，是只为空(NIL或null)的节点。<br>特性5，确保没有一条路径会比其他路径长出俩倍。因而，红黑树是相对是接近平衡的二叉树。</p>
+</blockquote>
+<h1 id="红黑树的修正"><a href="#红黑树的修正" class="headerlink" title="红黑树的修正"></a>红黑树的修正</h1><blockquote>
+<p>变色、左旋、右旋是红黑树在二叉树上的扩展操作，同时也是基于这三个操作才能遵守红黑树的五个特性。所以熟悉二叉树操作的同学只要掌握这红黑树这三个操作那么就能更加容易的理解进行红黑树的添加和删除之后怎么保证其平衡性，不熟悉二叉树的也可以先看看<a href="http://dandanlove.com/2017/10/20/about-binary-tree/" target="_blank" rel="noopener">《二叉树知识点回忆以及整理》</a>这片文章。</p>
+</blockquote>
+<h2 id="变色"><a href="#变色" class="headerlink" title="变色"></a>变色</h2><blockquote>
+<p>变色仅仅指的是红黑树节点的变色。因为红黑树节点必须是【红】或者【黑】这两中颜色，所以变色只是将当前的节点颜色进行变化，以满足特性（2，3，4，5）。</p>
+</blockquote>
+<h2 id="左旋"><a href="#左旋" class="headerlink" title="左旋"></a>左旋</h2><p>通常左旋操作用于将一个向右倾斜的红色链接旋转为向左链接。示意图如下：<br><img src="https://img-blog.csdnimg.cn/20191224152901205.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<p>左旋操作动画（更加容易理解和记忆）：<br><img src="https://img-blog.csdnimg.cn/20191224152932810.gif#pic_center" alt="在这里插入图片描述"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*************对红黑树节点x进行左旋操作 ******************/</span></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 左旋示意图：对节点x进行左旋</span></span><br><span class="line"><span class="comment"> *     p                       p</span></span><br><span class="line"><span class="comment"> *    /                       /</span></span><br><span class="line"><span class="comment"> *   x                       y</span></span><br><span class="line"><span class="comment"> *  / \                     / \</span></span><br><span class="line"><span class="comment"> * lx  y      -----&gt;       x  ry</span></span><br><span class="line"><span class="comment"> *    / \                 / \</span></span><br><span class="line"><span class="comment"> *   ly ry               lx ly</span></span><br><span class="line"><span class="comment"> * 左旋做了三件事：</span></span><br><span class="line"><span class="comment"> * 1. 将y的左子节点赋给x的右子节点,并将x赋给y左子节点的父节点(y左子节点非空时)</span></span><br><span class="line"><span class="comment"> * 2. 将x的父节点p(非空时)赋给y的父节点，同时更新p的子节点为y(左或右)</span></span><br><span class="line"><span class="comment"> * 3. 将y的左子节点设为x，将x的父节点设为y</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">leftRotate</span><span class="params">(RBNode&lt;T&gt; x)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (x == <span class="keyword">null</span>) <span class="keyword">return</span>;</span><br><span class="line">    <span class="comment">//1. 将y的左子节点赋给x的右子节点,并将x赋给y左子节点的父节点(y左子节点非空时)</span></span><br><span class="line">    RBNode&lt;T&gt; y = x.right;</span><br><span class="line">    x.right = y.left;</span><br><span class="line">    <span class="keyword">if</span> (y.left != <span class="keyword">null</span>) &#123;</span><br><span class="line">        y.left.parent = x;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//2. 将x的父节点p(非空时)赋给y的父节点，同时更新p的子节点为y(左或右)</span></span><br><span class="line">    y.parent = x.parent;</span><br><span class="line">    <span class="keyword">if</span> (x.parent == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="comment">//mRoot是RBTree的根节点</span></span><br><span class="line">        <span class="keyword">this</span>.mRoot = y;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (x == x.parent.left) &#123;</span><br><span class="line">            x.parent.left = y;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            x.parent.right = y;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//3. 将y的左子节点设为x，将x的父节点设为y</span></span><br><span class="line">    y.left = x;</span><br><span class="line">    x.parent = y;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="右旋"><a href="#右旋" class="headerlink" title="右旋"></a>右旋</h2><p>右旋可左旋刚好相反，这里不再赘述，直接看示意图：<br><img src="https://img-blog.csdnimg.cn/20191224153005170.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<p>右旋操作动画（更加容易理解和记忆）：<br><img src="https://img-blog.csdnimg.cn/20191224153029893.gif#pic_center" alt="在这里插入图片描述"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*************对红黑树节点y进行右旋操作 ******************/</span></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 右旋示意图：对节点y进行右旋</span></span><br><span class="line"><span class="comment"> *        p                   p</span></span><br><span class="line"><span class="comment"> *       /                   /</span></span><br><span class="line"><span class="comment"> *      y                   x</span></span><br><span class="line"><span class="comment"> *     / \                 / \</span></span><br><span class="line"><span class="comment"> *    x  ry   -----&gt;      lx  y</span></span><br><span class="line"><span class="comment"> *   / \                     / \</span></span><br><span class="line"><span class="comment"> * lx  rx                   rx ry</span></span><br><span class="line"><span class="comment"> * 右旋做了三件事：</span></span><br><span class="line"><span class="comment"> * 1. 将x的右子节点赋给y的左子节点,并将y赋给x右子节点的父节点(x右子节点非空时)</span></span><br><span class="line"><span class="comment"> * 2. 将y的父节点p(非空时)赋给x的父节点，同时更新p的子节点为x(左或右)</span></span><br><span class="line"><span class="comment"> * 3. 将x的右子节点设为y，将y的父节点设为x</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">rightRotate</span><span class="params">(RBNode&lt;T&gt; y)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (y == <span class="keyword">null</span>) <span class="keyword">return</span>;</span><br><span class="line">    <span class="comment">//1. 将x的右子节点赋给y的左子节点,并将y赋给x右子节点的父节点(x右子节点非空时)</span></span><br><span class="line">    RBNode&lt;T&gt; x = y.left;</span><br><span class="line">    y.left = x.right;</span><br><span class="line">    <span class="keyword">if</span> (x.right != <span class="keyword">null</span>) &#123;</span><br><span class="line">        x.right.parent = y;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//2. 将y的父节点p(非空时)赋给x的父节点，同时更新p的子节点为x(左或右)</span></span><br><span class="line">    x.parent = y.parent;</span><br><span class="line">    <span class="keyword">if</span> (y.parent == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">this</span>.mRoot = x;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (y == y.parent.left) &#123;</span><br><span class="line">            y.parent.left = x;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            y.parent.right = x;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//3. 将x的右子节点设为y，将y的父节点设为x</span></span><br><span class="line">    x.right = y;</span><br><span class="line">    y.parent = x;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="红黑树节点的添加"><a href="#红黑树节点的添加" class="headerlink" title="红黑树节点的添加"></a>红黑树节点的添加</h1><p>红黑树是在二叉树的基础上进行扩展的，其添加节点也是像二叉树一样进行添加，然后再做调整。<a href="http://dandanlove.com/2017/10/20/about-binary-tree/" target="_blank" rel="noopener">二叉树知识点回忆以及整理#创建二叉树</a> 这部分讲述了二叉树节点的添加。所以这里我们重点讲述二叉树的添加完后的调整。</p>
+<blockquote>
+<ul>
+<li>红黑树的第 5 条特征规定，任一节点到它子树的每个叶子节点的路径中都包含同样数量的黑节点。也就是说当我们往红黑树中插入一个黑色节点时，会违背这条特征。</li>
+<li>同时第 4 条特征规定红色节点的左右孩子一定都是黑色节点，当我们给一个红色节点下插入一个红色节点时，会违背这条特征。</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>因此我们需要在插入黑色节点后进行结构调整，保证红黑树始终满足这 5 条特征。</p>
+</blockquote>
+<h1 id="红黑树插入后节点的调整思想"><a href="#红黑树插入后节点的调整思想" class="headerlink" title="红黑树插入后节点的调整思想"></a>红黑树插入后节点的调整思想</h1><blockquote>
+<p>数学里最常用的一个解题技巧就是把多个未知数化解成一个未知数。</p>
+</blockquote>
+<p>我们插入黑色节点的时候担心违背第5条，插入红色节点时担心违背第4条，所以我们将将插入的节点改为红色，然后判断插入的节点的父亲是不是红色，是的话进行修改调整（变色、左旋、右旋）。同时在调整的过程中我们需要遵守<code>5条特性</code>。</p>
+<p>因为左右子树的操作是对称的，我们下边讲述需要添加的节点的父节点是祖父节点的左孩子的情况，右子树添加与其相反。</p>
+<blockquote>
+<ul>
+<li>1、如果我们添加的【红色节点】的【父节点】是黑色，那么树不需要做调整。</li>
+<li>2、如果我们添加的【红色节点】的【父节点】是红色，那么树需要做调整。<ul>
+<li>1）、父节点是红色，叔叔节点（父节点的兄弟节点）是红色的。</li>
+<li>2）、父节点是红色，叔叔节点是黑色，添加的节点是父节点的左孩子。</li>
+<li>3）、父节点是红色，叔叔节点是黑色，添加的节点是父节点的右孩子。</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<p><code>父节点是黑色，祖父节点一定是黑色的，因为红色节点的父节点不可能是红色（特性4:每个红色节点的两个子节点一定都是黑色）。</code></p>
+<h2 id="调整-情况（1）：父节点是红色，叔叔节点（父节点的兄弟节点）是红色的。"><a href="#调整-情况（1）：父节点是红色，叔叔节点（父节点的兄弟节点）是红色的。" class="headerlink" title="调整-情况（1）：父节点是红色，叔叔节点（父节点的兄弟节点）是红色的。"></a>调整-情况（1）：父节点是红色，叔叔节点（父节点的兄弟节点）是红色的。</h2><p>下图是这样情况的红黑树的修改过程（上边是目标节点为左孩子，下边是目标节点是右孩子）：</p>
+<p><img src="https://img-blog.csdnimg.cn/20191224153143480.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<p>为了新添加的节点也满足特性4:</p>
+<ul>
+<li>将父节点和叔叔节点全部染成黑色（节点T满足了特性四），但是这样父亲和叔叔节点的分支都多了一个黑色；</li>
+<li>将祖父节点染成红色，这样祖父节点的两个分支满足了所有特性，但是我们需要检验祖父节点是否符合红黑树的特性；</li>
+<li>将祖父节点当前插入节点，继续向树根方向进行修改；</li>
+</ul>
+<p>这样我们一直向上循环，直到父节点变为黑色，或者达到树根为止。</p>
+<h2 id="调整-情况（2）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的左孩子。"><a href="#调整-情况（2）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的左孩子。" class="headerlink" title="调整-情况（2）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的左孩子。"></a>调整-情况（2）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的左孩子。</h2><p>下图是这样情况的红黑树的修改过程:<br><img src="https://img-blog.csdnimg.cn/20191224153215672.png#pic_center" alt="在这里插入图片描述"></p>
+<p>我们通过将祖父节点的左孩子分支上的连续两个红色节点，转移一个插入到祖父节点和他的右孩子之间（保证左边没有两个连续红点、右边插入的红点满足所有特性）。</p>
+<ul>
+<li>先将父节点染成黑色；</li>
+<li>将祖父节点染成红色；</li>
+<li>将父节点进行右旋；</li>
+</ul>
+<p>我们仅仅通过以上3个步骤就调整完使整个红黑树的节点满足5个特性。</p>
+<h2 id="调整-情况（3）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的右孩子。"><a href="#调整-情况（3）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的右孩子。" class="headerlink" title="调整-情况（3）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的右孩子。"></a>调整-情况（3）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的右孩子。</h2><p>下图是这样情况的红黑树的修改过程:<br><img src="https://img-blog.csdnimg.cn/20191224153238966.png#pic_center" alt="在这里插入图片描述"></p>
+<p>我们父节点进行左旋操作，这样就变成了<code>调整-情况（2）</code>的状态，然后再按照其调整操作继续进行调整。</p>
+<blockquote>
+<p>通过以上三个情况对红黑树的调整，我们可以解决红黑树插入红色节点中的所有问题。</p>
+</blockquote>
+<h1 id="红黑树插入代码实现："><a href="#红黑树插入代码实现：" class="headerlink" title="红黑树插入代码实现："></a>红黑树插入代码实现：</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*********************** 向红黑树中插入节点 **********************/</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">insert</span><span class="params">(T key)</span> </span>&#123;</span><br><span class="line">    RBNode&lt;T&gt; node = <span class="keyword">new</span> RBNode&lt;&gt;(key, BLACK, <span class="keyword">null</span>, <span class="keyword">null</span>, <span class="keyword">null</span>);</span><br><span class="line">    insert(node);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 1、将节点插入到红黑树中，这个过程与二叉搜索树是一样的</span></span><br><span class="line"><span class="comment"> * 2、将插入的节点着色为"红色"；将插入的节点着色为红色，不会违背"特性5"！</span></span><br><span class="line"><span class="comment"> *    少违背了一条特性，意味着我们需要处理的情况越少。</span></span><br><span class="line"><span class="comment"> * 3、通过一系列的旋转或者着色等操作，使之重新成为一颗红黑树。</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> node 插入的节点</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">insert</span><span class="params">(RBNode&lt;T&gt; node)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//node的父节点</span></span><br><span class="line">    RBNode&lt;T&gt; current = <span class="keyword">null</span>;</span><br><span class="line">    RBNode&lt;T&gt; x = mRoot;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (x != <span class="keyword">null</span>) &#123;</span><br><span class="line">        current = x;</span><br><span class="line">        <span class="keyword">int</span> cmp = node.key.compareTo(x.key);</span><br><span class="line">        <span class="keyword">if</span> (cmp &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            x = x.left;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            x = x.right;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//找到位置，将当前current作为node的父节点</span></span><br><span class="line">    node.parent = current;</span><br><span class="line">    <span class="comment">//2. 接下来判断node是插在左子节点还是右子节点</span></span><br><span class="line">    <span class="keyword">if</span> (current != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">int</span> cmp = node.key.compareTo(current.key);</span><br><span class="line">        <span class="keyword">if</span> (cmp &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            current.left = node;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            current.right = node;</span><br><span class="line">        &#125;</span><br><span class="line">        node.color = RED;</span><br><span class="line">        insertFixUp(node);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">this</span>.mRoot = node;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 修改整插入node节点之后的红黑树</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> node</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">insertFixUp</span><span class="params">(RBNode&lt;T&gt; node)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//定义父节点和祖父节点</span></span><br><span class="line">    RBNode&lt;T&gt; parent, gparent;</span><br><span class="line">    <span class="comment">//需要修整的条件：父节点存在，且父节点的颜色是红色</span></span><br><span class="line">    <span class="keyword">while</span> (((parent = node.parent) != <span class="keyword">null</span>) &amp;&amp; isRed(parent)) &#123;</span><br><span class="line">        <span class="comment">//祖父节点</span></span><br><span class="line">        gparent = parent.parent;</span><br><span class="line">        <span class="comment">//若父节点是祖父节点的左子节点</span></span><br><span class="line">        <span class="keyword">if</span> (parent == gparent.left) &#123;</span><br><span class="line">            <span class="comment">//获取叔叔点点</span></span><br><span class="line">            RBNode&lt;T&gt; uncle = gparent.right;</span><br><span class="line">            <span class="comment">//case1:叔叔节点是红色</span></span><br><span class="line">            <span class="keyword">if</span> (uncle != <span class="keyword">null</span> &amp;&amp; isRed(uncle)) &#123;</span><br><span class="line">                <span class="comment">//把父亲和叔叔节点涂黑色</span></span><br><span class="line">                parent.color = BLACK;</span><br><span class="line">                uncle.color = BLACK;</span><br><span class="line">                <span class="comment">//把祖父节点图红色</span></span><br><span class="line">                gparent.color = RED;</span><br><span class="line">                <span class="comment">//将位置放到祖父节点</span></span><br><span class="line">                node = gparent;</span><br><span class="line">                <span class="comment">//继续往上循环判断</span></span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">//case2：叔叔节点是黑色，且当前节点是右子节点</span></span><br><span class="line">            <span class="keyword">if</span> (node == parent.right) &#123;</span><br><span class="line">                <span class="comment">//从父亲即诶单处左旋</span></span><br><span class="line">                leftRotate(parent);</span><br><span class="line">                <span class="comment">//将父节点和自己调换一下，为右旋左准备</span></span><br><span class="line">                RBNode&lt;T&gt; tmp = parent;</span><br><span class="line">                parent = node;</span><br><span class="line">                node = tmp;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//case3：叔叔节点是黑色，且当前节点是左子节点</span></span><br><span class="line">            parent.color = BLACK;</span><br><span class="line">            gparent.color = RED;</span><br><span class="line">            rightRotate(gparent);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">//若父亲节点是祖父节点的右子节点，与上面的完全相反，本质一样的</span></span><br><span class="line">            RBNode&lt;T&gt; uncle = gparent.left;</span><br><span class="line">            <span class="comment">//case1:叔叔节点也是红色</span></span><br><span class="line">            <span class="keyword">if</span> (uncle != <span class="keyword">null</span> &amp; isRed(uncle)) &#123;</span><br><span class="line">                parent.color = BLACK;</span><br><span class="line">                uncle.color = BLACK;</span><br><span class="line">                gparent.color = RED;</span><br><span class="line">                node = gparent;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">//case2: 叔叔节点是黑色的，且当前节点是左子节点</span></span><br><span class="line">            <span class="keyword">if</span> (node == parent.left) &#123;</span><br><span class="line">                rightRotate(parent);</span><br><span class="line">                RBNode&lt;T&gt; tmp = parent;</span><br><span class="line">                parent = node;</span><br><span class="line">                node = tmp;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//case3: 叔叔节点是黑色的，且当前节点是右子节点</span></span><br><span class="line">            parent.color = BLACK;</span><br><span class="line">            gparent.color = RED;</span><br><span class="line">            leftRotate(gparent);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//将根节点设置为黑色</span></span><br><span class="line">    <span class="keyword">this</span>.mRoot.color = BLACK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="红黑树节点的删除"><a href="#红黑树节点的删除" class="headerlink" title="红黑树节点的删除"></a>红黑树节点的删除</h1><p>上面部分讨论了红黑树添加新节点，接下来的部分讲述红黑树的删除。红黑树的删除是红黑树操作中最重要的部分（为什么说最重要呢？因为它最难理解）。</p>
+<p>同样红黑树的删除是在二叉树进行删除操作的基础上进行调整的，使之满足红黑树的所有特性。<br><a href="http://dandanlove.com/2017/10/20/about-binary-tree/" target="_blank" rel="noopener">二叉树知识点回忆以及整理#二叉树节点删除</a> 这部分讲述了二叉树节点的添加，所以这里我们重点讲述二叉树的添加完后的调整。</p>
+<h2 id="二叉树节点删除的思路"><a href="#二叉树节点删除的思路" class="headerlink" title="二叉树节点删除的思路"></a>二叉树节点删除的思路</h2><blockquote>
+<ul>
+<li>如果要删除的节点正好是叶子节点，直接删除就 Ok 了；</li>
+<li>如果要删除的节点还有子节点，就需要建立父节点和子节点的关系：<ul>
+<li>如果只有左孩子或者右孩子，直接把这个孩子上移放到要删除的位置就好了；</li>
+<li>如果有两个孩子，就需要选一个合适的孩子节点作为新的根节点，该节点称为 继承节点。（新节点要求比所有左子树要大、比右子树要小，我们可以选择左子树中的最大节点，或者选择右子树中的最小的节点。）</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<h2 id="红黑树删除总纲"><a href="#红黑树删除总纲" class="headerlink" title="红黑树删除总纲"></a>红黑树删除总纲</h2><blockquote>
+<p>我们需要在二叉树删除的思路上，再考虑对删除完后的树进行调整。还记得文章说过<code>数学里最常用的一个解题技巧就是把多个未知数化解成一个未知数。</code>这句话么？二叉树的删除分为两个大case或者三个小case。我们首先把这些case合并为一个case，再进行调整是不是就更加简单来？</p>
+</blockquote>
+<h2 id="红黑树删除之三派合并"><a href="#红黑树删除之三派合并" class="headerlink" title="红黑树删除之三派合并"></a>红黑树删除之三派合并</h2><p>上述将删除的步骤总结在一下就是：</p>
+<ul>
+<li>1、如果删除节点的左孩子和右孩子不同时为null，那么只需要让其子树继承删除该节点的位置；</li>
+<li>2、如果删除的节点是叶子节点，我们直接进行调整；</li>
+<li>假如删除节点的左右孩子都不是null，需要<code>后继节点</code>替换被删除的节点和值和颜色，这样才不会引起红黑树平衡的破坏，只需要对 <code>后继节点</code>删除后进行调整，这样我们就回归处理情况 1 和 2 的状态；<ul>
+<li><code>后继节点</code>为左子树最右边的子叶节点</li>
+<li><code>后继节点</code>为右子树最左边的叶子节点；</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>如果需要删除的节点颜色为<code>红色</code>，那么红黑树的结构不被破坏，也就不需要进行调整。如果我们判断删除节点的颜色为<code>黑色</code>，那么就进行调整；</p>
+</blockquote>
+<p>代码以及解析：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*********************** 删除红黑树中的节点 **********************/</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">(T key)</span> </span>&#123;</span><br><span class="line">    RBNode&lt;T&gt; node;</span><br><span class="line">    <span class="keyword">if</span> ((node = search(mRoot, key)) != <span class="keyword">null</span>) &#123;</span><br><span class="line">        remove(node);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 1、被删除的节点没有儿子，即删除的是叶子节点。那么，直接删除该节点。</span></span><br><span class="line"><span class="comment"> * 2、被删除的节点只有一个儿子。那么直接删除该节点，并用该节点的唯一子节点顶替它的初始位置。</span></span><br><span class="line"><span class="comment"> * 3、被删除的节点有两个儿子。那么先找出它的后继节点（右孩子中的最小的，该孩子没有子节点或者只有一右孩子）。</span></span><br><span class="line"><span class="comment"> *    然后把"它的后继节点的内容"复制给"该节点的内容"；之后，删除"它的后继节点"。</span></span><br><span class="line"><span class="comment"> *    在这里后继节点相当与替身，在将后继节点的内容复制给"被删除节点"之后，再将后继节点删除。</span></span><br><span class="line"><span class="comment"> *    ------这样问题就转化为怎么删除后继即节点的问题？</span></span><br><span class="line"><span class="comment"> *    在"被删除节点"有两个非空子节点的情况下，它的后继节点不可能是双子都非空。</span></span><br><span class="line"><span class="comment"> *    注：后继节点为补充被删除的节点；</span></span><br><span class="line"><span class="comment"> *    即：意味着"要么没有儿子，要么只有一个儿子"。</span></span><br><span class="line"><span class="comment"> *    若没有儿子，则回归到（1）。</span></span><br><span class="line"><span class="comment"> *    若只有一个儿子，则回归到（2）。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> node  需要删除的节点</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">(RBNode&lt;T&gt; node)</span> </span>&#123;</span><br><span class="line">    RBNode&lt;T&gt; child, parent;</span><br><span class="line">    <span class="keyword">boolean</span> color;</span><br><span class="line">    <span class="comment">//1、删除的节点的左右孩子都不为空</span></span><br><span class="line">    <span class="keyword">if</span> ((node.left != <span class="keyword">null</span>) &amp;&amp; (node.right != <span class="keyword">null</span>)) &#123;</span><br><span class="line">        <span class="comment">//先找到被删除节点的后继节点，用它来取代被删除节点的位置</span></span><br><span class="line">        RBNode&lt;T&gt; replace = node;</span><br><span class="line">        <span class="comment">//1).获取后继节点[右孩子中的最小]</span></span><br><span class="line">        replace = replace.right;</span><br><span class="line">        <span class="keyword">while</span> (replace.left != <span class="keyword">null</span>) &#123;</span><br><span class="line">            replace = replace.left;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//2).处理【后继节点的子节点】和【被删除节点的子节点】之间的关系</span></span><br><span class="line">        <span class="keyword">if</span> (node.parent != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="comment">//要删除的节点不是根节点</span></span><br><span class="line">            <span class="keyword">if</span> (node == node.parent.left) &#123;</span><br><span class="line">                node.parent.left = replace;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                node.parent.right = replace;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            mRoot = replace;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//3).处理【后继节点的子节点】和【被删除节点的子节点】之间的关系</span></span><br><span class="line">        <span class="comment">//后继节点肯定不存在左子节点</span></span><br><span class="line">        child = replace.right;</span><br><span class="line">        parent = replace.parent;</span><br><span class="line">        <span class="comment">//保存后继节点的颜色</span></span><br><span class="line">        color = replace.color;</span><br><span class="line">        <span class="comment">//后继节点是被删除的节点</span></span><br><span class="line">        <span class="keyword">if</span> (parent == node) &#123;</span><br><span class="line">            parent =replace;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (child != <span class="keyword">null</span>) &#123;</span><br><span class="line">                child.parent = parent;</span><br><span class="line">            &#125;</span><br><span class="line">            parent.left = child;</span><br><span class="line">            replace.right = node.right;</span><br><span class="line">            node.right.parent = replace;</span><br><span class="line">        &#125;</span><br><span class="line">        replace.parent = node.parent;</span><br><span class="line">        replace.color = node.color;</span><br><span class="line">        replace.left = node.left;</span><br><span class="line">        node.left.parent = replace;</span><br><span class="line">        <span class="comment">//4。如果移走的后继节点颜色是黑色，重新修正红黑树</span></span><br><span class="line">        <span class="keyword">if</span> (color == BLACK) &#123;</span><br><span class="line">            removeFixUp(child, parent);</span><br><span class="line">        &#125;</span><br><span class="line">        node = <span class="keyword">null</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">//被删除的节点是叶子节点，或者只有一个孩子。</span></span><br><span class="line">        <span class="keyword">if</span> (node.left != <span class="keyword">null</span>) &#123;</span><br><span class="line">            child = node.left;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            child = node.right;</span><br><span class="line">        &#125;</span><br><span class="line">        parent = node.parent;</span><br><span class="line">        <span class="comment">//保存"取代节点"的颜色</span></span><br><span class="line">        color = node.color;</span><br><span class="line">        <span class="keyword">if</span> (child != <span class="keyword">null</span>) &#123;</span><br><span class="line">            child.parent = parent;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//"node节点"不是根节点</span></span><br><span class="line">        <span class="keyword">if</span> (parent != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (parent.left == node) &#123;</span><br><span class="line">                parent.left = child;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                parent.right = child;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            mRoot = child;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (color == BLACK) &#123;</span><br><span class="line">            removeFixUp(child, parent);</span><br><span class="line">        &#125;</span><br><span class="line">        node = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>完成删除操作后接下来进行我们的调整操作，看完上面代码后我们知道调整时需要传递的参数是<code>后继节点</code>和<code>删除的父节点</code>。</p>
+<h2 id="红黑树删除之节点调整"><a href="#红黑树删除之节点调整" class="headerlink" title="红黑树删除之节点调整"></a>红黑树删除之节点调整</h2><p>删除后那么<code>后继节点</code>就成才删除节点的孩子，那么接下的过程中我们将<code>后继节点</code>定义<code>目标节点</code>。</p>
+<p>下边我们讨论一下节点的颜色情况：因为当前节点的颜色一定是黑色的，我们只根据兄弟节点的颜色做讨论。</p>
+<ul>
+<li>1、当前节点是黑色的，且兄弟节点是红色的（那么父节点和兄弟节点的子节点肯定是黑色的）；</li>
+<li>2、当前节点是黑色的，且兄弟节点是黑色的，<ul>
+<li>1）、兄弟节点的两个子节点均为黑色的；</li>
+<li>2）、兄弟节点的左子节点是红色，右子节点时黑色的；</li>
+<li>3）、兄弟节点的右子节点是红色，左子节点任意颜色；</li>
+</ul>
+</li>
+</ul>
+<h4 id="调整情况（1）-当前节点是黑色的，且兄弟节点是红色的"><a href="#调整情况（1）-当前节点是黑色的，且兄弟节点是红色的" class="headerlink" title="调整情况（1）:当前节点是黑色的，且兄弟节点是红色的"></a>调整情况（1）:当前节点是黑色的，且兄弟节点是红色的</h4><p>下图是这样情况的红黑树的修改过程：<br><img src="https://img-blog.csdnimg.cn/20191224153433246.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<ul>
+<li>将父节点涂红，将兄弟节点涂黑，然后将当前节点的父节点进行支点左旋。这样就会转化为情况2中的某种状态。</li>
+</ul>
+<h3 id="调整情况（2）-当前节点是黑色的，且兄弟节点是黑色的"><a href="#调整情况（2）-当前节点是黑色的，且兄弟节点是黑色的" class="headerlink" title="调整情况（2）:当前节点是黑色的，且兄弟节点是黑色的"></a>调整情况（2）:当前节点是黑色的，且兄弟节点是黑色的</h3><h4 id="2-1、兄弟节点的左子节点是红色，右子节点时黑色的；"><a href="#2-1、兄弟节点的左子节点是红色，右子节点时黑色的；" class="headerlink" title="2.1、兄弟节点的左子节点是红色，右子节点时黑色的；"></a>2.1、兄弟节点的左子节点是红色，右子节点时黑色的；</h4><p>下图是这样情况的红黑树的修改过程：<br><img src="https://img-blog.csdnimg.cn/20191224153500801.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<ul>
+<li>将兄弟节点涂红，将当前节点指向其父节点，将其父节点指向当前节点的祖父节点，继续往树根递归判断以及调整；</li>
+</ul>
+<h4 id="2-2、兄弟节点的两个子节点均为黑色的；"><a href="#2-2、兄弟节点的两个子节点均为黑色的；" class="headerlink" title="2.2、兄弟节点的两个子节点均为黑色的；"></a>2.2、兄弟节点的两个子节点均为黑色的；</h4><p>下图是这样情况的红黑树的修改过程：<br><img src="https://img-blog.csdnimg.cn/20191224153536670.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<ul>
+<li>把当前节点的兄弟节点涂红，把兄弟节点的左子节点涂黑，然后以兄弟节点作为支点做右旋操作。</li>
+</ul>
+<h4 id="2-3、兄弟节点的右子节点是红色，左子节点任意颜色；"><a href="#2-3、兄弟节点的右子节点是红色，左子节点任意颜色；" class="headerlink" title="2.3、兄弟节点的右子节点是红色，左子节点任意颜色；"></a>2.3、兄弟节点的右子节点是红色，左子节点任意颜色；</h4><p>下图是这样情况的红黑树的修改过程：<br><img src="https://img-blog.csdnimg.cn/20191224153615785.png#pic_center" alt="在这里插入图片描述"></p>
+<ul>
+<li>把兄弟节点涂成父节点的颜色，再把父节点涂黑，把兄弟节点的右子节点涂黑，然后以当前节点的父节点为支点做左旋操作。</li>
+</ul>
+<h2 id="红黑树删除调整case总结-amp-代码实现"><a href="#红黑树删除调整case总结-amp-代码实现" class="headerlink" title="红黑树删除调整case总结&amp;代码实现"></a>红黑树删除调整case总结&amp;代码实现</h2><p>如果是从<code>case:1</code>开始发生的，可能<code>case:2，3，4</code>中的一种：如果是<code>case:2</code>，就不可能再出现<code>case:3和4</code>；如果是<code>case:3</code>，必然会导致<code>case:4</code>的出现；如果<code>case:2和3</code>都不是，那必然是<code>case:4</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 红黑树删除修正函数</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 在从红黑树中删除插入节点之后(红黑树失去平衡)，再调用该函数；</span></span><br><span class="line"><span class="comment"> * 目的是将它重新塑造成一颗红黑树。</span></span><br><span class="line"><span class="comment"> * 如果当前待删除节点是红色的，它被删除之后对当前树的特性不会造成任何破坏影响。</span></span><br><span class="line"><span class="comment"> * 而如果被删除的节点是黑色的，这就需要进行进一步的调整来保证后续的树结构满足要求。</span></span><br><span class="line"><span class="comment"> * 这里我们只修正删除的节点是黑色的情况：</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 调整思想：</span></span><br><span class="line"><span class="comment"> * 为了保证删除节点的父节点左右两边黑色节点数一致，需要重点关注父节点没删除的那一边节点是不是黑色。</span></span><br><span class="line"><span class="comment"> * 如果删除后父亲节点另一边比删除的一边黑色多，就要想办法搞到平衡。</span></span><br><span class="line"><span class="comment"> * 1、把父亲节点另一边（即删除节点的兄弟树）其中一个节点弄成红色，也少了一个黑色。</span></span><br><span class="line"><span class="comment"> * 2、或者把另一边多的节点（染成黑色）转过来一个</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 1）、当前节点是黑色的，且兄弟节点是红色的（那么父节点和兄弟节点的子节点肯定是黑色的）；</span></span><br><span class="line"><span class="comment"> * 2）、当前节点是黑色的，且兄弟节点是黑色的，且兄弟节点的两个子节点均为黑色的；</span></span><br><span class="line"><span class="comment"> * 3）、当前节点是黑色的，且兄弟节点是黑色的，且兄弟节点的左子节点是红色，右子节点时黑色的；</span></span><br><span class="line"><span class="comment"> * 4）、当前节点是黑色的，且兄弟节点是黑色的，且兄弟节点的右子节点是红色，左子节点任意颜色。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 以上四种情况中，2，3，4都是（当前节点是黑色的，且兄弟节点是黑色的）的子集。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 参数说明：</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> node 删除之后代替的节点（后序节点）</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> parent 后序节点的父节点</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">removeFixUp</span><span class="params">(RBNode&lt;T&gt; node, RBNode&lt;T&gt; parent)</span> </span>&#123;</span><br><span class="line">    RBNode&lt;T&gt; other;</span><br><span class="line">    RBNode&lt;T&gt; root = mRoot;</span><br><span class="line">    <span class="keyword">while</span> ((node == <span class="keyword">null</span> || node.color == BLACK) &amp;&amp; node != root) &#123;</span><br><span class="line">        <span class="keyword">if</span> (parent.left == node) &#123;</span><br><span class="line">            other = parent.right;</span><br><span class="line">            <span class="keyword">if</span> (other.color == RED) &#123;</span><br><span class="line">                <span class="comment">//case 1：x的兄弟w是红色的【对应状态1，将其转化为2，3，4】</span></span><br><span class="line">                other.color = BLACK;</span><br><span class="line">                parent.color = RED;</span><br><span class="line">                leftRotate(parent);</span><br><span class="line">                other = parent.right;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> ((other.left == <span class="keyword">null</span> || other.left.color == BLACK)</span><br><span class="line">                    &amp;&amp; (other.right == <span class="keyword">null</span> || other.right.color == BLACK)) &#123;</span><br><span class="line">                <span class="comment">//case 2：x的兄弟w是黑色，且w的两个孩子都是黑色的【对应状态2，利用调整思想1网树的根部做递归】</span></span><br><span class="line">                other.color = RED;</span><br><span class="line">                node = parent;</span><br><span class="line">                parent = node.parent;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (other.right == <span class="keyword">null</span> || other.right.color == BLACK) &#123;</span><br><span class="line">                    <span class="comment">//case 3:x的兄弟w是黑色的，并且w的左孩子是红色的，右孩子是黑色的【对应状态3，调整到状态4】</span></span><br><span class="line">                    other.left.color = BLACK;</span><br><span class="line">                    other.color = RED;</span><br><span class="line">                    rightRotate(other);</span><br><span class="line">                    other = parent.right;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">//case 4:x的兄弟w是黑色的；并且w的右孩子是红色的，左孩子任意颜色【对应状态4，利用调整思想2做调整】</span></span><br><span class="line">                other.color = parent.color;</span><br><span class="line">                parent.color = BLACK;</span><br><span class="line">                other.right.color = BLACK;</span><br><span class="line">                leftRotate(parent);</span><br><span class="line">                node = root;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            other = parent.left;</span><br><span class="line">            <span class="keyword">if</span> (other.color == RED) &#123;</span><br><span class="line">                <span class="comment">//case 1:x的兄弟w是红色的</span></span><br><span class="line">                other.color = BLACK;</span><br><span class="line">                parent.color = RED;</span><br><span class="line">                rightRotate(parent);</span><br><span class="line">                other = parent.left;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> ((other.left == <span class="keyword">null</span> || other.left.color == BLACK)</span><br><span class="line">                    &amp;&amp; (other.right == <span class="keyword">null</span> || other.right.color == BLACK)) &#123;</span><br><span class="line">                <span class="comment">//case 2:x兄弟w是黑色，且w的两个孩子也都是黑色的</span></span><br><span class="line">                other.color = RED;</span><br><span class="line">                node = parent;</span><br><span class="line">                parent = node.parent;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (other.left == <span class="keyword">null</span> || other.left.color == BLACK) &#123;</span><br><span class="line">                    <span class="comment">//case 3:x的兄弟w是黑色的，并且w的左孩子是红色，右孩子为黑色。</span></span><br><span class="line">                    other.right.color = BLACK;</span><br><span class="line">                    other.color = RED;</span><br><span class="line">                    leftRotate(other);</span><br><span class="line">                    other = parent.left;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">//case 4:x的兄弟w是黑色的；并且w的右孩子是红色的，左孩子任意颜色。</span></span><br><span class="line">                other.color = parent.color;</span><br><span class="line">                parent.color = BLACK;</span><br><span class="line">                other.left.color = BLACK;</span><br><span class="line">                rightRotate(parent);</span><br><span class="line">                node = root;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (node != <span class="keyword">null</span>) &#123;</span><br><span class="line">        node.color = BLACK;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>红黑树查找的最坏时间复杂度也是O(logN)。为了它这么高的性能，我感觉自己费了这么多脑细胞和时间来学习也是值得的(自己前前后后看了好多次)。这篇文章和插入图也是我自己用心根据自己的理解来做，希望大家能在学习红黑树的时候提高效率，不走弯路。</p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p>红黑树的文章有好多，仔细阅读几篇之后感觉这三篇讲的不错。第一篇的红黑树插入，第二篇的红黑树左旋和右旋（动画做的非常好）和红黑树的删除，最后一篇的代码写的很棒并且提供的测试的case。文章的主要内容都是以下三篇文章的总结。</p>
+<p><a href="https://www.cnblogs.com/skywang12345/p/3624343.html" target="_blank" rel="noopener">重温数据结构：深入理解红黑树</a><br><a href="http://blog.csdn.net/eson_15/article/details/51144079" target="_blank" rel="noopener">【数据结构和算法05】 红-黑树（看完包懂~）</a><br><a href="https://www.cnblogs.com/skywang12345/p/3624343.html" target="_blank" rel="noopener">红黑树(五)之 Java的实现</a></p>
+<p>源码：<a href="https://gitee.com/dandanlove/codes/xezpa7g3q1dybw5mutvk643" target="_blank" rel="noopener">红黑树操作&amp;代码注释</a></p>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+<p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：<br><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center" alt="振兴书城"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/weixinpay.jpeg" alt="振兴 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpeg" alt="振兴 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    振兴
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2018/03/18/red-black-tree/" title="寻找红黑树的操作手册">http://yoursite.com/2018/03/18/red-black-tree/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/算法/" rel="tag"><i class="fa fa-tag"></i> 算法</a>
+          
+            <a href="/tags/红黑树/" rel="tag"><i class="fa fa-tag"></i> 红黑树</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/07/iterm-zsh-solarized/" rel="next" title="【可视化教程】iTerm2+oh-my-zsh+solarized配色方案">
+                <i class="fa fa-chevron-left"></i> 【可视化教程】iTerm2+oh-my-zsh+solarized配色方案
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/04/13/android-16ms/" rel="prev" title="Android的16ms和垂直同步以及三重缓存">
+                Android的16ms和垂直同步以及三重缓存 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/jay.jpg"
+                alt="振兴" />
+            
+              <p class="site-author-name" itemprop="name">振兴</p>
+              <p class="site-description motion-element" itemprop="description">好好学习，天天向上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">74</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">96</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stven0king" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://me.csdn.net/stven_king" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-crosshairs"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/311540b7592b" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-book"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/56824a1900b01b9f2bd94ae8" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-spinner"></i>掘金</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/2520114671/profile?rightmod=1&wvr=6&mod=personinfo" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-weibo"></i>微博</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:stven0king@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                推荐阅读
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://gityuan.com/" title="Gityuan" target="_blank">Gityuan</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.wanandroid.com/index" title="玩Android" target="_blank">玩Android</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.wjdiankong.cn/" title="尼古拉斯.赵四" target="_blank">尼古拉斯.赵四</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#简介"><span class="nav-number">2.</span> <span class="nav-text">简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#红黑树特点"><span class="nav-number">3.</span> <span class="nav-text">红黑树特点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#红黑树的修正"><span class="nav-number">4.</span> <span class="nav-text">红黑树的修正</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#变色"><span class="nav-number">4.1.</span> <span class="nav-text">变色</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#左旋"><span class="nav-number">4.2.</span> <span class="nav-text">左旋</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#右旋"><span class="nav-number">4.3.</span> <span class="nav-text">右旋</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#红黑树节点的添加"><span class="nav-number">5.</span> <span class="nav-text">红黑树节点的添加</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#红黑树插入后节点的调整思想"><span class="nav-number">6.</span> <span class="nav-text">红黑树插入后节点的调整思想</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#调整-情况（1）：父节点是红色，叔叔节点（父节点的兄弟节点）是红色的。"><span class="nav-number">6.1.</span> <span class="nav-text">调整-情况（1）：父节点是红色，叔叔节点（父节点的兄弟节点）是红色的。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调整-情况（2）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的左孩子。"><span class="nav-number">6.2.</span> <span class="nav-text">调整-情况（2）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的左孩子。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#调整-情况（3）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的右孩子。"><span class="nav-number">6.3.</span> <span class="nav-text">调整-情况（3）：父节点是红色，叔叔节点是黑色，添加的节点是父节点的右孩子。</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#红黑树插入代码实现："><span class="nav-number">7.</span> <span class="nav-text">红黑树插入代码实现：</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#红黑树节点的删除"><span class="nav-number">8.</span> <span class="nav-text">红黑树节点的删除</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#二叉树节点删除的思路"><span class="nav-number">8.1.</span> <span class="nav-text">二叉树节点删除的思路</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#红黑树删除总纲"><span class="nav-number">8.2.</span> <span class="nav-text">红黑树删除总纲</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#红黑树删除之三派合并"><span class="nav-number">8.3.</span> <span class="nav-text">红黑树删除之三派合并</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#红黑树删除之节点调整"><span class="nav-number">8.4.</span> <span class="nav-text">红黑树删除之节点调整</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#调整情况（1）-当前节点是黑色的，且兄弟节点是红色的"><span class="nav-number">8.4.0.1.</span> <span class="nav-text">调整情况（1）:当前节点是黑色的，且兄弟节点是红色的</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#调整情况（2）-当前节点是黑色的，且兄弟节点是黑色的"><span class="nav-number">8.4.1.</span> <span class="nav-text">调整情况（2）:当前节点是黑色的，且兄弟节点是黑色的</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#2-1、兄弟节点的左子节点是红色，右子节点时黑色的；"><span class="nav-number">8.4.1.1.</span> <span class="nav-text">2.1、兄弟节点的左子节点是红色，右子节点时黑色的；</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-2、兄弟节点的两个子节点均为黑色的；"><span class="nav-number">8.4.1.2.</span> <span class="nav-text">2.2、兄弟节点的两个子节点均为黑色的；</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-3、兄弟节点的右子节点是红色，左子节点任意颜色；"><span class="nav-number">8.4.1.3.</span> <span class="nav-text">2.3、兄弟节点的右子节点是红色，左子节点任意颜色；</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#红黑树删除调整case总结-amp-代码实现"><span class="nav-number">8.5.</span> <span class="nav-text">红黑树删除调整case总结&amp;代码实现</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">9.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文章"><span class="nav-number">10.</span> <span class="nav-text">参考文章</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">振兴</span>
+
+  
+</div>
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+<!--
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+-->
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://billts.site/extra_css/gitment.css">
+        <script src="https://billts.site/js/gitment.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitment({
+            id: window.location.pathname, 
+            owner: 'stven0king',
+            repo: 'stven0king.github.io',
+            
+            oauth: {
+            
+            
+                client_secret: '2206c556bf3e1f5967962220c3439f458ed41c7f',
+            
+                client_id: '00c12e7601ea8004b339'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

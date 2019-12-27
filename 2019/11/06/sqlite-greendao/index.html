@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="greendao," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前段时间写Demo的时候遇到了数据库的并发问题 [Android数据库多线程并发操作异常] ，然后研究了一下 [Android中的数据库连接池]。在看相关代码的时候阅读了我们项目使用的数据库框架`GreenDao` 。哈哈，挺有意思的^ _ ^。">
+<meta name="keywords" content="greendao">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android数据库开源框架GreenDao分析">
+<meta property="og:url" content="http://yoursite.com/2019/11/06/sqlite-greendao/index.html">
+<meta property="og:site_name" content="下雨天要逛街">
+<meta property="og:description" content="前段时间写Demo的时候遇到了数据库的并发问题 [Android数据库多线程并发操作异常] ，然后研究了一下 [Android中的数据库连接池]。在看相关代码的时候阅读了我们项目使用的数据库框架`GreenDao` 。哈哈，挺有意思的^ _ ^。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTA0MzI1YWI1OWY1MjVjNjEucG5n?x-oss-process=image/format,png#pic_center">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTc3NGUxOTFjYjhhMGRiMDEucG5n?x-oss-process=image/format,png#pic_center">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTVmN2Y4MTJmMDM5YWIyMzIucG5n?x-oss-process=image/format,png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20191106205012741.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_cente">
+<meta property="og:updated_time" content="2019-12-27T01:02:16.256Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android数据库开源框架GreenDao分析">
+<meta name="twitter:description" content="前段时间写Demo的时候遇到了数据库的并发问题 [Android数据库多线程并发操作异常] ，然后研究了一下 [Android中的数据库连接池]。在看相关代码的时候阅读了我们项目使用的数据库框架`GreenDao` 。哈哈，挺有意思的^ _ ^。">
+<meta name="twitter:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTA0MzI1YWI1OWY1MjVjNjEucG5n?x-oss-process=image/format,png#pic_center">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/11/06/sqlite-greendao/"/>
+
+
+
+
+
+  <title>Android数据库开源框架GreenDao分析 | 下雨天要逛街</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1055a4e1d37a3a4dcb3a3e1c4f32f147";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/stven0king" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">下雨天要逛街</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/06/sqlite-greendao/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="振兴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/jay.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="下雨天要逛街">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android数据库开源框架GreenDao分析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-11-06T20:58:00+08:00">
+                2019-11-06
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据库/" itemprop="url" rel="index">
+                    <span itemprop="name">数据库</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  前段时间写Demo的时候遇到了数据库的并发问题 [Android数据库多线程并发操作异常] ，然后研究了一下 [Android中的数据库连接池]。在看相关代码的时候阅读了我们项目使用的数据库框架`GreenDao` 。哈哈，挺有意思的^ _ ^。 
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>前段时间写Demo的时候遇到了数据库的并发问题 <a href="https://dandanlove.blog.csdn.net/article/details/102876043" target="_blank" rel="noopener">Android数据库多线程并发操作异常</a> ，然后研究了一下 <a href="https://dandanlove.blog.csdn.net/article/details/102942832" target="_blank" rel="noopener">Android中的数据库连接池</a> 。在看相关代码的时候阅读了我们项目使用的数据库框架<code>GreenDao</code> 。哈哈，挺有意思的^ _ ^。</p>
+<h1 id="Android原始数据库的使用"><a href="#Android原始数据库的使用" class="headerlink" title="Android原始数据库的使用"></a>Android原始数据库的使用</h1><h2 id="创建数据库"><a href="#创建数据库" class="headerlink" title="创建数据库"></a>创建数据库</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DatabaseHelper</span> <span class="keyword">extends</span> <span class="title">SQLiteOpenHelper</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String USER_TABLE_NAME = <span class="string">"user"</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String USER_NAME = <span class="string">"username"</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> String AGE = <span class="string">"age"</span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DatabaseHelper</span><span class="params">(Context context)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(context, <span class="string">"demo.db"</span>, <span class="keyword">null</span>, <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">(SQLiteDatabase db)</span> </span>&#123;</span><br><span class="line">        <span class="comment">//创建数据库</span></span><br><span class="line">        db.execSQL(<span class="string">"create table "</span> + USER_TABLE_NAME + <span class="string">"("</span> + USER_NAME + <span class="string">" varchar(20) not null,"</span> + AGE + <span class="string">" varchar(10) not null"</span> + <span class="string">")"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onUpgrade</span><span class="params">(SQLiteDatabase db, <span class="keyword">int</span> oldVersion, <span class="keyword">int</span> newVersion)</span> </span>&#123;</span><br><span class="line">        <span class="comment">//todo 更新数据库</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="增删改查"><a href="#增删改查" class="headerlink" title="增删改查"></a>增删改查</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">mDatabaseHelper = <span class="keyword">new</span> DatabaseHelper(<span class="keyword">this</span>);</span><br><span class="line">mSqLiteDatabase = mDatabaseHelper.getWritableDatabase();</span><br><span class="line"><span class="comment">//插入</span></span><br><span class="line">ContentValues values = <span class="keyword">new</span> ContentValues();</span><br><span class="line">values.put(mDatabaseHelper.USER_NAME, <span class="string">"老张"</span>);</span><br><span class="line">values.put(mDatabaseHelper.AGE, <span class="string">"18岁"</span>);</span><br><span class="line">mSqLiteDatabase.insert(mDatabaseHelper.USER_TABLE_NAME, <span class="keyword">null</span>, values);</span><br><span class="line"><span class="comment">//删除</span></span><br><span class="line">String conditions = <span class="string">"username=?"</span>;</span><br><span class="line">String[] args = &#123;<span class="string">"老张"</span>&#125;;</span><br><span class="line">mSqLiteDatabase.delete(DatabaseHelper.USER_TABLE_NAME, conditions, args);</span><br><span class="line"><span class="comment">//更新</span></span><br><span class="line">ContentValues contentValues = <span class="keyword">new</span> ContentValues();</span><br><span class="line">contentValues.put(DatabaseHelper.AGE, <span class="string">"20岁"</span>);</span><br><span class="line">String conditions = <span class="string">"age=?"</span>;</span><br><span class="line">String[] valueStr = &#123;<span class="string">"18岁"</span>&#125;;</span><br><span class="line"><span class="keyword">int</span> affectNum = mSqLiteDatabase.update(DatabaseHelper.USER_TABLE_NAME, contentValues, conditions, valueStr);</span><br><span class="line"><span class="comment">//查询</span></span><br><span class="line">Cursor cursor = mSqLiteDatabase.query(mDatabaseHelper.USER_TABLE_NAME, <span class="keyword">new</span> String[] &#123;DatabaseHelper.USER_NAME&#125;, <span class="keyword">null</span>, <span class="keyword">null</span>, <span class="keyword">null</span>, <span class="keyword">null</span>, <span class="keyword">null</span>, <span class="keyword">null</span>);</span><br><span class="line"><span class="keyword">if</span> (cursor.moveToFirst()) &#123;</span><br><span class="line">    <span class="keyword">int</span> count = cursor.getCount();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; count; i++) &#123;</span><br><span class="line">        String userName = cursor.getString(cursor.getColumnIndex(DatabaseHelper.USER_NAME));</span><br><span class="line">        Log.i(TAG,  i + <span class="string">" --&gt; "</span> + userName);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其内部实现为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//插入</span></span><br><span class="line">SQLiteStatement.executeInsert</span><br><span class="line"><span class="comment">//更新、删除</span></span><br><span class="line">SQLiteStatement.executeUpdateDelete</span><br><span class="line"><span class="comment">//查询</span></span><br><span class="line">SQLiteCursor</span><br></pre></td></tr></table></figure>
+<p>Android原生的数据库操作默认是没有开启事务的，我们自己使用的时候可以开启。</p>
+<h2 id="性能优化"><a href="#性能优化" class="headerlink" title="性能优化"></a>性能优化</h2><blockquote>
+<ol>
+<li>预编译SQL语句，重复的操作使用SQLiteStatement；</li>
+<li>显示使用事务操作，做数据库更新修改操作时用事物能够提高写入性能；</li>
+<li>查询数据优化，少用cursor.getColumnIndex；</li>
+<li>ContentValues的容量调整，内部是HashMap每次扩容进行double，最好能预估大小；</li>
+<li>及时关闭Cursor；</li>
+<li>耗时异步化；</li>
+</ol>
+</blockquote>
+<p>Android平台上的数据库框架非常多，但是有一个共同特点就是基于对象关系映射<code>(ORM)</code>模型的。实现的目标也都是不需要写<code>SQL</code>语句，通过对对象的操作保存和操作数据。</p>
+<p><code>GreenDAO</code>是基于<code>AndroidSQLite</code>的最快、性能最强悍的数据库框架之一，因为他不涉及反射，靠的是代码辅助生成。</p>
+<h1 id="GreenDao框架分析"><a href="#GreenDao框架分析" class="headerlink" title="GreenDao框架分析"></a>GreenDao框架分析</h1><p><a href="http://greenrobot.org/greendao/documentation/updating-to-greendao-3-and-annotations/" target="_blank" rel="noopener">GreenDao3.0官网介绍</a><br><a href="http://greenrobot.org/greendao/documentation/" target="_blank" rel="noopener">GreenDao文档</a><br><a href="https://github.com/greenrobot/greenDAO" target="_blank" rel="noopener">GreenDao的Github仓库</a></p>
+<p><code>GreenDao</code> 的使用在这里就不介绍了，上面的文档链接或者网络上的各种使用教程讲的都很详细。这里主要分析、对比一下<code>GreenDao框架</code> 在原生的基础之上进行了怎么样的封装。</p>
+<p>在进行源码分析之前我们先说一下<code>GreenDao</code> 的优缺点，然后在下面的阅读过程中自己进行体会。</p>
+<p><strong>优点：</strong></p>
+<ol>
+<li>库文件比较小，小于100K，编译时间低，而且可以避免65K方法限制；</li>
+<li>性能最大化(官方词汇)；</li>
+<li>API 非常易用，提升了开发效率；</li>
+<li>最小的内存开销(这个没有实际测试过)；</li>
+<li>可支持原生语句，从Android原生 <code>SQLite</code> 过度到 <code>GreenDao</code> 相对还是比较容易；</li>
+<li>数据表结构和<code>Entity</code>数据结构<code>convert</code>支持，<code>Entity</code>的不同数据结构和数据库存储结构之间做一个灵活的转换；</li>
+</ol>
+<p><strong>缺点:</strong></p>
+<ol>
+<li>不支持组合主键，这个很少用到。</li>
+<li>数据库表有关系时，在第一次请求上会有延迟并且之后的更新都不会自动同步，需要主动更新或者清楚缓存之后再请求，写的时候需要主动同时更新。当然这个也不算缺点，现在很多时候在数据库建表的时候很很少使用关联，要么建索引，要么查询的时候自己做关联。</li>
+<li>不支持<code>min</code>、<code>max</code>等函数，需要自己写<code>sql</code>执行<code>execSQL</code>。但这些都可以通过其他方式进行实现。</li>
+<li>不支持合并写，写入的时候判断已有这条数据那么进行更新，没有则实现插入。</li>
+</ol>
+<h2 id="数据库框架设计"><a href="#数据库框架设计" class="headerlink" title="数据库框架设计"></a>数据库框架设计</h2><p>文章前面简单的用代码进行数据库操作，我们可以从中看到一般在Android中操作数据库所需要的对象有：</p>
+<ul>
+<li><p><strong>SQLiteOpenHelper</strong>：数据库的创建、更新的操作对象；</p>
+</li>
+<li><p><strong>SQLiteDatabase</strong>：执行数据的增删改查的操作对象；</p>
+</li>
+<li><p><strong>SQLiteStatement</strong>：<code>SQL</code> 执行的操作对象；</p>
+</li>
+</ul>
+<p>所以首先任何一个数据框架都需要对这几个对象做封装，其次就是对于<code>ORM模式</code> 的数据库框架来说对象和数据库之间映射的元数据<code>Entity</code> 的管理，以及对外提供建议操作数据的API的封装。</p>
+<center><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTA0MzI1YWI1OWY1MjVjNjEucG5n?x-oss-process=image/format,png#pic_center" alt="greendao-framework.png"></center>
+
+<h2 id="GreenDao底层封装"><a href="#GreenDao底层封装" class="headerlink" title="GreenDao底层封装"></a>GreenDao底层封装</h2><h3 id="Database"><a href="#Database" class="headerlink" title="Database"></a>Database</h3><p><code>StandardDatabase</code>实现<code>Database</code>接口，内部代理<code>SQLiteDatabase</code>。</p>
+<ul>
+<li>提供数据库操作对象；</li>
+<li>执行<code>SQL</code> 语句；</li>
+<li>进行<strong>事务</strong>操作；</li>
+<li>数据库的关闭和打开；</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Database</span> </span>&#123;</span><br><span class="line">    <span class="function">Cursor <span class="title">rawQuery</span><span class="params">(String sql, String[] selectionArgs)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">execSQL</span><span class="params">(String sql)</span> <span class="keyword">throws</span> SQLException</span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">beginTransaction</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">endTransaction</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">inTransaction</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">setTransactionSuccessful</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">execSQL</span><span class="params">(String sql, Object[] bindArgs)</span> <span class="keyword">throws</span> SQLException</span>;</span><br><span class="line">    <span class="function">DatabaseStatement <span class="title">compileStatement</span><span class="params">(String sql)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">isDbLockedByCurrentThread</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">isOpen</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">close</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function">Object <span class="title">getRawDatabase</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StandardDatabase</span> <span class="keyword">implements</span> <span class="title">Database</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> SQLiteDatabase delegate;</span><br><span class="line">    <span class="comment">/***部分代码省略***/</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="DatabaseStatement"><a href="#DatabaseStatement" class="headerlink" title="DatabaseStatement"></a>DatabaseStatement</h3><p><code>StandardDatabaseStatement</code>实现<code>DatabaseStatement</code>，内部代理<code>SQLiteStatement</code></p>
+<ul>
+<li>数据对象的<strong>增删改查</strong>；</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">DatabaseStatement</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">execute</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">long</span> <span class="title">simpleQueryForLong</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">bindNull</span><span class="params">(<span class="keyword">int</span> index)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">long</span> <span class="title">executeInsert</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">bindString</span><span class="params">(<span class="keyword">int</span> index, String value)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">bindBlob</span><span class="params">(<span class="keyword">int</span> index, <span class="keyword">byte</span>[] value)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">bindLong</span><span class="params">(<span class="keyword">int</span> index, <span class="keyword">long</span> value)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">clearBindings</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">bindDouble</span><span class="params">(<span class="keyword">int</span> index, <span class="keyword">double</span> value)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">close</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function">Object <span class="title">getRawStatement</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StandardDatabaseStatement</span> <span class="keyword">implements</span> <span class="title">DatabaseStatement</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> SQLiteStatement delegate;</span><br><span class="line">    <span class="comment">/***部分代码省略***/</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="DatabaseOpenHelper"><a href="#DatabaseOpenHelper" class="headerlink" title="DatabaseOpenHelper"></a>DatabaseOpenHelper</h3><p><code>DatabaseOpenHelper</code>内部<code>SQLiteDataBase</code>改为<code>StandardDatabase</code>进行代理。</p>
+<ul>
+<li>数据库的创建；</li>
+<li>数据库的更新以及版本管理；</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">DatabaseOpenHelper</span> <span class="keyword">extends</span> <span class="title">SQLiteOpenHelper</span> </span>&#123;</span><br><span class="line">    <span class="comment">/***部分代码省略***/</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Database <span class="title">getWritableDb</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> wrap(getWritableDatabase());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> Database <span class="title">getReadableDb</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> wrap(getReadableDatabase());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">protected</span> Database <span class="title">wrap</span><span class="params">(SQLiteDatabase sqLiteDatabase)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> StandardDatabase(sqLiteDatabase);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<center><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTc3NGUxOTFjYjhhMGRiMDEucG5n?x-oss-process=image/format,png#pic_center" alt="greendao.png"></center>
+
+<h2 id="GreenDao访问层"><a href="#GreenDao访问层" class="headerlink" title="GreenDao访问层"></a>GreenDao访问层</h2><p>提供 <code>XXEntity</code> 数据模型对象、数据模型对象的<code>Properties</code>用来做每个字段的快速访问以及操作数据模型的<code>XXEntityDao</code>。</p>
+<center><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTVmN2Y4MTJmMDM5YWIyMzIucG5n?x-oss-process=image/format,png#pic_center" alt="green-entity.png"></center>
+
+<p>上图为<code>XXEntity</code>、<code>XXEntity.Properties</code>、<code>XXEntityDao</code> 的关系和类的相关功能。</p>
+<p>除此之外还未查询提供了 <a href="http://greenrobot.org/greendao/documentation/queries/" target="_blank" rel="noopener">QueryBuilder</a> 方便查询，可进行<code>分页</code>和<code>偏移量</code>的查询设置。还有 <a href="http://greenrobot.org/greendao/documentation/joins/" target="_blank" rel="noopener">join</a> 方法可以进行 <strong>表的关联查询</strong> 。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">QueryBuilder&lt;User&gt; queryBuilder = userDao.queryBuilder();</span><br><span class="line">queryBuilder.join(Address.class, AddressDao.Properties.userId)</span><br><span class="line">     .where(AddressDao.Properties.Street.eq(<span class="string">"Sesame Street"</span>));</span><br><span class="line">List&lt;User&gt; users = queryBuilder.list();</span><br></pre></td></tr></table></figure>
+<h2 id="GreenDao中间层"><a href="#GreenDao中间层" class="headerlink" title="GreenDao中间层"></a>GreenDao中间层</h2><ul>
+<li>数据操作者<code>XXEntityDao</code> 的具体操作 <code>AbstractDao</code>；</li>
+<li><code>XXEntityDao</code> 的管理者 <code>AbstractDaoSession</code>；</li>
+<li>封装过程中的性能优化；</li>
+</ul>
+<center><img src="https://img-blog.csdnimg.cn/20191106205012741.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></center>
+
+<h1 id="GreenDao的优化"><a href="#GreenDao的优化" class="headerlink" title="GreenDao的优化"></a>GreenDao的优化</h1><p><code>GreenDao</code> 的优化主要体现在 <code>DaoConfig</code> 这个类中。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">DaoConfig</span> <span class="keyword">implements</span> <span class="title">Cloneable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> Database db;<span class="comment">//数据库</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> String tablename;<span class="comment">//表名</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> Property[] properties;<span class="comment">//表的属性</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> String[] allColumns;<span class="comment">//表的字段名</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> String[] pkColumns;<span class="comment">//表主键字段名</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> String[] nonPkColumns;<span class="comment">//表的非主键字段名</span></span><br><span class="line">    <span class="comment">/** Single property PK or null if there's no PK or a multi property PK. */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> Property pkProperty;<span class="comment">//表的主键属性，如果有多个或者没有那么为null</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> keyIsNumeric;<span class="comment">//主键是否为数字类型，用来区别缓存容器类型，long和Object</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> TableStatements statements;<span class="comment">//sql语句预编译的Statement</span></span><br><span class="line">    <span class="keyword">private</span> IdentityScope&lt;?, ?&gt; identityScope;<span class="comment">//对应数据对象的缓存容器</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DaoConfig</span><span class="params">(Database db, Class&lt;? extends AbstractDao&lt;?, ?&gt;&gt; daoClass)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.db = db;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">this</span>.tablename = (String) daoClass.getField(<span class="string">"TABLENAME"</span>).get(<span class="keyword">null</span>);</span><br><span class="line">            <span class="comment">//读取对应表的字段属性</span></span><br><span class="line">            Property[] properties = reflectProperties(daoClass);</span><br><span class="line">            <span class="keyword">this</span>.properties = properties;</span><br><span class="line">            allColumns = <span class="keyword">new</span> String[properties.length];</span><br><span class="line">            List&lt;String&gt; pkColumnList = <span class="keyword">new</span> ArrayList&lt;String&gt;();</span><br><span class="line">            List&lt;String&gt; nonPkColumnList = <span class="keyword">new</span> ArrayList&lt;String&gt;();</span><br><span class="line">            Property lastPkProperty = <span class="keyword">null</span>;</span><br><span class="line">            <span class="comment">//循环遍历所有字段，为pkProperty，allColumns，pkColumns，nonPkColumns赋值</span></span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; properties.length; i++) &#123;</span><br><span class="line">                Property property = properties[i];</span><br><span class="line">                String name = property.columnName;</span><br><span class="line">                allColumns[i] = name;</span><br><span class="line">                <span class="keyword">if</span> (property.primaryKey) &#123;</span><br><span class="line">                    pkColumnList.add(name);</span><br><span class="line">                    lastPkProperty = property;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    nonPkColumnList.add(name);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//字段赋值</span></span><br><span class="line">            String[] nonPkColumnsArray = <span class="keyword">new</span> String[nonPkColumnList.size()];</span><br><span class="line">            nonPkColumns = nonPkColumnList.toArray(nonPkColumnsArray);</span><br><span class="line">            String[] pkColumnsArray = <span class="keyword">new</span> String[pkColumnList.size()];</span><br><span class="line">            pkColumns = pkColumnList.toArray(pkColumnsArray);</span><br><span class="line">            pkProperty = pkColumns.length == <span class="number">1</span> ? lastPkProperty : <span class="keyword">null</span>;</span><br><span class="line">            <span class="comment">//sql增删改查语句的预编译，Statement的缓存</span></span><br><span class="line">            statements = <span class="keyword">new</span> TableStatements(db, tablename, allColumns, pkColumns);</span><br><span class="line">            <span class="keyword">if</span> (pkProperty != <span class="keyword">null</span>) &#123;</span><br><span class="line">                Class&lt;?&gt; type = pkProperty.type;</span><br><span class="line">                keyIsNumeric = type.equals(<span class="keyword">long</span>.class) || type.equals(Long.class) || type.equals(<span class="keyword">int</span>.class)</span><br><span class="line">                        || type.equals(Integer.class) || type.equals(<span class="keyword">short</span>.class) || type.equals(Short.class)</span><br><span class="line">                        || type.equals(<span class="keyword">byte</span>.class) || type.equals(Byte.class);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                keyIsNumeric = <span class="keyword">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> DaoException(<span class="string">"Could not init DAOConfig"</span>, e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/***部分代码省略***/</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>增删改查的<code>SQL</code>的预编译的<code>Statement</code>的缓存：<br><code>insertStatement</code>、<code>insertOrReplaceStatement</code>、<code>updateStatement</code>、<code>deleteStatement</code>和<code>countStatement</code> 。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TableStatements</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Database db;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String tablename;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String[] allColumns;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String[] pkColumns;</span><br><span class="line">    <span class="keyword">private</span> DatabaseStatement insertStatement;</span><br><span class="line">    <span class="keyword">private</span> DatabaseStatement insertOrReplaceStatement;</span><br><span class="line">    <span class="keyword">private</span> DatabaseStatement updateStatement;</span><br><span class="line">    <span class="keyword">private</span> DatabaseStatement deleteStatement;</span><br><span class="line">    <span class="keyword">private</span> DatabaseStatement countStatement;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> String selectAll;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> String selectByKey;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> String selectByRowId;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> String selectKeys;</span><br><span class="line">    <span class="comment">/***部分代码省略***/</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> DatabaseStatement <span class="title">getInsertStatement</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (insertStatement == <span class="keyword">null</span>) &#123;</span><br><span class="line">            String sql = SqlUtils.createSqlInsert(<span class="string">"INSERT INTO "</span>, tablename, allColumns);</span><br><span class="line">            DatabaseStatement newInsertStatement = db.compileStatement(sql);</span><br><span class="line">            <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> (insertStatement == <span class="keyword">null</span>) &#123;</span><br><span class="line">                    insertStatement = newInsertStatement;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (insertStatement != newInsertStatement) &#123;</span><br><span class="line">                newInsertStatement.close();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> insertStatement;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>每次数据库操作都使用了事务提高的性能。<br>我们来看一个插入操作的执行过程：</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//AbstractDao.java</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">insert</span><span class="params">(T entity)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> executeInsert(entity, statements.getInsertStatement(), <span class="keyword">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">long</span> <span class="title">executeInsert</span><span class="params">(T entity, DatabaseStatement stmt, <span class="keyword">boolean</span> setKeyAndAttach)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> rowId;</span><br><span class="line">    <span class="keyword">if</span> (db.isDbLockedByCurrentThread()) &#123;</span><br><span class="line">        rowId = insertInsideTx(entity, stmt);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// Do TX to acquire a connection before locking the stmt to avoid deadlocks</span></span><br><span class="line">        <span class="comment">//开起事务</span></span><br><span class="line">        db.beginTransaction();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            rowId = insertInsideTx(entity, stmt);</span><br><span class="line">            <span class="comment">//提交事务</span></span><br><span class="line">            db.setTransactionSuccessful();</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="comment">//关闭事务</span></span><br><span class="line">            db.endTransaction();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (setKeyAndAttach) &#123;</span><br><span class="line">        updateKeyAfterInsertAndAttach(entity, rowId, <span class="keyword">true</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> rowId;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//stmt绑定对应entity的value，并进行数据库写入</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">long</span> <span class="title">insertInsideTx</span><span class="params">(T entity, DatabaseStatement stmt)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (stmt) &#123;</span><br><span class="line">        <span class="keyword">if</span> (isStandardSQLite) &#123;</span><br><span class="line">            SQLiteStatement rawStmt = (SQLiteStatement) stmt.getRawStatement();</span><br><span class="line">            bindValues(rawStmt, entity);</span><br><span class="line">            <span class="keyword">return</span> rawStmt.executeInsert();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            bindValues(stmt, entity);</span><br><span class="line">            <span class="keyword">return</span> stmt.executeInsert();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>数据对象的缓存</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//提供两种配置，缓存和不缓存，在生成DaoSession的时候做的配置</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> IdentityScopeType &#123;</span><br><span class="line">    Session, None</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">IdentityScopeObject</span>&lt;<span class="title">K</span>, <span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">IdentityScope</span>&lt;<span class="title">K</span>, <span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> HashMap&lt;K, Reference&lt;T&gt;&gt; map;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ReentrantLock lock;</span><br><span class="line">    <span class="comment">/***部分代码省略***/</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">IdentityScopeLong</span>&lt;<span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">IdentityScope</span>&lt;<span class="title">Long</span>, <span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="comment">//LongHashMap内部是一个数组，对于索引做了优化</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> LongHashMap&lt;Reference&lt;T&gt;&gt; map;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ReentrantLock lock;</span><br><span class="line">    <span class="comment">/***部分代码省略***/</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用这个缓存有一个问题需要注意，如果直接使用<code>SQL</code>进行的操作是这里的缓存是不会进行更新的。但可以执行<code>refresh</code>更新，或者执行<code>clearIdentityScope</code>之后进行重新<code>load</code>。</p>
+<h1 id="数据库多线程并发操作"><a href="#数据库多线程并发操作" class="headerlink" title="数据库多线程并发操作"></a>数据库多线程并发操作</h1><p><a href="https://dandanlove.blog.csdn.net/article/details/102942832" target="_blank" rel="noopener">Android数据库多线程并发操作异常</a></p>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+<p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：</p>
+<center><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_cente" alt="振兴书城"></center>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/weixinpay.jpeg" alt="振兴 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpeg" alt="振兴 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    振兴
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2019/11/06/sqlite-greendao/" title="Android数据库开源框架GreenDao分析">http://yoursite.com/2019/11/06/sqlite-greendao/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/greendao/" rel="tag"><i class="fa fa-tag"></i> greendao</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/11/06/sqlite-multithread/" rel="next" title="Android数据库多线程并发操作异常">
+                <i class="fa fa-chevron-left"></i> Android数据库多线程并发操作异常
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/11/26/AndroidUniversalImageLoader/" rel="prev" title="Android-Universal-Image-Loader源码分析">
+                Android-Universal-Image-Loader源码分析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/jay.jpg"
+                alt="振兴" />
+            
+              <p class="site-author-name" itemprop="name">振兴</p>
+              <p class="site-description motion-element" itemprop="description">好好学习，天天向上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">74</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">96</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stven0king" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://me.csdn.net/stven_king" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-crosshairs"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/311540b7592b" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-book"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/56824a1900b01b9f2bd94ae8" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-spinner"></i>掘金</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/2520114671/profile?rightmod=1&wvr=6&mod=personinfo" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-weibo"></i>微博</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:stven0king@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                推荐阅读
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://gityuan.com/" title="Gityuan" target="_blank">Gityuan</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.wanandroid.com/index" title="玩Android" target="_blank">玩Android</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.wjdiankong.cn/" title="尼古拉斯.赵四" target="_blank">尼古拉斯.赵四</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Android原始数据库的使用"><span class="nav-number">1.</span> <span class="nav-text">Android原始数据库的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#创建数据库"><span class="nav-number">1.1.</span> <span class="nav-text">创建数据库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#增删改查"><span class="nav-number">1.2.</span> <span class="nav-text">增删改查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能优化"><span class="nav-number">1.3.</span> <span class="nav-text">性能优化</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GreenDao框架分析"><span class="nav-number">2.</span> <span class="nav-text">GreenDao框架分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#数据库框架设计"><span class="nav-number">2.1.</span> <span class="nav-text">数据库框架设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GreenDao底层封装"><span class="nav-number">2.2.</span> <span class="nav-text">GreenDao底层封装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Database"><span class="nav-number">2.2.1.</span> <span class="nav-text">Database</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DatabaseStatement"><span class="nav-number">2.2.2.</span> <span class="nav-text">DatabaseStatement</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DatabaseOpenHelper"><span class="nav-number">2.2.3.</span> <span class="nav-text">DatabaseOpenHelper</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GreenDao访问层"><span class="nav-number">2.3.</span> <span class="nav-text">GreenDao访问层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GreenDao中间层"><span class="nav-number">2.4.</span> <span class="nav-text">GreenDao中间层</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#GreenDao的优化"><span class="nav-number">3.</span> <span class="nav-text">GreenDao的优化</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#数据库多线程并发操作"><span class="nav-number">4.</span> <span class="nav-text">数据库多线程并发操作</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">振兴</span>
+
+  
+</div>
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+<!--
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+-->
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://billts.site/extra_css/gitment.css">
+        <script src="https://billts.site/js/gitment.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitment({
+            id: window.location.pathname, 
+            owner: 'stven0king',
+            repo: 'stven0king.github.io',
+            
+            oauth: {
+            
+            
+                client_secret: '2206c556bf3e1f5967962220c3439f458ed41c7f',
+            
+                client_id: '00c12e7601ea8004b339'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
