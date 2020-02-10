@@ -6,8 +6,7 @@ categories: Android
 description: "Android换肤技术已经是很久之前就已经被成熟使用的技术了，然而我最近才在学习和接触热修复的时候才看到。在看了一些换肤的方法之后，并且对市面上比较认可的Android-Skin-Loader换肤框架的源码进行了分析总结。再次记录一下祭奠自己逝去的时间。"
 ---
 
-<center>![换皮肤啦](http://upload-images.jianshu.io/upload_images/1319879-f50a325cf078154c.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/700)</center>
-
+![换皮肤啦](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktZjUwYTMyNWNmMDc4MTU0Yy5KUEc?x-oss-process=image/format,png#pic_center)
 前言
 ===
 Android换肤技术已经是很久之前就已经被成熟使用的技术了，然而我最近才在学习和接触热修复的时候才看到。在看了一些换肤的方法之后，并且对市面上比较认可的Android-Skin-Loader换肤框架的源码进行了分析总结。再次记录一下祭奠自己逝去的时间。
@@ -546,4 +545,5 @@ public class SkinManager implements ISkinLoader{
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
 
 想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)
