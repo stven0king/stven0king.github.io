@@ -5,7 +5,9 @@ tags: [LayoutInflater,Factory]
 categories: Android
 description: "在我们写listview的adapter的getView方法中我们都会通过LayoutInflater.from(mContext)获取LayoutInflater实例然后调用inflate方法创建View。这个有xml布局文件转化为View对象的过程到底是怎么样的，我们今天通过源码来了解一下。"
 ---
-<center>![奥体公园](http://upload-images.jianshu.io/upload_images/1319879-dc1d123cac6ec4ad.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/720)</center>
+
+![奥体公园](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktZGMxZDEyM2NhYzZlYzRhZC5qcGc?x-oss-process=image/format,png#pic_center)
+
 
 LayoutInflater的获取
 ---
@@ -1074,4 +1076,5 @@ Android应用中的换肤（夜间模式）是不是也利用的是LayoutInflate
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
 
 想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+
+![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)
