@@ -997,7 +997,7 @@ class AppCompatViewInflater {
 在appcompat使用自定义的LayoutInflater.Factory
 ---
 这里我们有两种书写方式：
-
+> 这里必须写在 `super.oncreate` 之前，否则还会继续报错。
 - 继续使用 LayoutInflater.from(this).setFactory 方法。
 
 ```java

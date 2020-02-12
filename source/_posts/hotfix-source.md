@@ -234,6 +234,8 @@ bool AssetManager::addAssetPath(const String8& path, void** cookie)
 
 ```java
 public final class AssetManager {
+    //静态变量
+    static AssetManager sSystem = null;
     /***部分代码省略***/
     //构造方法
     public AssetManager() {
@@ -247,6 +249,7 @@ public final class AssetManager {
     }
     private static void ensureSystemAssets() {
         synchronized (sSync) {
+            //当sSystem不为空时，所以下边这块代码只会走一次
             if (sSystem == null) {
                 AssetManager system = new AssetManager(true);
                 //初始化系统的字符串块
@@ -293,14 +296,18 @@ static jint android_content_AssetManager_getStringBlockCount(JNIEnv* env, jobjec
 
 好了，我们找到了 `ResTable` 的时机，它是发生在java层的 `AssetManager` 构造的时候。
 
+> 看代码注释的朋友，都看到了重要的部分。并非所有的 `AssetManager` 的构造都会调用 `ResTable` ，只有第一个 `AssetManager` 对象产生的时候会调用，所以如果我们想要添加自己资源的时候可以自己创建 `AssetManager` 然后调用 `addAssetPath` 这个时候无论是在 `AndroidL` 之前还是之后都没有问题。
+
 # 结论
+
+以下结论需要大家结合文章来看，因为涉及到的 `Android` 不同版本的代码：
 
 >- Android中进行资源管理的是 `AssetManager`；
 >- 资源由C层 `AssetManager` 的 `ResTable` 提供；
 >- `ResTable` 构造是遍历 `mAssetPaths` 中的资源路径；
 >- AndroidL `addAssetPath` 方法可以直接将资源路添加到 `ResTable` 中使用；
 >- AndroidL之前 `addAssetPath` 方法只是将资源路径添加到了`mAssetPaths` 中；
->- `ResTable` 构造包含在Java层 `AssetManager` 的构造中的；
+>- `ResTable` 构造包含在Java层 `AssetManager` 的构造中的（PS:只有第一个`AssetManager` 的构造会执行）；
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
 
