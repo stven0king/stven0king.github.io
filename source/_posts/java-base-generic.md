@@ -5,7 +5,8 @@ tags: [泛型]
 categories: Java 
 description: "泛型是JDK1.5版本中加入的，在没有泛型之前，从集合中读取到的每一个对象都必须进行转化。如果有人不小心插入了类型错误的对象，在运行时的转化处理就会出错。有了泛型之后，可以告诉变一起每个集合中接受那些对象类型。编译器自动地为你的插入进行转化，并在编译时告知是否插入了类型错误的对象。。。"
 ---
-<center><img src="http://upload-images.jianshu.io/upload_images/1319879-2a8ba439a173436d.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" width="600px" />
+
+![](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktMmE4YmE0MzlhMTczNDM2ZC5KUEc?x-oss-process=image/format,png#pic_center)
 
 泛型是什么
 ===
@@ -492,4 +493,5 @@ public class People<T> {
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
 
 想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)
