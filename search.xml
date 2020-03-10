@@ -1,6 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Gradle自定义Plugin插件和ASM修改字节码</title>
+    <url>/2020/03/09/gradle-plugin-asm/</url>
+    <content><![CDATA[<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>先介绍一下 <code>AOP</code> 和 <code>ASM</code> 的概念，<code>AOP</code> 是一种<strong>面向切面编程，通过预编译方式和运行期动态代理实现程序功能的统一维护的一种技术</strong>。和面向对象编程 的 <code>OOP</code> 相同。<code>ASM</code> 是一个框架可以看作 <code>AOP</code> 的工具，当然 <code>AOP</code> 也有其他工具，比如用的比较多的 <code>AspectJ</code> 、<code>Javassist</code> 、<code>Xposed</code> 和 <code>Dexposed</code> 等。</p>
+<p>这里我们主要介绍一下在自定义<code>Plugin</code> 使用的 <code>ASM</code> :</p>
+<blockquote>
+<p><a href="https://asm.ow2.io/" target="_blank" rel="noopener">ASM</a> 是一个通用的<code>Java</code>字节码操作和分析框架。它可以直接以二进制形式用于修改现有类或动态生成类。 <code>ASM</code>提供了一些常见的字节码转换和分析算法，可以从中构建定制的复杂转换和代码分析工具。 <code>ASM</code>提供与其他<code>Java字</code>节码框架类似的功能，但侧重于性能。因为它的设计和实现是尽可能的小和尽可能快，所以它非常适合在动态系统中使用（但当然也可以以静态方式使用，例如在编译器中）。</p>
+</blockquote>
+<h1 id="自定义plugin开发"><a href="#自定义plugin开发" class="headerlink" title="自定义plugin开发"></a>自定义plugin开发</h1><p><code>Gradle</code>从1.5开始，<code>Gradle</code>插件包含了一个叫<code>Transform</code>的API，这个API允许第三方插件在<code>class</code>文件转为为<code>dex</code>文件前操作编译好的<code>class</code>文件，这个API的目标是简化自定义类操作，而不必处理<code>Task</code>，并且在操作上提供更大的灵活性。并且可以更加灵活地进行操作。官方文档：<a href="http://google.github.io/android-gradle-dsl/javadoc/" target="_blank" rel="noopener">http://google.github.io/android-gradle-dsl/javadoc/</a></p>
+<h2 id="创建插件"><a href="#创建插件" class="headerlink" title="创建插件"></a>创建插件</h2><p>在 <code>AndroidStudio</code> 中创建一个纯净的<code>Module</code> ，删除 <code>res</code> 文件夹和 <code>AndroidManifest.xml</code> 文件。</p>
+<p><strong>Gradle会默认在配置初始化前，编译buildSrc这个项目，可以是java、groovy、kotlin项目，并把项目配置到classpath下。</strong>所以如果<code>Module</code> 命名为 <code>buildSrc</code> 那么不需要在 <code>Project</code> 级别的 <code>build.gradle</code> 文件中使用 <code>classpath</code> 引入，也不需要在 <code>app</code> 级别的 <code>build.gradle</code> 文件中使用 <code>apply plugin:</code> 进行应用。  </p>
+<p>下面我们介绍的是自定义的 <code>Plugin</code> 插件，是编译之后需要引入项目的。</p>
+<blockquote>
+<p>类继承<code>Plugin</code> </p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AmsPlugin</span> <span class="keyword">implements</span> <span class="title">Plugin</span>&lt;<span class="title">Project</span>&gt; </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">apply</span><span class="params">(@NonNull Project project)</span> </span>&#123;</span><br><span class="line">        AppExtension appExtension = project.getExtensions().findByType(AppExtension.class);</span><br><span class="line">        <span class="keyword">assert</span> appExtension != <span class="keyword">null</span>;</span><br><span class="line">        <span class="comment">//注册task任务</span></span><br><span class="line">        appExtension.registerTransform(<span class="keyword">new</span> AmsTransform(project));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AmsTransform</span> <span class="keyword">extends</span> <span class="title">Transform</span></span>&#123;</span><br><span class="line">  	<span class="comment">/***部分代码省略***/</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><code>build.gradle</code> 文件配置</p>
+</blockquote>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LWE4YTkxODBiODUzYzIxODkucG5n?x-oss-process=image/format,png#pic_center" alt="uploadArchives.png"></p>
+<blockquote>
+<p>配置<code>properties</code></p>
+</blockquote>
+<p>在 <code>/src/main/resources/META-INF/gradle-plugins</code> 目录下创建<code>xxx.properties</code> 文件，这个 <code>xxx</code> 就是以后项目<code>build.gradle</code> 文件中需要<code>apply</code> 的插件名称。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">implementation-class=com.tzx.ams.plugin.AmsPlugin</span><br></pre></td></tr></table></figure>
+<p><code>com.tzx.ams.plugin.AmsPlugin</code> 就是插件对应的类。</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTI4MmY0MTVhMzdkYzRlZTQucG5n?x-oss-process=image/format,png#pic_center" alt="properties.png"></p>
+<h2 id="生成插件"><a href="#生成插件" class="headerlink" title="生成插件"></a>生成插件</h2><p>我们在执行 <code>uploadArchives</code> 的任务的时候就在我们对于的仓库生成了我们需要的插件。</p>
+<h2 id="在项目中引入插件"><a href="#在项目中引入插件" class="headerlink" title="在项目中引入插件"></a>在项目中引入插件</h2><blockquote>
+<p>项目的根 <code>build.gradle</code>配置</p>
+</blockquote>
+<figure class="highlight groovy"><table><tr><td class="code"><pre><span class="line">buildscript &#123;</span><br><span class="line">    repositories &#123;</span><br><span class="line">        maven &#123;<span class="comment">//添加repo本地仓库</span></span><br><span class="line">            url uri(<span class="string">"repo"</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        google()</span><br><span class="line">        jcenter()</span><br><span class="line">    &#125;</span><br><span class="line">    dependencies &#123;</span><br><span class="line">        classpath <span class="string">'com.android.tools.build:gradle:3.5.3'</span></span><br><span class="line">        <span class="comment">//添加插件依赖</span></span><br><span class="line">        classpath <span class="string">'com.tzx.ams:ams-plugin:1.0.0'</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>项目的 <code>build.gradle</code> 配置</p>
+</blockquote>
+<figure class="highlight groovy"><table><tr><td class="code"><pre><span class="line">apply <span class="string">plugin:</span> <span class="string">'com.android.application'</span></span><br><span class="line">apply <span class="string">plugin:</span> <span class="string">'amsplugin'</span></span><br><span class="line"><span class="comment">/***部分代码省略***/</span></span><br></pre></td></tr></table></figure>
+<h1 id="plugin自定义配置"><a href="#plugin自定义配置" class="headerlink" title="plugin自定义配置"></a>plugin自定义配置</h1><blockquote>
+<p>配置类</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AmsConfig</span> </span>&#123;</span><br><span class="line">    <span class="comment">//日志开关</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">boolean</span> isDebug;</span><br><span class="line">    <span class="comment">//class包含str则不处理</span></span><br><span class="line">    <span class="keyword">public</span> String[] filterContainsClassStr;</span><br><span class="line">    <span class="comment">//class以str开头则不处理</span></span><br><span class="line">    <span class="keyword">public</span> String[] filterstartsWithClassStr;</span><br><span class="line">    <span class="comment">//拦截在这个文件中声明的class</span></span><br><span class="line">    <span class="keyword">public</span> String filterClassFile;</span><br><span class="line">    <span class="keyword">public</span> List&lt;String&gt; filterClassNameList;</span><br><span class="line">    <span class="comment">//需要进行注入的method</span></span><br><span class="line">    <span class="keyword">public</span> String amsMethodFile;</span><br><span class="line">    <span class="comment">//需要进行注入的method对应的tag</span></span><br><span class="line">    <span class="keyword">public</span> String amsMethodTag;</span><br><span class="line">    <span class="keyword">public</span> List&lt;Pair&lt;String, String&gt;&gt; amsMethodFileList;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>创建<code>AmsConfig</code> 的类对象</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AmsPlugin</span> <span class="keyword">implements</span> <span class="title">Plugin</span>&lt;<span class="title">Project</span>&gt; </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">apply</span><span class="params">(@NonNull Project project)</span> </span>&#123;</span><br><span class="line">        AppExtension appExtension = project.getExtensions().findByType(AppExtension.class);</span><br><span class="line">        <span class="keyword">assert</span> appExtension != <span class="keyword">null</span>;</span><br><span class="line">        <span class="comment">//注册优先于task任务的添加</span></span><br><span class="line">        project.getExtensions().create(<span class="string">"AmsConfig"</span>, AmsConfig.class);</span><br><span class="line">        appExtension.registerTransform(<span class="keyword">new</span> AmsTransform(project));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><code>build.gradle</code> 文件中定义配置（如果gradle中没有定义，那么会反射构造一个对象）</p>
+</blockquote>
+<figure class="highlight groovy"><table><tr><td class="code"><pre><span class="line">apply <span class="string">plugin:</span> <span class="string">'com.android.application'</span></span><br><span class="line">apply <span class="string">plugin:</span> <span class="string">'amsplugin'</span></span><br><span class="line">AmsConfig&#123;</span><br><span class="line">    isDebug = <span class="literal">true</span></span><br><span class="line">    filterContainsClassStr = [<span class="string">"R.class"</span>, <span class="string">".R\$"</span>]</span><br><span class="line">    filterstartsWithClassStr = [<span class="string">"android"</span>]</span><br><span class="line">    filterClassFile = <span class="string">"amsfilterclass.text"</span><span class="comment">//build.gradle相同目录级别的文件名</span></span><br><span class="line">    amsMethodFile = <span class="string">"amsmethods.text"</span><span class="comment">//build.gradle相同目录级别的文件名</span></span><br><span class="line">    amsMethodTag = <span class="string">"TEST"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>获取<code>gradle</code> 中定义的配置</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">AmsConfig amsConfig = (AmsConfig) <span class="keyword">this</span>.project.getExtensions().getByName(AmsConfig.class.getSimpleName());</span><br><span class="line"><span class="comment">//配置文件的获取</span></span><br><span class="line">String projectDri = <span class="keyword">this</span>.project.getProjectDir().getAbsolutePath()</span><br><span class="line">String fileName = projectDri + File.separatorChar + amsConfig.filterClassFile;</span><br></pre></td></tr></table></figure>
+<p>这个 <code>amsConfig</code> 在使用的时候不用判空，如果调用<code>project.getExtensions().create</code> 添加了那么就会反射构造出这个对象。如果<code>gradle</code> 文件中定义了，那么这个对象就会被赋与相应的属性值。</p>
+<p>如果在获取的时候，没有被<code>create</code>那么就会跑出一下异常：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">* Where:</span><br><span class="line">Build file &apos;/Users/tanzx/AndroidStudioWorkSpace/GitHub/AmsDemo/app/build.gradle&apos; line: 3</span><br><span class="line">* What went wrong:</span><br><span class="line">A problem occurred evaluating project &apos;:app&apos;.</span><br><span class="line">&gt; Could not find method AmsConfig() for arguments [build_5n6idkxwtmzfflm5k30ynjblo$_run_closure1@2cf1f355] on project &apos;:app&apos; of type org.gradle.api.Project</span><br></pre></td></tr></table></figure>
+<p><a href="https://github.com/stven0king/AndroidPluginStudy" target="_blank" rel="noopener">代码传送门，拿走不谢^^！</a></p>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+<p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center" alt="振兴书城"></p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>泛型</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Picasso源码分析和对比</title>
     <url>/2019/12/30/picasso/</url>
     <content><![CDATA[<p>前面的 <a href="https://dandanlove.blog.csdn.net/article/details/103256724" target="_blank" rel="noopener">Android-Universal-Image-Loader源码分析</a> 和 <a href="https://dandanlove.blog.csdn.net/article/details/103564516" target="_blank" rel="noopener">Glide源码阅读理解一小时</a> 分别讲述了五年前和现在最受欢迎的 <code>Android</code> 图片加载库。今天讲述的<code>picasso</code>是<code>Square</code>公司开源的一个<code>Android</code>图片加载库，可以实现图片下载和缓存功能。它 <code>ImageLoader</code> 和 <code>Glide</code> 的都有些相同和和不同点以及自己独特的点。</p>
@@ -2090,9 +2157,9 @@
         <category>Android</category>
       </categories>
       <tags>
+        <tag>byte</tag>
         <tag>Bitmap</tag>
         <tag>base64</tag>
-        <tag>byte</tag>
       </tags>
   </entry>
   <entry>
@@ -4376,7 +4443,7 @@
   <entry>
     <title>JAVA回忆录之泛型篇</title>
     <url>/2017/08/18/java-base-generic/</url>
-    <content><![CDATA[<p><center><img src="http://upload-images.jianshu.io/upload_images/1319879-2a8ba439a173436d.JPG?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" width="600px"></center></p>
+    <content><![CDATA[<p><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktMmE4YmE0MzlhMTczNDM2ZC5KUEc?x-oss-process=image/format,png#pic_center" alt=""></p>
 <h1 id="泛型是什么"><a href="#泛型是什么" class="headerlink" title="泛型是什么"></a>泛型是什么</h1><p>泛型是JDK1.5版本中加入的，在没有泛型之前，从集合中读取到的每一个对象都必须进行转化。如果有人不小心插入了类型错误的对象，在运行时的转化处理就会出错。有了泛型之后，可以告诉变一起每个集合中接受那些对象类型。编译器自动地为你的插入进行转化，并在编译时告知是否插入了类型错误的对象。</p>
 <p>泛型最精准的定义：参数化类型。具体点说就是处理的数据类型不是固定的，而是可以作为参数传入。定义泛型类、泛型接口、泛型方法，这样，同一套代码，可以用于多种数据类型。</p>
 <blockquote>
@@ -4461,7 +4528,7 @@
 <p>泛型在我们编码的过程中，特别是写一些框架或者通用组件时是非常有帮助的。</p>
 <p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
 <p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：</p>
-<p><center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center></p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center" alt="振兴书城"></p>
 ]]></content>
       <categories>
         <category>Java</category>
@@ -5199,6 +5266,22 @@ Looper在Android的消息机制中扮演着消息循环的角色，具体来说�
       </tags>
   </entry>
   <entry>
+    <title>python、main函数和argv参数</title>
+    <url>/2017/02/08/python-main-argvs/</url>
+    <content><![CDATA[<p>笔者学习和使用过的语言中：C语言，C++语言，C#语言，Java语言都时有main函数在的，main是程序执行的起点，Python中，也有类似的运行机制，但方式却截然不同：Python使用缩进对齐组织代码的执行，所有没有缩进的代码（非函数定义和类定义），都会在载入时自动执行，这些代码，可以认为是Python的main函数。</p>
+<p>举个列子，我们可以清楚的了解：<br><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ cat test.py </span><br><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">	print(<span class="string">'world~!'</span>)</span><br><span class="line">print(<span class="string">'hello'</span>)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	main()</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ python test.py </span><br><span class="line">hello</span><br><span class="line">world~!</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line">&gt; 这样看来是否main函数没有多大的作用呢？</span><br><span class="line"></span><br><span class="line">每个文件（模块）都可以任意写一些没有缩进的代码，并且在载入时自动执行，为了区分主执行文件还是被调用的文件，Python引入了一个变量__name__，当文件是被调用时，__name__的值为模块名，当文件被执行时，__name__为<span class="string">'__main__'</span>。这个特性，我们可以在每个模块中写上测试代码，这些测试代码仅当模块被Python直接执行时才会运行，代码和测试完美的结合在一起。</span><br><span class="line"></span><br><span class="line">```python</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ cat test.py </span><br><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">(argv)</span>:</span></span><br><span class="line">	<span class="keyword">if</span> argv == <span class="keyword">None</span>:</span><br><span class="line">		print(<span class="string">'world~!'</span>)</span><br><span class="line">	<span class="keyword">else</span>:</span><br><span class="line">		print(argv)</span><br><span class="line">print(<span class="string">'hello'</span>)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	main(sys.argv)</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ python test.py Tom</span><br><span class="line">hello</span><br><span class="line">[<span class="string">'test.py'</span>, <span class="string">'Tom'</span>]</span><br></pre></td></tr></table></figure></p>
+<p>想阅读作者的更多文章，可以查看我的公共号：</p>
+<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>python</tag>
+        <tag>mian</tag>
+        <tag>argv</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>python2 import urllib2报错</title>
     <url>/2017/02/08/python2-import-urllib2-error/</url>
     <content><![CDATA[<p>这段时间想玩玩python网页信息爬取，在使用urllib2这个库的时候导入失败，提示信息为：<br><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">im@<span class="number">58</span>user:~/PythonProjects/IOTest$ python</span><br><span class="line">Python <span class="number">2.7</span><span class="number">.6</span> (default, Oct <span class="number">26</span> <span class="number">2016</span>, <span class="number">20</span>:<span class="number">30</span>:<span class="number">19</span>) </span><br><span class="line">[GCC <span class="number">4.8</span><span class="number">.4</span>] on linux2</span><br><span class="line">Type <span class="string">"help"</span>, <span class="string">"copyright"</span>, <span class="string">"credits"</span> <span class="keyword">or</span> <span class="string">"license"</span> <span class="keyword">for</span> more information.</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> urllib2</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">  File <span class="string">"/usr/lib/python2.7/urllib2.py"</span>, line <span class="number">94</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">    <span class="keyword">import</span> httplib</span><br><span class="line">  File <span class="string">"/usr/lib/python2.7/httplib.py"</span>, line <span class="number">80</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">    <span class="keyword">import</span> mimetools</span><br><span class="line">  File <span class="string">"/usr/lib/python2.7/mimetools.py"</span>, line <span class="number">6</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">    <span class="keyword">import</span> tempfile</span><br><span class="line">  File <span class="string">"/usr/lib/python2.7/tempfile.py"</span>, line <span class="number">32</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">    <span class="keyword">import</span> io <span class="keyword">as</span> _io</span><br><span class="line">  File <span class="string">"io.py"</span>, line <span class="number">3</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">    os.remove(f)</span><br><span class="line">NameError: name <span class="string">'f'</span> <span class="keyword">is</span> <span class="keyword">not</span> defined</span><br></pre></td></tr></table></figure></p>
@@ -5213,22 +5296,6 @@ Looper在Android的消息机制中扮演着消息循环的角色，具体来说�
       <tags>
         <tag>python2</tag>
         <tag>urllib1L</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>python、main函数和argv参数</title>
-    <url>/2017/02/08/python-main-argvs/</url>
-    <content><![CDATA[<p>笔者学习和使用过的语言中：C语言，C++语言，C#语言，Java语言都时有main函数在的，main是程序执行的起点，Python中，也有类似的运行机制，但方式却截然不同：Python使用缩进对齐组织代码的执行，所有没有缩进的代码（非函数定义和类定义），都会在载入时自动执行，这些代码，可以认为是Python的main函数。</p>
-<p>举个列子，我们可以清楚的了解：<br><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ cat test.py </span><br><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">	print(<span class="string">'world~!'</span>)</span><br><span class="line">print(<span class="string">'hello'</span>)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	main()</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ python test.py </span><br><span class="line">hello</span><br><span class="line">world~!</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line">&gt; 这样看来是否main函数没有多大的作用呢？</span><br><span class="line"></span><br><span class="line">每个文件（模块）都可以任意写一些没有缩进的代码，并且在载入时自动执行，为了区分主执行文件还是被调用的文件，Python引入了一个变量__name__，当文件是被调用时，__name__的值为模块名，当文件被执行时，__name__为<span class="string">'__main__'</span>。这个特性，我们可以在每个模块中写上测试代码，这些测试代码仅当模块被Python直接执行时才会运行，代码和测试完美的结合在一起。</span><br><span class="line"></span><br><span class="line">```python</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ cat test.py </span><br><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">(argv)</span>:</span></span><br><span class="line">	<span class="keyword">if</span> argv == <span class="keyword">None</span>:</span><br><span class="line">		print(<span class="string">'world~!'</span>)</span><br><span class="line">	<span class="keyword">else</span>:</span><br><span class="line">		print(argv)</span><br><span class="line">print(<span class="string">'hello'</span>)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	main(sys.argv)</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ python test.py Tom</span><br><span class="line">hello</span><br><span class="line">[<span class="string">'test.py'</span>, <span class="string">'Tom'</span>]</span><br></pre></td></tr></table></figure></p>
-<p>想阅读作者的更多文章，可以查看我的公共号：</p>
-<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>python</tag>
-        <tag>mian</tag>
-        <tag>argv</tag>
       </tags>
   </entry>
   <entry>
