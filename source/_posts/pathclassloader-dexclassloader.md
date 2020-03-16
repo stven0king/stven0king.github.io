@@ -5,21 +5,19 @@ tags: [PathClassLoader,DexClassLoader]
 categories: Android
 description: " 上一章节我们讨论了JVM的类加载机制，那么Android中的类加载是什么样的呢？两者有什么相同和不同？"
 ---
-![北京的初雪.jpg](http://upload-images.jianshu.io/upload_images/1319879-10c40968b6c6edcf.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-上一篇文章 [自定义ClassLoader和双亲委派机制](/2017/02/23/java-classloader/) 讲述了JVM中的类的加载机制，Android也是类JVM虚拟机那么它的类加载机制是什么呢，我们来探究一下(PS：文章源码为Android5.1)。
+![北京的初雪.jpg](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktMTBjNDA5NjhiNmM2ZWRjZi5qcGc?x-oss-process=image/format,png#pic_center=200x300)
 
-前言
----
-Android的Dalvik虚拟机和Java虚拟机的运行原理相同都是将对应的java类加载在内存中运行。而Java虚拟机是加载class文件，也可以将一段二进制流通过defineClass方法生产Class进行加载（PS: [自定义ClassLoader和双亲委派机制](/2017/02/23/java-classloader/) 文章后面的自定义类加载器就是通过这种方式实现的）。Dalvik虚拟机加载的dex文件。dex文件是Android对与Class文件做的优化，以便于提高手机的性能。可以想象dex为class文件的一个压缩文件。dex在Android中的加载和class在jvm中的相同都是基于双亲委派模型，都是调用ClassLoader的loadClass方法加载类。
+上一篇文章 [自定义ClassLoader和双亲委派机制](http://www.jianshu.com/p/a8371d26f848) 讲述了 `JVM` 中的类的加载机制，`Android` 也是类 `JVM` 虚拟机那么它的类加载机制是什么呢，我们来探究一下(PS：文章源码为 `Android5.1` )。
 
-Android系统中类加载的双亲委派机制
----
-- Android5.1源码中ClassLoader的loadClass方法
+# 前言
+`Android` 的 `Dalvik` 虚拟机和 `Java` 虚拟机的运行原理相同都是将对应的 `java` 类加载在内存中运行。而 `Java` 虚拟机是加载 `class` 文件，也可以将一段二进制流通过 `defineClass` 方法生产 `Class` 进行加载（PS: [自定义ClassLoader和双亲委派机制](http://www.jianshu.com/p/a8371d26f848) 文章后面的自定义类加载器就是通过这种方式实现的）。`Dalvik` 虚拟机加载的 `dex` 文件。`dex` 文件是 `Android` 对与 `Class` 文件做的优化，以便于提高手机的性能。可以想象 `dex` 为 `class` 文件的一个压缩文件。`dex` 在 `Android` 中的加载和 `class` 在 `jvm` 中的相同都是基于双亲委派模型，都是调用`ClassLoader` 的 `loadClass` 方法加载类。
+
+# Android系统中类加载的双亲委派机制
+- `Android5.1` 源码中 `ClassLoader` 的 `loadClass` 方法
 ```java
 protected Class<?> loadClass(String className, boolean resolve) throws ClassNotFoundException {
         Class<?> clazz = findLoadedClass(className);
-
         if (clazz == null) {
             ClassNotFoundException suppressed = null;
             try {
@@ -40,27 +38,26 @@ protected Class<?> loadClass(String className, boolean resolve) throws ClassNotF
         }
 ```
 
-- 想要动态加载类，可以用 [自定义ClassLoader和双亲委派机制](/2017/02/23/java-classloader/) 中自定义ClassLoader的方法加载自己定义的class文件么？看看Android源码中的ClassLoader的findClass方法：
+- 想要动态加载类，可以用 [自定义ClassLoader和双亲委派机制](http://www.jianshu.com/p/a8371d26f848) 中自定义 `ClassLoader` 的方法加载自己定义的 `class` 文件么？看看 `Android` 源码中的` ClassLoader ` 的 `findClass` 方法：
+
 ```java
 protected Class<?> findClass(String className) throws ClassNotFoundException {
         throw new ClassNotFoundException(className);
-    }
+}
 ```
-这个方法直接抛出了“ClassNotFoundException”异常，所以在Android中想通过这种方式实现类的加载时不行的。
 
-Android系统中的类加载器
----
-- Android系统屏蔽了ClassLoader的findClass加载方法，那么它自己的类加载时通过什么样的方式实现的呢？
- - Android系统中有两个类加载器分别为PathClassLoader和DexclassLoader。
- - PathClassLoader和DexClassLoader都是继承与BaseDexClassLoader，BaseDexClassLoader继承与ClassLoader。
+这个方法直接抛出了 `ClassNotFoundException` 异常，所以在 `Android` 中想通过这种方式实现类的加载时不行的。
 
-提出问题
-===
-在这里我们先提一个问题Android为什么会将自己的类加载器派生出两个不同的子类，它们各自有什么用？
+# Android系统中的类加载器
+- `Android` 系统屏蔽了 `ClassLoader` 的 `findClass` 加载方法，那么它自己的类加载时通过什么样的方式实现的呢？
+ - `Android` 系统中有两个类加载器分别为 `PathClassLoader` 和 `DexclassLoader`。
+ - `PathClassLoader` 和 `DexClassLoader` 都是继承与`BaseDexClassLoader`，`BaseDexClassLoader` 继承与 `ClassLoader`。
 
-BaseDexClassLoader类加载
----
-- 作为ClassLoader的子类，复写了父类的findClass方法。
+## 提出问题
+在这里我们先提一个问题 `Android` 为什么会将自己的类加载器派生出两个不同的子类，它们各自有什么用？
+
+### BaseDexClassLoader类加载
+- 作为 `ClassLoader` 的子类，复写了父类的 `findClass` 方法。
 ```java
 @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -78,7 +75,8 @@ BaseDexClassLoader类加载
     }
 ```
 
-- DexPathList的findClass方法
+- `DexPathList` 的 `findClass` 方法
+
 ```java
 public Class findClass(String name, List<Throwable> suppressed) {
         //循环便利成员变量dexElements，调用DexFile.loadClassBinaryName加载class
@@ -99,12 +97,12 @@ public Class findClass(String name, List<Throwable> suppressed) {
     }
 ```
 
-通过以上两段代码我们可以看出，虽然Android中的ClassLoader的findClass方法的实现被取消了，但是ClassLoader的基类BaseDexClassLoader实现了findClass方法取加载指定的Class。
+通过以上两段代码我们可以看出，虽然 `Android` 中的 `ClassLoader` 的`findClass` 方法的实现被取消了，但是 `ClassLoader` 的基类 `BaseDexClassLoader` 实现了 `findClass` 方法取加载指定的 `Class`。
 
-PathClassLoader和DexClassLoader比较
----
+### PathClassLoader和DexClassLoader比较
 
-- PathClassLoader
+- `PathClassLoader`
+
 ```java
 public class PathClassLoader extends BaseDexClassLoader {
     public PathClassLoader(String dexPath, ClassLoader parent) {
@@ -117,7 +115,8 @@ public class PathClassLoader extends BaseDexClassLoader {
 }
 ```
 
-- DexClassLoader
+- `DexClassLoader`
+
 ```java
 public class DexClassLoader extends BaseDexClassLoader {
     public DexClassLoader(String dexPath, String optimizedDirectory,
@@ -127,20 +126,15 @@ public class DexClassLoader extends BaseDexClassLoader {
 }
 ```
 
-- BaseDexClassLoader的构造函数
+- `BaseDexClassLoader` 的构造函数
+
 ```java
     /**
-     * Constructs an instance.
-     *
-     * @param dexPath the list of jar/apk files containing classes and
-     * resources, delimited by {@code File.pathSeparator}, which
-     * defaults to {@code ":"} on Android
-     * @param optimizedDirectory directory where optimized dex files
-     * should be written; may be {@code null}
-     * @param libraryPath the list of directories containing native
-     * libraries, delimited by {@code File.pathSeparator}; may be
-     * {@code null}
-     * @param parent the parent class loader
+     * 构造方法
+     * @param dexPath 包含类和资源的jar/apk文件列表，Android中使用“:”拆分
+     * @param optimizedDirectory 优化的dex文件所在的目录，可以为空；
+     * @param libraryPath 动态库路径，可以为空；
+     * @param parent 父类加载器
      */
 public BaseDexClassLoader(String dexPath, File optimizedDirectory,
             String libraryPath, ClassLoader parent) {
@@ -148,15 +142,17 @@ public BaseDexClassLoader(String dexPath, File optimizedDirectory,
         this.pathList = new DexPathList(this, dexPath, libraryPath, optimizedDirectory);
     }
 ```
-> - dexPath:指定的是dex文件地址，多个地址可以用":"进行分隔
- - optimizedDirectory:制定输出dex优化后的odex文件，可以为null
- - libraryPath:动态库路径（将被添加到app动态库搜索路径列表中）
- - parent:制定父类加载器，以保证双亲委派机制从而实现每个类只加载一次。
 
-可以看出 PathClassLoader和DexClassLoader的区别就在于构造函数中optimizedDirectory这个参数。PathClassLoader中optimizedDirectory为null，DexClassLoader中为new File(optimizedDirectory)。
+> - `dexPath`：指定的是`dex`文件地址，多个地址可以用":"进行分隔
+>  - `optimizedDirectory`：制定输出 `dex` 优化后的 `odex` 文件，可以为`null`
+>  - `libraryPath` ：动态库路径（将被添加到 `app` 动态库搜索路径列表中）
+>  - `parent` ：制定父类加载器，以保证双亲委派机制从而实现每个类只加载一次。
 
-- optimizedDirectory的干活
-BaseDexClassLoader的构造函数利用optimizedDirectory创建了一个DexPathList，看看DexPathList中optimizedDirectory:
+可以看出 `PathClassLoader` 和 `DexClassLoader` 的区别就在于构造函数中 `optimizedDirectory` 这个参数。`PathClassLoader` 中 `optimizedDirectory` 为 `null`，`DexClassLoader` 中为 `new File(optimizedDirectory)`。
+
+### `optimizedDirectory` 的作用
+
+ `BaseDexClassLoader` 的构造函数利用 `optimizedDirectory` 创建了一个`DexPathList`，看看 `DexPathList` 中 `optimizedDirectory`:
 
 ```java
 public DexPathList(ClassLoader definingContext, String dexPath,
@@ -210,29 +206,17 @@ private static DexFile loadDexFile(File file, File optimizedDirectory)
 }
 ```
 
-从这里可以看出optimizedDirectory不同生产的DexFile对象不同，我们继续看看optimizedDirectory在DexFile中的作用：
+从这里可以看出 `optimizedDirectory` 不同生产的 `DexFile` 对象不同，我们继续看看 `optimizedDirectory` 在 `DexFile` 中的作用：
 
 ```java
 public DexFile(File file) throws IOException {
     this(file.getPath());
 }
-
 /**
- * Opens a DEX file from a given filename. This will usually be a ZIP/JAR
- * file with a "classes.dex" inside.
- *
- * The VM will generate the name of the corresponding file in
- * /data/dalvik-cache and open it, possibly creating or updating
- * it first if system permissions allow.  Don't pass in the name of
- * a file in /data/dalvik-cache, as the named file is expected to be
- * in its original (pre-dexopt) state.
- *
- * @param fileName
- *            the filename of the DEX file
- *
- * @throws IOException
- *             if an I/O error occurs, such as the file not being found or
- *             access rights missing for opening it
+ * 从给定的File对象打开一个DEX文件。这通常是一个ZIP/JAR 文件，其中包含“classes.dex”。
+ * VM将在/data/dalvik-cache中生成相应文件的名称，然后打开它，如果允许系统权限，可能会首先创建或更新它。不要在/data/dalvik-cache中传递文件名，因为预期该命名文件为原始状态（pre-dexopt）。
+ * @param fileName 引用实际DEX文件的File对象
+ * @throws IOException 找不到文件或*打开文件缺少访问权限，回抛出io异常
  */
 public DexFile(String fileName) throws IOException {
     mCookie = openDexFile(fileName, null, 0);
@@ -242,15 +226,10 @@ public DexFile(String fileName) throws IOException {
 }
 
 /**
- * Opens a DEX file from a given filename, using a specified file
- * to hold the optimized data.
- *
- * @param sourceName
- *  Jar or APK file with "classes.dex".
- * @param outputName
- *  File that will hold the optimized form of the DEX data.
- * @param flags
- *  Enable optional features.
+ * 打开一个DEX文件。返回的值是VM cookie
+ * @param sourceName Jar或APK文件包含“ classes.dex”。
+ * @param outputName 包含优化形式的DEX数据的文件。
+ * @param flags 启用可选功能。
  */
 private DexFile(String sourceName, String outputName, int flags) throws IOException {
     if (outputName != null) {
@@ -265,7 +244,6 @@ private DexFile(String sourceName, String outputName, int flags) throws IOExcept
             // assume we'll fail with a more contextual error later
         }
     }
-
     mCookie = openDexFile(sourceName, outputName, flags);
     mFileName = sourceName;
     guard.open("close");
@@ -276,24 +254,35 @@ static public DexFile loadDex(String sourcePathName, String outputPathName,
     int flags) throws IOException {
     return new DexFile(sourcePathName, outputPathName, flags);
 }
+
+//打开dex的native方法，/art/runtime/native/dalvik_system_DexFile.cc
+private static native long openDexFileNative(String sourceName, String outputName, int flags);
+//打开一个DEX文件。返回的值是VM cookie。 失败时，将引发IOException。
+private static long openDexFile(String sourceName, String outputName, int flags) throws IOException {
+    // Use absolute paths to enable the use of relative paths when testing on host.
+    return openDexFileNative(new File(sourceName).getAbsolutePath(),
+                                (outputName == null) ? null : new File(outputName).getAbsolutePath(),
+                                flags);
+}
 ```
 
-从注释当中就可以看到`new DexFile(file)`的dex输出路径只能为`/data/dalvik-cache`，而`DexFile.loadDex()`的dex输出路径为自己输入的optimizedDirectory路径。
+从注释当中就可以看到 `new DexFile(file)` 的dex输出路径只能为 `/data/dalvik-cache`，而 `DexFile.loadDex()` 的 `dex` 输出路径为自己输入的`optimizedDirectory` 路径。
 
-![dalvik-cache.jpg](http://upload-images.jianshu.io/upload_images/1319879-897567743fc325af.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![dalvik-cache.jpg](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktODk3NTY3NzQzZmMzMjVhZi5qcGc?x-oss-process=image/format,png#pic_center)
 
-解决疑问
-===
+## 解决疑问
 我们在文章开始提出的问题就这样一步步得到了答案。
-> DexClassLoader：能够加载自定义的jar/apk/dex
- PathClassLoader：只能加载系统中已经安装过的apk
-所以Android系统默认的类加载器为PathClassLoader，而DexClassLoader可以像JVM的ClassLoader一样提供动态加载。
+>- `DexClassLoader`：能够加载自定义的`jar/apk/dex` ;
+>- `PathClassLoader`：只能加载系统中已经安装过的`apk` ，因为它的 `optimizedDirectory` 没法自己设定;
 
-总结
----
-- ClassLoader的loadClass方法保证了双亲委派机。
-- BaseDexClassLoader提供了两种派生类使我们可以加载自定义类。
+所以 `Android` 系统默认的类加载器为 `PathClassLoader`，而`DexClassLoader` 可以像 `JVM` 的 `ClassLoader` 一样提供动态加载。
 
+# 总结
+- `ClassLoader` 的 `loadClass` 方法保证了双亲委派机。
+- `BaseDexClassLoader` 提供了两种派生类使我们可以加载自定义类。
 
-想阅读作者的更多文章，可以查看我的公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
+
+想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
+
+![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)
