@@ -6,15 +6,15 @@ categories: Android
 description: "文章Activity中的Window的setContentView、遇见LayoutInflater&Factory、ViewRootImpl的独白，我不是一个View(布局篇) 分别讲述了Activity的setContentView添加View、LayoutInflater布局解析以及添加Window。文章内容都是站在Activity的角度来进行代码解析的，因此我们不再对Dialog和Toast与Activity做具体分析，主要来看看它们与Activity有什么不同之处。源码:android-22。"
 ---
 
-前言
-===
-文章[Activity中的Window的setContentView](http://dandanlove.com/2017/11/10/activity-setcontentview/)、[遇见LayoutInflater&Factory](http://dandanlove.com/2017/11/15/layoutinflater-factory/)、[ViewRootImpl的独白，我不是一个View(布局篇)](http://dandanlove.com/2017/12/11/viewrootimpl-activity/) 分别讲述了Activity的`setContentView添加View`、`LayoutInflater布局解析`以及`添加Window`。文章内容都是站在Activity的角度来进行代码解析的，因此我们不再对Dialog和Toast与Activity做具体分析，主要来看看它们与Activity有什么不同之处`源码:android-22`。
+
+# 前言
+
+文章[Activity中的Window的setContentView](http://blog.csdn.net/stven_king/article/details/49095221)、[遇见LayoutInflater&Factory](http://blog.csdn.net/stven_king/article/details/78559145)、[ViewRootImpl的独白，我不是一个View(布局篇)](http://blog.csdn.net/stven_king/article/details/78775166) 分别讲述了Activity的`setContentView添加View`、`LayoutInflater布局解析`以及`添加Window`。文章内容都是站在Activity的角度来进行代码解析的，因此我们不再对Dialog和Toast与Activity做具体分析，主要来看看它们与Activity有什么不同之处`源码:android-22`。
 
 
-Dialog
-===
-Dialog的构造
----
+# Dialog
+
+## Dialog的构造
 
 ```java
 public class Dialog implements DialogInterface, Window.Callback,
@@ -41,14 +41,15 @@ public class Dialog implements DialogInterface, Window.Callback,
         w.setOnWindowDismissedCallback(this);
         w.setWindowManager(mWindowManager, null, null);
         w.setGravity(Gravity.CENTER);
+        //Handler中的Looper默认为当前线程的Looper
         mListenersHandler = new ListenersHandler(this);
     }
 }
 ```
 
-Dialog添加View
----
-和Activity相同通过`setContentView`初始化Window中的DecorView，并对页面View进行add。详细讲述请移动到[Activity中的Window的setContentView](http://dandanlove.com/2017/11/10/activity-setcontentview/)
+## Dialog添加View
+
+和Activity相同通过`setContentView`初始化 `Window` 中的 `DecorView`，并对页面 `View` 进行add。详细讲述请移动到[Activity中的Window的setContentView](http://www.jianshu.com/p/e62990e1c88e)
 
 ```java
 public class Dialog implements DialogInterface, Window.Callback,
@@ -65,10 +66,9 @@ public class Dialog implements DialogInterface, Window.Callback,
 }
 ```
 
-Dialog的展现
----
-Dialog的展现和Activity不同是因为两者的声明周期不同，Activity的声明周期是有AMS调用而Dialog是应用程序自己调用的。`ViewRootImpl`的初始化在Activity会在`onResume()`方法之后，而是Dialog被调用`show`方法时触发的。
+## Dialog的展现
 
+`Dialog` 的展现和 `Activity` 不同是因为两者的声明周期不同，`Activity` 的声明周期是有 `AMS` 调用而 `Dialog` 是应用程序自己调用的。`ViewRootImpl`的初始化在 `Activity` 会在`onResume()`方法之后，而是 `Dialog` 被调用`show`方法时触发的。
 ```java
 public class Dialog implements DialogInterface, Window.Callback,
         KeyEvent.Callback, OnCreateContextMenuListener,Window.OnWindowDismissedCallback{
@@ -88,7 +88,6 @@ public class Dialog implements DialogInterface, Window.Callback,
             }
             return;
         }
-
         mCanceled = false;
         //判断是否调用onCreate方法
         if (!mCreated) {
@@ -98,7 +97,6 @@ public class Dialog implements DialogInterface, Window.Callback,
         onStart();
         //获取DecorView对象实例
         mDecor = mWindow.getDecorView();
-
         if (mActionBar == null && mWindow.hasFeature(Window.FEATURE_ACTION_BAR)) {
             final ApplicationInfo info = mContext.getApplicationInfo();
             mWindow.setDefaultIcon(info.icon);
@@ -115,7 +113,6 @@ public class Dialog implements DialogInterface, Window.Callback,
                     WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION;
             l = nl;
         }
-
         try {
             //Windowmanger添加Window、ViewRootImpl初始化并绑定Window
             mWindowManager.addView(mDecor, l);
@@ -128,10 +125,9 @@ public class Dialog implements DialogInterface, Window.Callback,
 }
 ```
 
-Toast
-===
-Toast的构造
-----
+# Toast
+
+## Toast的构造
 
 ```java
 public class Toast {
@@ -159,6 +155,10 @@ public class Toast {
     private static INotificationManager sService;
 
     private static class TN extends ITransientNotification.Stub {
+        /***部分代码省略***/
+        private final WindowManager.LayoutParams mParams = new WindowManager.LayoutParams();
+        //Handler中的Looper默认为当前线程的Looper
+        final Handler mHandler = new Handler(); 
         TN() {
             // XXX This should be changed to use a Dialog, with a Theme.Toast
             // defined that sets up the layout params appropriately.
@@ -177,9 +177,7 @@ public class Toast {
     }   
 }
 ```
-
-transient_notification.xml
-
+> `transient_notification.xml`
 ```xml
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -202,10 +200,9 @@ transient_notification.xml
 </LinearLayout>
 ```
 
-Toast添加View
----
-从Toast的调用我们开始分析`Toast.makeText(MainActivity.this , "Hello World" , Toast.LENGTH_SHORT);`我们主要看`makeText`方法。
+## Toast添加View
 
+从Toast的调用我们开始分析`Toast.makeText(MainActivity.this , "Hello World" , Toast.LENGTH_SHORT);`我们主要看`makeText`方法。
 ```java
 public class Toast {
     /**
@@ -233,26 +230,22 @@ public class Toast {
         result.mNextView = v;
         //设置间隔时间
         result.mDuration = duration;
-
         return result;
     }
 }
 ```
-
 主要是对Toast内部成员变量`mNextView `和`mDuration `进行初始化。
 
-Toast的展示
----
+## Toast的展示
 
-<center>![TOAST.png](http://upload-images.jianshu.io/upload_images/1319879-c8eac3714d3721d5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+![toast](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktYzhlYWMzNzE0ZDM3MjFkNS5wbmc?x-oss-process=image/format,png#pic_center)
 
-将Toast内部的TN(ITransientNotification客户端对象)加入到INotificationManager服务端的Binder兑现的mToastQueue队列中。再由服务端循环遍历mToastQueue队列中`ToastRecord`对象，处理一个移除一个，每次处理的都是List的第一个`ToastRecord`对象。
+将 `Toast` 内部的 `TN` ( `ITransientNotification` 客户端对象)加入到 `INotificationManager` 服务端的 `Binder` 兑现的 `mToastQueue` 队列中。再由服务端循环遍历 `mToastQueue` 队列中`ToastRecord`对象，处理一个移除一个，每次处理的都是 `List` 的第一个`ToastRecord`对象。
 
 ```java
 public class Toast {
     //INotificationManager的客户端的Binder对象
     private static INotificationManager sService;
-    
     static private INotificationManager getService() {
         if (sService != null) {
             return sService;
@@ -275,7 +268,6 @@ public class Toast {
         String pkg = mContext.getOpPackageName();
         TN tn = mTN;
         tn.mNextView = mNextView;
-
         try {
             //将TN加入INotificationManager中的mToastQueue队列
             service.enqueueToast(pkg, tn, mDuration);
@@ -301,7 +293,6 @@ public class NotificationManagerService extends SystemService {
                 Slog.i(TAG, "enqueueToast pkg=" + pkg + " callback=" + callback
                         + " duration=" + duration);
             }
-
             if (pkg == null || callback == null) {
                 Slog.e(TAG, "Not doing toast. pkg=" + pkg + " callback=" + callback);
                 return ;
@@ -375,7 +366,9 @@ public class NotificationManagerService extends SystemService {
     }
 }
 ```
-`NotificationManagerService`使用先进先出（FIFO）的方式处理`mToastQueue `队列中的消息。
+
+`NotificationManagerService`使用先进先出（`FIFO`）的方式处理 `mToastQueue ` 队列中的消息。
+
 - 服务端的处理
 ```java
 public class NotificationManagerService extends SystemService {
@@ -423,9 +416,8 @@ private static class TN extends ITransientNotification.Stub {
     @Override
     public void show() {
         if (localLOGV) Log.v(TAG, "SHOW: " + this);
-        mHandler.post(mShow);
+        mHandler.post(mShow);//利用Handler执行mShow
     }
-
     final Runnable mShow = new Runnable() {
         @Override
         public void run() {
@@ -483,12 +475,11 @@ private static class TN extends ITransientNotification.Stub {
 }
 ```
 
-Toast的消失
----
-系统的Toast的hide都是在INotificationManager的服务端Binder中发起的，但最终的执行都是在INotificationManager的客户端Binder中执行的。
+## Toast的消失
+
+系统的 `Toast` 的 `hide` 都是在 `INotificationManager` 的服务端 `Binder` 中发起的，但最终的执行都是在 `INotificationManager` 的客户端 `Binder` 中执行的。
 
 - 服务端
-
 ```java
 public class NotificationManagerService extends SystemService {
     private final class WorkerHandler extends Handler{
@@ -571,9 +562,8 @@ private static class TN extends ITransientNotification.Stub {
     @Override
     public void hide() {
         if (localLOGV) Log.v(TAG, "HIDE: " + this);
-        mHandler.post(mHide);
+        mHandler.post(mHide);//利用Handler执行mHide
     }
-
     final Runnable mHide = new Runnable() {
         @Override
         public void run() {
@@ -593,18 +583,78 @@ private static class TN extends ITransientNotification.Stub {
                 //调用WindowManager的removeView移除mView
                 mWM.removeView(mView);
             }
-
             mView = null;
         }
     }
 }
 ```
 
-总结
-===
-通过分析`Activity`、`Dialog`、`Toast`通过对ViewRootImpl的更细节的分析，所有添加在窗口上的View都有一个ViewRootImpl作为它的Parent，处理View的布局、事件处理等。
+# Dialog和Toast在异步线程的展现
+[ViewRootImpl的独白，我不是一个View(布局篇)](https://dandanlove.blog.csdn.net/article/details/78775166) ，这篇文章说明了为什么我们一般禁止在非 `UI线程` 中刷新 `View` 。
+
+> `ViewRootImpl.checkThread` 方法会校验当前执行的线程是否是 `ViewRootImpl` 构造的线程。所以在 `ViewRootImpl` 没有构造出来之前 `View` 可以在异步线程刷新，或者 `ViewRootImpl`  本身就在**异步线程**构造，那么这个异步线程也能刷新 `View` 。
+
+那么 `Toast` 、 `Dialog` 和 `View` 的异步刷新是否一致呢？
+
+首先测试一下异步展现 `Dialog` 和 `Toast` :
+
+```java
+//Toast展现
+new Thread(new Runnable() {
+    @Override
+    public void run() {
+        //Looper.prepare();
+        Toast.makeText(TestActivity.this, "test", Toast.LENGTH_SHORT).show();
+        //Looper.loop();
+    }
+}).start();
+//Dialog的展现
+new Thread(new Runnable() {
+    @Override
+    public void run() {
+        //Looper.prepare();
+        new MyDialog(TestActivity.this, "test").show();
+        //Looper.loop();
+    }
+}).start();
+```
+
+崩溃日志：
+
+```java
+//Toast崩溃日志
+17:30:04.211#[androidcode@]#30824#E#AndroidRuntime #FATAL EXCEPTION: Thread-2
+		Process: com.tzx.androidcode, PID: 30513
+		java.lang.RuntimeException: Can't toast on a thread that has not called Looper.prepare()
+		at android.widget.Toast$TN.<init>(Toast.java:394)
+		at android.widget.Toast.<init>(Toast.java:114)
+		at android.widget.Toast.makeText(Toast.java:277)
+		at android.widget.Toast.makeText(Toast.java:267)
+		at com.tzx.androidcode.activity.TestActivity$1.run(TestActivity.java:72)
+		at java.lang.Thread.run(Thread.java:764)
+//Dialog的崩溃日志
+17:33:07.961#[androidcode@]#31514#E#AndroidRuntime #FATAL EXCEPTION: Thread-2
+		Process: com.tzx.androidcode, PID: 31438
+		java.lang.RuntimeException: Can't create handler inside thread that has not called Looper.prepare()
+		at android.os.Handler.<init>(Handler.java:203)
+		at android.os.Handler.<init>(Handler.java:117)
+		at android.app.Dialog.<init>(Dialog.java:123)
+		at android.app.Dialog.<init>(Dialog.java:149)
+		at com.tzx.rollaction.test.BaseDailog.<init>(BaseDailog.java:23)
+		at com.tzx.rollaction.test.MyDialog.<init>(MyDialog.java:20)
+		at com.tzx.androidcode.activity.TestActivity$2.run(TestActivity.java:86)
+		at java.lang.Thread.run(Thread.java:764)
+```
+
+我们可以看到都是提示 `当前的Handler的Looper没有调用prepare`。
+我们在上面进行源码阅读的时候都看到了 `Toast.TN` 和 `Dialog` 构造的时候的 `Handler` 都是默认当前线程的 `Looper` 。
+如果当前线程的 `Looper` 没有 `prepare` 那么必定会抛异常，如果仅仅执行了 `prepare` 那么崩溃不会产生了，但是依旧不展示。因为整个 `Looper` 还没有开始，里面的 `Message` 都未进行处理。最后我们将代码中注释的 `Looper.prepare();` 和 `Looper.loop();` 打开就可以正常在异步线程进行 `Toast` 和 `Dialog` 的展现。
+
+# 总结
+
+通过分析`Activity`、`Dialog`、`Toast`通过对 `ViewRootImpl` 的更细节的分析，所有添加在窗口上的 `View` 都有一个 `ViewRootImpl` 作为它的 `Parent` ，处理View的布局、事件处理等。
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
 
 想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)
