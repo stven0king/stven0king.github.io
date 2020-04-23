@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="Bitmap," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Android官网中【处理位图】和【高效加载大型位图】两篇文章中已经做了很明确指出了如何高效的加载大图。这篇文章只是对其中的内容进行总结和扩展（比如图片内存计算、图片压缩等）。">
+<meta name="keywords" content="Bitmap">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Bitmap图片压缩，大图加载防止OOM">
+<meta property="og:url" content="http://yoursite.com/2020/04/22/bitmap-load-big-pic/index.html">
+<meta property="og:site_name" content="下雨天要逛街">
+<meta property="og:description" content="Android官网中【处理位图】和【高效加载大型位图】两篇文章中已经做了很明确指出了如何高效的加载大图。这篇文章只是对其中的内容进行总结和扩展（比如图片内存计算、图片压缩等）。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200422150554242.jpeg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9kZXZlbG9wZXIuYW5kcm9pZC5nb29nbGUuY24vaW1hZ2VzL3NjcmVlbnNfc3VwcG9ydC9kZXZpY2VzLWRlbnNpdHlfMngucG5n?x-oss-process=image/format,png#pic_center">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center">
+<meta property="og:updated_time" content="2020-04-22T11:10:28.519Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bitmap图片压缩，大图加载防止OOM">
+<meta name="twitter:description" content="Android官网中【处理位图】和【高效加载大型位图】两篇文章中已经做了很明确指出了如何高效的加载大图。这篇文章只是对其中的内容进行总结和扩展（比如图片内存计算、图片压缩等）。">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200422150554242.jpeg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2020/04/22/bitmap-load-big-pic/"/>
+
+
+
+
+
+  <title>Bitmap图片压缩，大图加载防止OOM | 下雨天要逛街</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1055a4e1d37a3a4dcb3a3e1c4f32f147";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/stven0king" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">下雨天要逛街</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/04/22/bitmap-load-big-pic/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="振兴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/jay.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="下雨天要逛街">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Bitmap图片压缩，大图加载防止OOM</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-04-22T18:55:00+08:00">
+                2020-04-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  Android官网中【处理位图】和【高效加载大型位图】两篇文章中已经做了很明确指出了如何高效的加载大图。这篇文章只是对其中的内容进行总结和扩展（比如图片内存计算、图片压缩等）。 
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><img src="https://img-blog.csdnimg.cn/20200422150554242.jpeg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>Android官网中<a href="https://developer.android.com/topic/performance/graphics" target="_blank" rel="noopener">处理位图</a> 和 <a href="https://developer.android.com/topic/performance/graphics/load-bitmap" target="_blank" rel="noopener">高效加载大型位图
+</a> 这两篇文章中已经做了很明确指出了如何高效的加载大图。这篇文章只是对其中的内容进行总结和扩展（比如图片内存计算、图片压缩等）。</p>
+<p>为了防止加载 <code>Bitmap</code> 的时候造成 <code>OOM</code> 崩溃，我们首选要知道：</p>
+<ul>
+<li>一张图片加载到 <code>Bitmap</code> 的时候的占用的是怎么内存计算；</li>
+<li>占用内存过高的时候怎么进行图片压缩减小内存占用；</li>
+</ul>
+<h1 id="RGB介绍"><a href="#RGB介绍" class="headerlink" title="RGB介绍"></a>RGB介绍</h1><blockquote>
+<p>RGB颜色模型: 最常见的颜色模型，设备相关。R、G、B分别代表红、绿和蓝色三种颜色通道，取值均为[0,255]。</p>
+</blockquote>
+<blockquote>
+<p>RGB 8位色: 表示使用8位(bit)表示颜色，一共能表示2^8 = 128种颜色。<br>依次类推RGB 16位色，RGB 24位色，RGB 32位色，使用的位数越多，能表示的颜色越多，24位能表示的颜色数量已经很多了，称之为“真彩色”。</p>
+</blockquote>
+<blockquote>
+<p>32位和24位能表示的颜色一样多，多一个了透明度。</p>
+</blockquote>
+<blockquote>
+<p>Android Bitmap使用的三种颜色格式：</p>
+<ul>
+<li>ALPHA_8–每个像素占1个字节，存储透明度信息，没有颜色信息。</li>
+<li>RGB_565–每个像素占2个字节存储颜色信息，R 5位，G 6位，B 5位，能表示2^16种颜色。</li>
+<li>ARGB_8888–每个像素占4个字节存储颜色信息，A R G B各一个字节，能表示2^24种颜色，还有一个字节存储透明度信息。</li>
+</ul>
+</blockquote>
+<h1 id="图片占用内存的计算"><a href="#图片占用内存的计算" class="headerlink" title="图片占用内存的计算"></a>图片占用内存的计算</h1><p><code>Bitmap</code> 所占内存大小计算方式：图片长度 x 图片宽度 x 一个像素点占用的字节数。</p>
+<h2 id="读取位图尺寸和类型"><a href="#读取位图尺寸和类型" class="headerlink" title="读取位图尺寸和类型"></a>读取位图尺寸和类型</h2><p><code>BitmapFactory</code> 类提供了几种用于从各种来源创建 <code>Bitmap</code> 的解码方法<code>（decodeByteArray()、decodeFile()、decodeResource()</code>等）。根据您的图片数据源选择最合适的解码方法。这些方法尝试为构造的位图分配内存，因此很容易导致 <code>OutOfMemory</code> 异常。每种类型的解码方法都有额外的签名，允许您通过 <code>BitmapFactory.Options</code> 类指定解码选项。在解码时将<code>inJustDecodeBounds</code> 属性设置为 <code>true</code> 可避免内存分配，为位图对象返回 <code>null</code>，但设置 <code>outWidth</code>、<code>outHeight</code> 和 <code>outMimeType</code>。此方法可让您在构造位图并为其分配内存之前读取图片数据的尺寸和类型。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">BitmapFactory.Options options = <span class="keyword">new</span> BitmapFactory.Options();</span><br><span class="line">options.inJustDecodeBounds = <span class="keyword">true</span>;</span><br><span class="line">BitmapFactory.decodeResource(getResources(), R.id.myimage, options);</span><br><span class="line"><span class="keyword">int</span> imageHeight = options.outHeight;</span><br><span class="line"><span class="keyword">int</span> imageWidth = options.outWidth;</span><br><span class="line">String imageType = options.outMimeType;</span><br></pre></td></tr></table></figure>
+<p>为避免出现 <code>java.lang.OutOfMemory</code> 异常，请先检查位图的尺寸，然后再对其进行解码，除非您绝对信任该来源可为您提供大小可预测的图片数据，以轻松适应可用的内存。</p>
+<h2 id="内存中如果加载一张-500-500-的-png-高清图片-应该是占用多少的内存"><a href="#内存中如果加载一张-500-500-的-png-高清图片-应该是占用多少的内存" class="headerlink" title="内存中如果加载一张 500*500 的 png 高清图片.应该是占用多少的内存?"></a>内存中如果加载一张 <code>500*500</code> 的 <code>png</code> 高清图片.应该是占用多少的内存?</h2><p><code>png</code> 图片应该有<strong>alpha通道</strong>，所以  <code>Bitmap.Config</code> 是 <code>ARGB_8888</code> 。4个8位一种占用32位。<br>最终答案： <code>500 * 500 * 4 = 1000000Bytes = 0.95MB</code></p>
+<h2 id="如果这个图片为本地资源图片，是否还是0-95MB呢？"><a href="#如果这个图片为本地资源图片，是否还是0-95MB呢？" class="headerlink" title="如果这个图片为本地资源图片，是否还是0.95MB呢？"></a>如果这个图片为本地资源图片，是否还是0.95MB呢？</h2><p>先看一些基础知识（后面有答案） <a href="https://developer.android.google.cn/training/multiscreen/screendensities#TaskProvideAltBmp" target="_blank" rel="noopener">Android官网-提供备用位图</a> 这篇文章链接中的有讲到：</p>
+<blockquote>
+<p>要在像素密度不同的设备上提供良好的图形质量，您应该以相应的分辨率在应用中提供每个位图的多个版本（针对每个密度级别提供一个版本）。否则，Android 系统必须缩放位图，使其在每个屏幕上占据相同的可见空间，从而导致缩放失真，如模糊。</p>
+</blockquote>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly9kZXZlbG9wZXIuYW5kcm9pZC5nb29nbGUuY24vaW1hZ2VzL3NjcmVlbnNfc3VwcG9ydC9kZXZpY2VzLWRlbnNpdHlfMngucG5n?x-oss-process=image/format,png#pic_center" alt=""></p>
+<p>例如，如果您有一个可绘制位图资源，它在中密度屏幕上的大小为 48x48 像素，那么它在其他各种密度的屏幕上的大小应该为：</p>
+<ul>
+<li>36x36 (0.75x) - 低密度 (ldpi)</li>
+<li>48x48（1.0x 基准）- 中密度 (mdpi)</li>
+<li>72x72 (1.5x) - 高密度 (hdpi)</li>
+<li>96x96 (2.0x) - 超高密度 (xhdpi)</li>
+<li>144x144 (3.0x) - 超超高密度 (xxhdpi)</li>
+<li>192x192 (4.0x) - 超超超高密度 (xxxhdpi)</li>
+</ul>
+<p>然后，将生成的图片文件放在 <code>res/</code> 下的相应子目录中，系统将根据运行应用的设备的像素密度自动选取正确的文件。之后，每当您引用<code>@drawable/xxx</code>时，系统都会根据屏幕的 <code>dpi</code> 选择适当的位图。如果您没有为某个密度提供特定于密度的资源，那么系统会选取下一个最佳匹配项并对其进行缩放以适合屏幕。</p>
+<p>实测：<code>1520 x 2688</code> 大小为 <code>334.28KB</code> 图片，屏幕密度为480的手机；</p>
+<ul>
+<li>放在 <code>drawable-xxdpi</code> 下加载到 <code>Bitmap</code> 中占用内存为 <code>16343040(1520*2688*4)</code>，因为图片不需要进行缩放，所以只需要计算 <code>ARGB_8888</code> 占用的字节数就行；</li>
+<li>放在 <code>drawable-mdpi</code> 下加载到 <code>Bitmap</code> 中占用内存为 <code>147087360(1520*3*2688*3*4)</code> ，因为 <code>mdip</code> 到 <code>xxdpi</code> 图片的宽高分别会放大4倍；</li>
+</ul>
+<p><code>nodpi</code> 目录中的资源被视为与密度无关，系统将不会对它们进行缩放。</p>
+<h1 id="Bitmap压缩"><a href="#Bitmap压缩" class="headerlink" title="Bitmap压缩"></a>Bitmap压缩</h1><h2 id="压缩原理"><a href="#压缩原理" class="headerlink" title="压缩原理"></a>压缩原理</h2><p>在 <code>Android</code> 中进行图片压缩是非常常见的开发场景，主要的压缩方法有两种：其一是下 <strong>采样压缩</strong>，其二是 <strong>质量压缩</strong>。</p>
+<ul>
+<li>前者是降低图像尺寸，改变图片的存储体积；</li>
+<li>后者则是在不改变图片尺寸的情况下，通过损失颜色精度，达到相同目的;</li>
+</ul>
+<h2 id="压缩Bitmap磁盘占用空间的大小"><a href="#压缩Bitmap磁盘占用空间的大小" class="headerlink" title="压缩Bitmap磁盘占用空间的大小"></a>压缩Bitmap磁盘占用空间的大小</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//如果成功地把压缩数据写入输出流，则返回true。</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">compress</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">    Bitmap.CompressFormat format, //图像的压缩格式；</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">int</span> quality,//图像压缩率，<span class="number">0</span><span class="number">-100</span>。 <span class="number">0</span> 压缩<span class="number">100</span>%，<span class="number">100</span>意味着不压缩；</span></span></span><br><span class="line"><span class="function"><span class="params">    OutputStream stream)</span> </span>;<span class="comment">//写入压缩数据的输出流；</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>Bitmap.CompressFormat.PNG</code> ，那不管第二个值如何变化，图片大小都不会变化，不支持 <code>png图片</code> 的压缩。因为 <code>PNG</code> 格式是无损的，它无法再进行质量压缩，<code>quality</code>这个参数就没有作用了，会被忽略，所以最后图片保存成的文件大小不会有变化；</li>
+<li><code>CompressFormat.WEBP</code> ，这个格式是 <code>google</code> 推出的图片格式，它会比 <code>JPEG</code> 更加省空间。官方表示能节省 <code>25%-34%</code> 的空间；</li>
+</ul>
+<h2 id="压缩Bitmap占用内存的大小"><a href="#压缩Bitmap占用内存的大小" class="headerlink" title="压缩Bitmap占用内存的大小"></a>压缩Bitmap占用内存的大小</h2><p>图片尺寸的修改其实就是通过修改像素数，放大的过程称之为<strong>上采样</strong>，缩小的过程称之为<strong>下采样</strong>。</p>
+<p>要知道怎么压缩才能使 <code>Bitmap</code> 占用的内存变小，首先需要知道 <code>Bitmap</code> 的内存占用怎么计算。 <a href="https://www.kancloud.cn/book/stven\_king/stven\_king\_android\_interview\_topic/preview/Bitmap/%E8%AE%A1%E7%AE%97%E5%9B%BE%E7%89%87%E7%9A%84%E5%86%85%E5%AD%98%E5%8D%A0%E7%94%A8.md" target="_blank" rel="noopener">计算图片的内存占用</a> 这篇文章有详细讲解。</p>
+<h3 id="使用inSampleSize进行压缩"><a href="#使用inSampleSize进行压缩" class="headerlink" title="使用inSampleSize进行压缩"></a>使用inSampleSize进行压缩</h3><p>既然图片尺寸已知，便可用于确定应将完整图片加载到内存中，还是应改为加载下采样版本。以下是需要考虑的一些因素：</p>
+<ul>
+<li>在内存中加载完整图片的估计内存使用量。</li>
+<li>根据应用的任何其他内存要求，您愿意分配用于加载此图片的内存量。</li>
+<li>图片要载入到的目标 ImageView 或界面组件的尺寸。</li>
+<li>当前设备的屏幕大小和密度。</li>
+</ul>
+<p>例如，如果 1024x768 像素的图片最终会在 ImageView 中显示为 128x96 像素缩略图，则不值得将其加载到内存中。</p>
+<p>要让解码器对图片进行下采样，以将较小版本加载到内存中，请在 <code>BitmapFactory.Options</code> 对象中将 <code>inSampleSize</code> 设置为 <code>true</code>。</p>
+<p>例如，分辨率为 <code>2048x1536</code> 且以 <code>4</code> 作为 <code>inSampleSize</code> 进行解码的图片会生成大约 <code>512x384</code> 的位图。将此图片加载到内存中需使用 <code>0.75MB</code>，而不是完整图片所需的 <code>12MB</code>（假设位图配置为 <code>ARGB_8888</code>）。</p>
+<p>下面的方法用于计算样本大小值，即基于目标宽度和高度的 <code>2</code> 的幂：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">calculateInSampleSize</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">            BitmapFactory.Options options, <span class="keyword">int</span> reqWidth, <span class="keyword">int</span> reqHeight)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Raw height and width of image</span></span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> height = options.outHeight;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> width = options.outWidth;</span><br><span class="line">    <span class="keyword">int</span> inSampleSize = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">if</span> (height &gt; reqHeight || width &gt; reqWidth) &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> halfHeight = height / <span class="number">2</span>;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> halfWidth = width / <span class="number">2</span>;</span><br><span class="line">        <span class="comment">// Calculate the largest inSampleSize value that is a power of 2 and keeps both</span></span><br><span class="line">        <span class="comment">// height and width larger than the requested height and width.</span></span><br><span class="line">        <span class="keyword">while</span> ((halfHeight / inSampleSize) &gt;= reqHeight</span><br><span class="line">                &amp;&amp; (halfWidth / inSampleSize) &gt;= reqWidth) &#123;</span><br><span class="line">            inSampleSize *= <span class="number">2</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> inSampleSize;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>注意：根据 <code>inSampleSize</code> 文档，计算 <code>2</code> 的幂的原因是解码器使用的最终值将向下舍入为最接近的 <code>2</code> 的幂。</p>
+</blockquote>
+<p>要使用此方法，请先将 <code>inJustDecodeBounds</code> 设为 <code>true</code> 进行解码，传递选项，然后使用新的 <code>inSampleSize</code> 值并将 设为<code>false</code> 再次进行解码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Bitmap <span class="title">decodeSampledBitmapFromResource</span><span class="params">(Resources res, <span class="keyword">int</span> resId,</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">int</span> reqWidth, <span class="keyword">int</span> reqHeight)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// First decode with inJustDecodeBounds=true to check dimensions</span></span><br><span class="line">    <span class="keyword">final</span> BitmapFactory.Options options = <span class="keyword">new</span> BitmapFactory.Options();</span><br><span class="line">    options.inJustDecodeBounds = <span class="keyword">true</span>;</span><br><span class="line">    BitmapFactory.decodeResource(res, resId, options);</span><br><span class="line">    <span class="comment">// Calculate inSampleSize</span></span><br><span class="line">    options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);</span><br><span class="line">    <span class="comment">// Decode bitmap with inSampleSize set</span></span><br><span class="line">    options.inJustDecodeBounds = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">return</span> BitmapFactory.decodeResource(res, resId, options);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>Android</code> 使用的 <code>inSampleSize</code> 计算采样率使用的采样算法是<strong>邻近采样（Nearest Neighbour Resampling）</strong>， <code>x</code>（<code>x</code> 为 2 的倍数）个像素最后对应一个像素。比如采样率设置为 <code>1/2</code> ，所以是两个像素生成一个像素。邻近采样的方式比较粗暴，直接选择其中的一个像素作为生成像素，另一个像素直接抛弃。</p>
+<h3 id="使用createScaledBitmap或Matrix"><a href="#使用createScaledBitmap或Matrix" class="headerlink" title="使用createScaledBitmap或Matrix"></a>使用createScaledBitmap或Matrix</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Bitmap bitmap = BitmapFactory.decodeFile(<span class="string">"/sdcard/test.png"</span>);</span><br><span class="line">Bitmap compress = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth()/<span class="number">2</span>, bitmap.getHeight()/<span class="number">2</span>, <span class="keyword">true</span>);</span><br><span class="line"><span class="comment">//或者直接使用 matrix 进行缩放，查看Bitmap.createScaledBitmap源码其实就是使用 matrix 缩放</span></span><br><span class="line">Bitmap bitmap = BitmapFactory.decodeFile(<span class="string">"/sdcard/test.png"</span>);</span><br><span class="line">Matrix matrix = <span class="keyword">new</span> Matrix();</span><br><span class="line">matrix.setScale(<span class="number">0.5f</span>, <span class="number">0.5f</span>);</span><br><span class="line">bm = Bitmap.createBitmap(bitmap, <span class="number">0</span>, <span class="number">0</span>, bit.getWidth(), bit.getHeight(), matrix, <span class="keyword">true</span>);</span><br></pre></td></tr></table></figure>
+<p>同样是图片宽高各为原来的<code>1/2</code>，这种方式采用<strong>双线性采样（Bilinear Resampling）</strong>，这个算法不像邻近采样算法直接粗暴的选择一个像素，而是参考了源像素相应位置周围 <code>2x2</code> 个点的值，根据相对位置取对应的权重，经过计算之后得到目标图像。</p>
+<p>不同的采样算法会产生不同效果，除了 <code>Android</code> 中这两种常用的采样算法之外，还有比较常见如：<code>双立方／双三次采样（Bicubic Resampling）</code> 和 <code>Lanczos Resampling</code> 等。如果对 <code>Android</code> 使用的这两种采样算法效果不满意，必要时可以引入其他的算法。</p>
+<h3 id="BitmapFactory-Options三件套"><a href="#BitmapFactory-Options三件套" class="headerlink" title="BitmapFactory.Options三件套"></a>BitmapFactory.Options三件套</h3><blockquote>
+<p><code>inScaled</code> + <code>inDensity</code> + <code>inTargetDensity</code></p>
+</blockquote>
+<p>当<strong>inScaled</strong>设置为true时（设置此标志时），如果<strong>inDensity</strong>与<strong>inTargetDensity</strong>不为0，<code>Bitmap</code> 就会在加载的时候直接进行缩放以匹配 <code>inTargetDensity</code> ，而不是绘制的时候进行缩放。（加载到堆内存时已经缩放了大小了，<code>.9图</code> 会忽略此标志）</p>
+<p><strong>inDensity</strong>:加载图片的原始宽度，如果此密度与 <code>inTargetDensity</code> 不匹配，则在返回 <code>Bitmap</code>前会将它缩放至目标密度。<br><strong>inTargetDensity</strong> :目标图片的显示宽度，它与 <code>inScaled</code> 与 <code>inDensity</code> 结合使用，确定如何在返回 <code>Bitmap</code> 前对其进行缩放。</p>
+<p>前面讲述的计算 <code>Bitmap</code> 大小的第二个例子，就是将相同图片加载放到不同的 <code>drawable-dpi</code> 的文件目录下去加载到内存中的 <code>Bitmap</code> 大小不同，其原因就是 <code>inDensity</code> 和 <code>inTargetDensity</code> 不一致导致。</p>
+<h1 id="Bitmap局部解码"><a href="#Bitmap局部解码" class="headerlink" title="Bitmap局部解码"></a>Bitmap局部解码</h1><p><a href="https://developer.android.com/reference/android/graphics/BitmapRegionDecoder?hl=en" target="_blank" rel="noopener">官网文档-BitmapRegionDecoder</a> ，<code>BitmapRegionDecoder</code> 可用于解码图像中的矩形区域。当原始图像很大且只需要部分图像时，<code>BitmapRegionDecoder</code> 尤其有用。 要创建 <code>BitmapRegionDecoder</code>，请调用 <code>newInstance()</code> 。给定一个 <code>BitmapRegionDecoder</code>，用户可以重复调用 <code>encodeRegio()</code>以获取指定区域的解码后的 <code>Bitmap</code> 。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    inputStream = getResources().getAssets().open(<span class="string">"qq.jpg"</span>);</span><br><span class="line">    BitmapRegionDecoder mRegionDecoder = BitmapRegionDecoder.newInstance(inputStream, <span class="keyword">false</span>);</span><br><span class="line">    BitmapFactory.Options sOptions = <span class="keyword">new</span> BitmapFactory.Options();</span><br><span class="line">    sOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;</span><br><span class="line">    sOptions.inSampleSize = <span class="number">2</span>;</span><br><span class="line">    Rect mRect = <span class="keyword">new</span> Rect();</span><br><span class="line">    mRect.top = <span class="number">0</span>;</span><br><span class="line">    mRect.left = <span class="number">0</span>;</span><br><span class="line">    mRect.right = <span class="number">100</span>;</span><br><span class="line">    mRect.bottom = <span class="number">100</span>;</span><br><span class="line">    Bitmap bitmap = mRegionDecoder.decodeRegion(mRect, sOptions);</span><br><span class="line">    <span class="comment">//bitmap.getByteCount()=40000</span></span><br><span class="line">&#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里需要注意的是 <code>mRect</code> 的宽高不能太大，否则加载得到的 <code>Bitmap</code> 的时候也会出现 <code>OOM</code> 的异常。</p>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center" alt="振兴书城"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/weixinpay.jpeg" alt="振兴 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpeg" alt="振兴 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    振兴
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2020/04/22/bitmap-load-big-pic/" title="Bitmap图片压缩，大图加载防止OOM">http://yoursite.com/2020/04/22/bitmap-load-big-pic/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Bitmap/" rel="tag"><i class="fa fa-tag"></i> Bitmap</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/03/09/gradle-plugin-asm/" rel="next" title="Gradle自定义Plugin插件和ASM修改字节码">
+                <i class="fa fa-chevron-left"></i> Gradle自定义Plugin插件和ASM修改字节码
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      
+        <div id="gitment-container"></div>
+      
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/jay.jpg"
+                alt="振兴" />
+            
+              <p class="site-author-name" itemprop="name">振兴</p>
+              <p class="site-description motion-element" itemprop="description">好好学习，天天向上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">77</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">97</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stven0king" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://me.csdn.net/stven_king" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-crosshairs"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/311540b7592b" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-book"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/56824a1900b01b9f2bd94ae8" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-spinner"></i>掘金</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/2520114671/profile?rightmod=1&wvr=6&mod=personinfo" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-weibo"></i>微博</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:stven0king@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                推荐阅读
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://gityuan.com/" title="Gityuan" target="_blank">Gityuan</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.wanandroid.com/index" title="玩Android" target="_blank">玩Android</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.wjdiankong.cn/" title="尼古拉斯.赵四" target="_blank">尼古拉斯.赵四</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#RGB介绍"><span class="nav-number">2.</span> <span class="nav-text">RGB介绍</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#图片占用内存的计算"><span class="nav-number">3.</span> <span class="nav-text">图片占用内存的计算</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#读取位图尺寸和类型"><span class="nav-number">3.1.</span> <span class="nav-text">读取位图尺寸和类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存中如果加载一张-500-500-的-png-高清图片-应该是占用多少的内存"><span class="nav-number">3.2.</span> <span class="nav-text">内存中如果加载一张 500*500 的 png 高清图片.应该是占用多少的内存?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如果这个图片为本地资源图片，是否还是0-95MB呢？"><span class="nav-number">3.3.</span> <span class="nav-text">如果这个图片为本地资源图片，是否还是0.95MB呢？</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Bitmap压缩"><span class="nav-number">4.</span> <span class="nav-text">Bitmap压缩</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#压缩原理"><span class="nav-number">4.1.</span> <span class="nav-text">压缩原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#压缩Bitmap磁盘占用空间的大小"><span class="nav-number">4.2.</span> <span class="nav-text">压缩Bitmap磁盘占用空间的大小</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#压缩Bitmap占用内存的大小"><span class="nav-number">4.3.</span> <span class="nav-text">压缩Bitmap占用内存的大小</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用inSampleSize进行压缩"><span class="nav-number">4.3.1.</span> <span class="nav-text">使用inSampleSize进行压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用createScaledBitmap或Matrix"><span class="nav-number">4.3.2.</span> <span class="nav-text">使用createScaledBitmap或Matrix</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BitmapFactory-Options三件套"><span class="nav-number">4.3.3.</span> <span class="nav-text">BitmapFactory.Options三件套</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Bitmap局部解码"><span class="nav-number">5.</span> <span class="nav-text">Bitmap局部解码</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">振兴</span>
+
+  
+</div>
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+<!--
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+-->
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+<!-- LOCAL: You can save these files to your site and update links -->
+    
+        
+        <link rel="stylesheet" href="https://billts.site/extra_css/gitment.css">
+        <script src="https://billts.site/js/gitment.js"></script>
+    
+<!-- END LOCAL -->
+
+    
+
+    
+      <script type="text/javascript">
+      function renderGitment(){
+        var gitment = new Gitment({
+            id: window.location.pathname, 
+            owner: 'stven0king',
+            repo: 'stven0king.github.io',
+            
+            oauth: {
+            
+            
+                client_secret: '2206c556bf3e1f5967962220c3439f458ed41c7f',
+            
+                client_id: '00c12e7601ea8004b339'
+            }});
+        gitment.render('gitment-container');
+      }
+
+      
+      renderGitment();
+      
+      </script>
+    
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
