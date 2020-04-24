@@ -6,9 +6,9 @@ categories: Android
 description: "前一段时间写过两篇关于View的文章 Activity中的Window的setContentView 和 遇见LayoutInflater&Factory 。分析了Activity设置页面布局到页面View元素进行布局到底经历了一个怎么样的过程？"
 ---
 
-前言
-===
-前一段时间写过两篇关于View的文章 [Activity中的Window的setContentView](http://dandanlove.com/2017/11/10/activity-setcontentview/) 和 [遇见LayoutInflater&Factory](http://dandanlove.com/2017/11/15/layoutinflater-factory/) 。分析了Activity设置页面布局到页面View元素进行布局到底经历了一个怎么样的过程？
+# 前言
+
+前一段时间写过两篇关于View的文章 [Activity中的Window的setContentView](http://blog.csdn.net/stven_king/article/details/49095221) 和 [遇见LayoutInflater&Factory](http://blog.csdn.net/stven_king/article/details/78559145) 。分析了Activity设置页面布局到页面View元素进行布局到底经历了一个怎么样的过程？
 >- Activity的attach中生成PhoneWindow对象;
 >- setContentView中初始化DecorView（ViewGroup）;
 >- 在LayoutInflater进行对布局文件的解析之后更加解析的数据
@@ -16,12 +16,12 @@ description: "前一段时间写过两篇关于View的文章 Activity中的Windo
 
 为什么接下来继续写这篇文章呢？是因为我在掘金上看到一篇子线程更新View的文章之后，发现自己对View还不是很了，以这个问题为方向看了View相关的源码。发现网络上有些文章对于ViewRootImpl的分析还是有些问题或者疑惑的，所以自己整理过的知识点分享给大家，希望能对大家有帮助。（`源码cm12.1`）
 
-View的介绍
-===
+# View的介绍
+
 最开始学习View的时候最先分析的是它的布局（LinearLayout、FrameLayout、TableLayout、RelativeLayout、AbsoluteLayout）,然后是它的三大方法（measure、layout、draw）。
 
-绘制&加载View-----onMeasure()
----
+## 绘制&加载View-----onMeasure()
+
 >- MeasureSpec.EXACTLY是精确尺寸， 当我们将控件的layout_width或layout_height指定为具体数值时如andorid:layout_width="50dip"，或者为FILL_PARENT是，都是控件大小已经确定的情况，都是精确尺寸。
 >- MeasureSpec.AT_MOST是最大尺寸，当控件的layout_width或layout_height指定为WRAP_CONTENT时  ，控件大小一般随着控件的子空间或内容进行变化，此时控件尺寸只要不超过父控件允许的最大尺寸即可。因此，此时的mode是AT_MOST，size给出了父控件允许的最大尺寸。  
 >- MeasureSpec.UNSPECIFIED是未指定尺寸，这种情况不多，一般都是父控件是AdapterView,通过measure方法传入的模式。
@@ -36,13 +36,12 @@ protected void measureChildWithMargins(View child,int parentWidthMeasureSpec, in
 ```
 
 
-绘制&加载View-----onLayout()
----
+## 绘制&加载View-----onLayout()
+
 >- onLayout方法：是ViewGroup中子View的布局方法。放置子View很简单，只需在重写onLayout方法，然后获取子View的实例，调用子View的layout方法实现布局。在实际开发中，一般要配合onMeasure测量方法一起使用。View的放置都是根据一个矩形空间放置的。
 >- layout方法：是View的放置方法，在View类实现。调用该方法需要传入放置View的矩形空间左上角left、top值和右下角right、bottom值。
 
-绘制&加载View-----onDraw()
----
+## 绘制&加载View-----onDraw()
 
 ```java
 public void draw(Canvas canvas)
@@ -51,18 +50,17 @@ protected void dispatchDraw(Canvas canvas)(View,ViewGroup)
 protected boolean drawChild(Canvas canvas, View child, long drawingTime) (ViewGroup)
 ```
 
-<center>![ViewTree.jpg](http://upload-images.jianshu.io/upload_images/1319879-92ccbcbdca85efdc.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+![ViewTree](https://img-blog.csdnimg.cn/20191023100908801.jpeg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center)
 
-View的解析与生成
-===
+# View的解析与生成
 
 View的解析和生成之前在下边的这两篇文章中已经讲述
 
 > View如何在页面进行展示的，View树是如何生成的。
-[Activity中的Window的setContentView](http://dandanlove.com/2017/11/10/activity-setcontentview/)
+[Activity中的Window的setContentView](http://blog.csdn.net/stven_king/article/details/49095221)
 
 > View对象的生成，属性值的初始化。
-[遇见LayoutInflater&Factory](http://dandanlove.com/2017/11/15/layoutinflater-factory/)
+[遇见LayoutInflater&Factory](http://blog.csdn.net/stven_king/article/details/78559145)
 
 在这两篇文章中用到了一些Android中相关的类：
 
@@ -75,11 +73,9 @@ View的解析和生成之前在下边的这两篇文章中已经讲述
 >- ViewRootImpl:ViewRoot是GUI管理系统与GUI呈现系统之间的桥梁。
 >- WindowManangerService：简称WMS,它的作用是管理所有应用程序中的窗口，并用于管理用户与这些窗口发生的的各种交互。
 
-ViewRootImpl简介
-===
+# ViewRootImpl简介
 
 `The top of a view hierarchy, implementing the needed protocol between View and the WindowManager.  This is for the most part an internal implementation detail of {@link WindowManagerGlobal}.`
-
 
 ```java
 public final class ViewRootImpl implements ViewParent,
@@ -90,7 +86,7 @@ public final class ViewRootImpl implements ViewParent,
 
 ViewRootImpl是View中的最高层级，属于所有View的根（`但ViewRootImpl不是View，只是实现了ViewParent接口`），实现了View和WindowManager之间的通信协议，实现的具体细节在WindowManagerGlobal这个类当中。
 
-<center>![ViewManager.png](http://upload-images.jianshu.io/upload_images/1319879-295a6896e2a27237.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+![ViewManager](https://img-blog.csdnimg.cn/20191023101002907.jpeg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9kYW5kYW5sb3ZlLmJsb2cuY3Nkbi5uZXQ=,size_16,color_FFFFFF,t_70#pic_center)
 
 
 ```java
@@ -106,15 +102,15 @@ public interface ViewManager{
 
 上面提到了`WindowManager`对`View`的添加、更新、删除操作，那么联系这两者之间的`Window`呢？
 
->  [Activity中的Window的setContentView](http://dandanlove.com/2017/11/10/activity-setcontentview/) 阅读这篇文章我们知道Activity中有Window对象，一个Window对象对应着一个View（`DecorView`），`ViewRootImpl`就是对这个View进行操作的。
+>  [Activity中的Window的setContentView](http://www.jianshu.com/p/e62990e1c88e) 阅读这篇文章我们知道Activity中有Window对象，一个Window对象对应着一个View（`DecorView`），`ViewRootImpl`就是对这个View进行操作的。
 
 我们知道界面所有的元素都是有View构成的，界面上的每一个像素点也都是由View绘制的。Window只是一个抽象的概念，把界面抽象为一个窗口对象，也可以抽象为一个View。
 
-ViewRootImpl与其他类之间的关系
-===
+# ViewRootImpl与其他类之间的关系
+
 在了解ViewRootImpl与其他类的关系之前，我们先看一副图和一段代码：
 
-<center>![ViewRootImpl.jpg](http://upload-images.jianshu.io/upload_images/1319879-b845406a6c472c2d.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+![ViewRootImpl.jpg](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktYjg0NTQwNmE2YzQ3MmMyZC5qcGc?x-oss-process=image/format,png#pic_center)
 
 
 
@@ -132,9 +128,9 @@ public final class WindowManagerGlobal {
 ```
 
 
-> `WindowManagerGlobal`在其内部存储着`ViewRootImpl`和`View`实例的映射关系(顺序存储)。
+- `WindowManagerGlobal`在其内部存储着`ViewRootImpl`和`View`实例的映射关系(顺序存储)。
 
-> `WindowManager`继承与`ViewManger`，从`ViewManager`这个类名来看就是用来对`View`类进行管理的，从`ViewManager`接口中的添加、更新、删除View的方法也可以看出来`WindowManager`对`View`的管理。
+- `WindowManager`继承与`ViewManger`，从`ViewManager`这个类名来看就是用来对`View`类进行管理的，从`ViewManager`接口中的添加、更新、删除View的方法也可以看出来`WindowManager`对`View`的管理。
 
 ```java
 public final class WindowManagerImpl implements WindowManager {
@@ -162,11 +158,9 @@ public final class WindowManagerImpl implements WindowManager {
 - `WindowManagerImpl`为`WindowManager`的实现类。`WindowManagerImpl`内部方法实现都是由代理类`WindowManagerGlobal`完成，而`WindowManagerGlobal`是一个单例，也就是一个进程中只有一个`WindowManagerGlobal`对象服务于所有页面的View。
 
 
-ViewRootImpl的初始化
-===
+# ViewRootImpl的初始化
 
 在Activity的onResume之后，当前Activity的Window对象中的View会被添加在WindowManager中。
-
 
 ```java
 public final class ActivityThread {
@@ -221,7 +215,6 @@ public final class ActivityThread {
 ```
 
 创建Window所对应的ViewRootImpl，并将Window所对应的View、ViewRootImpl、LayoutParams顺序添加在WindowManager中。
-
 
 ```java
 public final class WindowManagerGlobal {
@@ -323,10 +316,9 @@ public final class WindowManagerGlobal {
 }
 ```
 
-ViewRootImpl绑定Window所对应的View
-===
-ViewRootImpl绑定Window所对应的View，并对该View进行测量、布局、绘制等。
+# ViewRootImpl绑定Window所对应的View
 
+ViewRootImpl绑定Window所对应的View，并对该View进行测量、布局、绘制等。
 ```java
 public final class ViewRootImpl implements ViewParent,
         View.AttachInfo.Callbacks, HardwareRenderer.HardwareDrawCallbacks {
@@ -381,12 +373,9 @@ public final class ViewRootImpl implements ViewParent,
 }
 ```
 
-
-ViewRootImpl对mView进行操作
-===
+# ViewRootImpl对mView进行操作
 
 对View的操作包括文章最开始讲述的测量、布局、绘制，其过程主要是在ViewRootImpl的performTraversals方法中。
-
 ```java
 public final class ViewRootImpl implements ViewParent,
         View.AttachInfo.Callbacks, HardwareRenderer.HardwareDrawCallbacks {
@@ -462,7 +451,12 @@ public final class ViewRootImpl implements ViewParent,
         //想要展示窗口的宽高
         int desiredWindowWidth;
         int desiredWindowHeight;
-
+        if (mFirst) {
+            /*******部分代码省略**********/
+            //将窗口信息依附给DecorView
+            host.dispatchAttachedToWindow(mAttachInfo, 0);
+            /*******部分代码省略**********/
+        }
         //开始进行布局准备
         if (mFirst || windowShouldResize || insetsChanged ||
             viewVisibilityChanged || params != null) {
@@ -534,8 +528,8 @@ public final class ViewRootImpl implements ViewParent,
 }
 ```
 
-View的测量
----
+## View的测量
+
 ViewRootImpl调用performMeasure执行Window对应的View的测量。
 
 >- ViewRootImpl的performMeasure;
@@ -560,8 +554,8 @@ public final class ViewRootImpl implements ViewParent,
 }
 ```
 
-View的布局
----
+## View的布局
+
 ViewRootImpl调用performLayout执行Window对应的View的布局。
 
 >- ViewRootImpl的performLayout；
@@ -658,8 +652,8 @@ public final class ViewRootImpl implements ViewParent,
 }
 ```
 
-View的绘制
----
+## View的绘制
+
 ViewRootImpl调用performDraw执行Window对应的View的布局。
 
 >- ViewRootImpl的performDraw；
@@ -762,22 +756,41 @@ public final class ViewRootImpl implements ViewParent,
 }
 ```
 
-异步线程更新视图
-===
+# 异步线程更新视图
+
 异步线程中到底是否能对视图进行更新呢？我们先看看`TextView.setText`方法的代码执行流程图。
 
-<center>![setText.png](http://upload-images.jianshu.io/upload_images/1319879-2c7e4d1df9ee3ff7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+![setText.png](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktMmM3ZTRkMWRmOWVlM2ZmNy5wbmc?x-oss-process=image/format,png#pic_center)
 
-从上图看在页面进行视图更新的时候会触发`checkThread`,校验当前线程是否是`ViewRootImpl`被创建时所在的线程。而`ViewRootImpl`的创建是在Activity的`onResume`生命周期之后。
+从上图看在页面进行视图更新的时候会触发 `checkThread` ,校验当前线程是否是 `ViewRootImpl` 被创建时所在的线程。而 `ViewRootImpl` 的创建是在 `Activity` 的 `onResume` 生命周期之后。
 
->- 我们可以再`onResume`之前在异步线程进行视图更新,因为这个时候不会发生线程校验。
->- 我们可以再异步线程初始化`ViewRootImpl`同时在该线程进行视图更新。
+**需要注意的是不是所有的 `TextView.setText`  都会触发 `checkThread` 。** 比如 `TextView.setText` 之后对当前 `TextView` 的 `layout` 不会进行任何改变，那么这次的 `TextView.setText` 就可以在异步线程执行。 
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200423193533332.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center =600x220)
+**操作UI**的时候只有这些方法被调用的时候才会执行 `ViewRootImpl.checkThread` ，进行任务执行线程的校验。
+
+```java
+//异常信息，提示当前执行任务的线程与创建ViewRootImpl的线程不一样~！
+new CalledFromWrongThreadException("Only the original thread that created a view hierarchy can touch its views.");
+```
+
+## 异步线程执行UI操作
+我们知道了异步线程不建议**操作UI**的最终原因是：
+
+> 发生了对任务执行线程的校验，而且当前执行任务的线程与创建`ViewRootImpl` 的线程不一样；
+
+所以只要避免上面的执行逻辑，还是可以在异步线程**操作UI**的。
+
+1. 我们在不触发 `ViewRootImpl.checkThread` 的情况下再异步线程执行**UI操作**。
+2. 我们在 `Activity.onResume` 之前在异步线程进行视图更新,因为这个时候不会发生线程校验。（PS：我们知道 `Activity` 所绑定的 `ViewRootImpl` 的初始化是在主线程中，所以我们一般不会在非主线程进行 `UI操作` 。）
+3. 我们可以再异步线程初始化 `ViewRootImpl` 同时在该线程进行视图更新（eg: `Dialog` 异步线程的展现，具体参考：[Dialog、Toast的Window和ViewRootImpl](http://blog.csdn.net/stven_king/article/details/78775211)）。
+
 
 PS:我们学习Android源码并通过了解其内部实现，我们可以通过技术手段去掉、增加或修改部分代码逻辑。以期望能做出更好的产品、做更细节的优化。但是想这种界面绘制只能发生在主线程规则我们还是必须要遵守的。`两个线程不能同时draw，否则屏幕会花；不能同时写一块内存，否则内存会花；不能同时写一份文件，否则文件会花。同一时刻只有一个线程可以做ui，那么当两个线程互斥几率较大时，或者保证互斥的代码复杂时，选择其中一个长期持有其他发消息就是典型的解决方案。所以普遍的要求ui只能单线程。`
 
-Activity、Dialog、Toast的ViewRootImpl的不同
-===
-文章前面内容都是站在Activity的角度来进行代码解析的，因此我们不再对Dialog和Toast与Activity做具体分析，主要来看看它们与Activity有什么不同之处。详见：[Dialog、Toast的Window和ViewRootImpl](http://dandanlove.com/2017/12/11/viewrootimpl-dialog-toast/)。
+# Activity、Dialog、Toast的ViewRootImpl的不同
+
+文章前面内容都是站在Activity的角度来进行代码解析的，因此我们不再对Dialog和Toast与Activity做具体分析，主要来看看它们与Activity有什么不同之处。详见：[Dialog、Toast的Window和ViewRootImpl](http://blog.csdn.net/stven_king/article/details/78775211)。
 
 总结
 ===
@@ -786,4 +799,5 @@ Activity、Dialog、Toast的ViewRootImpl的不同
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
 
 想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
+
 <center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>

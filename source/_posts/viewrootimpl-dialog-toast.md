@@ -590,11 +590,12 @@ private static class TN extends ITransientNotification.Stub {
 ```
 
 # Dialog和Toast在异步线程的展现
-[ViewRootImpl的独白，我不是一个View(布局篇)](https://dandanlove.blog.csdn.net/article/details/78775166) ，这篇文章说明了为什么我们一般禁止在非 `UI线程` 中刷新 `View` 。
 
-> `ViewRootImpl.checkThread` 方法会校验当前执行的线程是否是 `ViewRootImpl` 构造的线程。所以在 `ViewRootImpl` 没有构造出来之前 `View` 可以在异步线程刷新，或者 `ViewRootImpl`  本身就在**异步线程**构造，那么这个异步线程也能刷新 `View` 。
+[ViewRootImpl的独白，我不是一个View(布局篇)](https://dandanlove.blog.csdn.net/article/details/78775166) 这篇文章说明了为什么我们一般禁止在非 `UI线程` 中刷新 `View` ，以及怎么安全的在异步线程**操作UI**。
 
-那么 `Toast` 、 `Dialog` 和 `View` 的异步刷新是否一致呢？
+> 发生了对任务执行线程的校验，而且当前执行任务的线程与创建 `ViewRootImpl` 的线程不一样；。
+
+那么 `Toast` 、 `Dialog` 和 `View` 的**异步展现**，与**异步操作UI**是否一致呢？
 
 首先测试一下异步展现 `Dialog` 和 `Toast` :
 
@@ -649,6 +650,9 @@ new Thread(new Runnable() {
 我们可以看到都是提示 `当前的Handler的Looper没有调用prepare`。
 我们在上面进行源码阅读的时候都看到了 `Toast.TN` 和 `Dialog` 构造的时候的 `Handler` 都是默认当前线程的 `Looper` 。
 如果当前线程的 `Looper` 没有 `prepare` 那么必定会抛异常，如果仅仅执行了 `prepare` 那么崩溃不会产生了，但是依旧不展示。因为整个 `Looper` 还没有开始，里面的 `Message` 都未进行处理。最后我们将代码中注释的 `Looper.prepare();` 和 `Looper.loop();` 打开就可以正常在异步线程进行 `Toast` 和 `Dialog` 的展现。
+
+所以 `Toast` 和 `Dialog` 的异步展现其实主要是与其线程的 `Looper` 队列有关。 `Toast` 和 `Dialog` 展示的时候进行的 `ViewRootImpl` 的创建，这个执行**UI操作**的也是这个线程，所以展现不会发现异常。如果对 `Dialog` 进行**异步刷新UI** ，那么他的限制和 `View` 的异步刷新是相同的。
+
 
 # 总结
 
