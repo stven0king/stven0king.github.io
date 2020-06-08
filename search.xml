@@ -1,6 +1,251 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Android内存泄漏检测工具使用手册</title>
+    <url>/2020/06/05/android-memory-leak-analyze-tool/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>性能优化除过我们平时自己设计和开发之外就得考虑使用工具进行检测。<code>Android</code> 关于能够定位和剖析问题的内存工具有很多，但不是每个工具所有场景都能覆盖到。</p>
+<ul>
+<li><code>DDMS</code></li>
+<li><code>LeakCanary</code></li>
+<li><code>haha/shark</code></li>
+<li><code>Android Profile</code></li>
+<li><code>MAT</code></li>
+<li><code>Jhat</code></li>
+<li><code>dumpsys meminfo</code></li>
+<li><code>APT</code></li>
+<li><code>LeakInspector</code></li>
+<li><code>Chrome Devtool</code></li>
+<li><code>GC Log</code> </li>
+</ul>
+<p>现在对平时能发现问题，而且使用简单的一些工具的使用进行整理，并且对这个 <code>LeakCanaryTestActivity</code> 页面进行内存泄漏的分析。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">LeakCanaryTestActivity</span> <span class="keyword">extends</span> <span class="title">BaseActivity</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> Test test;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">(@Nullable Bundle savedInstanceState)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onCreate(savedInstanceState);</span><br><span class="line">        test = <span class="keyword">new</span> Test(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Test</span></span>&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">Test</span><span class="params">(Context context)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.context = context;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">private</span> Context context;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">int</span> a;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">int</span> b;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="LeakCanary"><a href="#LeakCanary" class="headerlink" title="LeakCanary"></a>LeakCanary</h2><p><a href="https://square.github.io/leakcanary/" target="_blank" rel="noopener">LeakCanary 官网</a></p>
+<p><code>LeakCanary</code> 的原理很简单: 在 <code>Activity</code> 或 <code>Fragment</code> 被销毁后, 将他们的引用包装成一个 <code>WeakReference</code>, 然后将这个 <code>WeakReference</code> 关联到一个 <code>ReferenceQueue</code> 。查看<code>ReferenceQueue</code>中是否含有 <code>Activity</code> 或 <code>Fragment</code> 的引用。如果没有 <strong>触发GC</strong> 后再次查看。还是没有的话就说明回收成功, 否则可能发生了泄露. 这时候开始 <code>dump</code> 内存的信息,并分析泄露的引用链。</p>
+<h3 id="在Android中接入LeakCanary"><a href="#在Android中接入LeakCanary" class="headerlink" title="在Android中接入LeakCanary"></a>在Android中接入LeakCanary</h3><figure class="highlight groovy"><table><tr><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">  debugImplementation <span class="string">'com.squareup.leakcanary:leakcanary-android:2.3'</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 <code>LeakCanary2.0</code> 之前我们接入的时候需要在 <code>Application.onCreate</code> 方法中显式调用 <code>LeakCanary.install(this);</code> 开启 <code>LeakCanary</code> 的内存监控。</p>
+<p><code>LeakCanary2.0</code> 开始通过自己注册的 <code>provider</code> 自己开启 <code>LeakCanary</code> 的内存监控。我们平时开发用的 <code>Instant Run</code> 运行过程中也使用的是这种静默方式进行启动。</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">provider</span> <span class="attr">android:name</span>=<span class="string">"com.android.tools.ir.server.InstantRunContentProvider"</span> </span></span><br><span class="line"><span class="tag">    <span class="attr">android:multiprocess</span>=<span class="string">"true"</span> </span></span><br><span class="line"><span class="tag">  <span class="attr">android:authorities</span>=<span class="string">"com.tzx.androidcode.com.android.tools.ir.server.InstantRunContentProvider"</span>/&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="LeakCanary内存泄漏分析"><a href="#LeakCanary内存泄漏分析" class="headerlink" title="LeakCanary内存泄漏分析"></a>LeakCanary内存泄漏分析</h3><p>在进行 <code>debug</code> 或者 <code>UI自动化</code> 测试的时候，我们会在通知栏看到有关内存泄漏的提示。查看详情后我们能看到相关的内存泄漏具体位置，存在泄露的成员变量都用波浪线进行的标识。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605194330839.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="LeakCanary-user"></p>
+<h3 id="内存泄漏上报到服务端"><a href="#内存泄漏上报到服务端" class="headerlink" title="内存泄漏上报到服务端"></a>内存泄漏上报到服务端</h3><p><code>LeakCanary</code> 升级到 <code>2.0</code> 的  <code>beta</code> 和 <code>final</code> 版本之后 <a href="https://square.github.io/leakcanary/shark/" target="_blank" rel="noopener">shark 官网</a> 文档提供的的内存泄漏上报方式对应的 <code>API</code> 已经过时，我们需要实现新的接口将 <code>LeakCanary</code> 捕获的内存泄漏进行上报。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">class LeakUploader : OnHeapAnalyzedListener &#123;</span><br><span class="line">  <span class="function">override fun <span class="title">onHeapAnalyzed</span><span class="params">(heapAnalysis: HeapAnalysis)</span> </span>&#123;</span><br><span class="line">    TODO(<span class="string">"Upload heap analysis to server"</span>)</span><br><span class="line">    <span class="comment">//HeapAnalysis的toString和2.0之前的版本的LeakCanary.leakInfo获得的信息类似</span></span><br><span class="line">    println(heapAnalysis)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">class MyApplication : Application() &#123;</span><br><span class="line">  <span class="function">override fun <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.onCreate()</span><br><span class="line">    LeakCanary.config = LeakCanary.config.copy(</span><br><span class="line">        onHeapAnalyzedListener = LeakUploader()</span><br><span class="line">    )</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Shark"><a href="#Shark" class="headerlink" title="Shark"></a>Shark</h2><p><a href="https://square.github.io/leakcanary/shark/" target="_blank" rel="noopener">shark 官网</a></p>
+<p><code>Shark</code>是为 <code>LeakCanary 2</code> 提供支持的堆分析器，它是<code>Kotlin</code>独立堆分析库，可在低内存占用情况下高速运行（PS：<code>LeakCanary 2</code> 之前的堆分析库是 <code>haha</code> ，<a href="https://github.com/square/haha" target="_blank" rel="noopener">haha Git地址</a>）。</p>
+<p>此处说的 <code>LeakCanary 2</code> 为 <code>beta</code> 和 <code>final</code> 版本，<code>alpha</code> 版依旧是用的 <code>haha</code> 只不过是用 <code>kotlin</code> 写的。</p>
+<p><code>Shark</code> 在为 <code>LeakCanary 2</code> 提供支持的同事也提供 <strong>Shark CLI</strong> 支持。</p>
+<p><code>Shark</code> 命令行界面（<code>CLI</code>）使您可以直接从计算机分析堆。它可以转储安装在已连接的 <code>Android</code> 设备上的应用程序的堆，对其进行分析，甚至剥离所有敏感数据（例如PII，密码或加密密钥）的堆转储，这在共享堆转储时非常有用。</p>
+<h3 id="Shark分析当前应用的内存泄漏情况"><a href="#Shark分析当前应用的内存泄漏情况" class="headerlink" title="Shark分析当前应用的内存泄漏情况"></a>Shark分析当前应用的内存泄漏情况</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">shark-cli --device 设备id --process 包名 analyze</span><br></pre></td></tr></table></figure>
+<p><img src="https://img-blog.csdnimg.cn/20200605194413812.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="shark-cli-analyze"></p>
+<p>同时支持混淆后的内存泄漏分析，利用<code>mapping</code>文件进行可读性还原。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">shark-cli -d 设备id -p 包名 -m 混淆文件 analyze</span><br></pre></td></tr></table></figure>
+<p><img src="https://img-blog.csdnimg.cn/20200605194453407.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="shark-cli-analyze-mapping"></p>
+<h3 id="Shark分析hprof文件"><a href="#Shark分析hprof文件" class="headerlink" title="Shark分析hprof文件"></a>Shark分析hprof文件</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">shark-cli -h 生成的hprof文件 analyze</span><br></pre></td></tr></table></figure>
+<p><img src="https://img-blog.csdnimg.cn/20200605194524639.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="shark-cli-analyze-hprof"></p>
+<h2 id="Android-Profile"><a href="#Android-Profile" class="headerlink" title="Android Profile"></a>Android Profile</h2><p><strong>Android Profiler</strong>分为三大模块： <strong>cpu</strong>、<strong>内存</strong> 、<strong>网络</strong>。</p>
+<p><a href="https://developer.android.com/studio/profile/memory-profiler?hl=zh-cn" target="_blank" rel="noopener">官网：使用 Memory Profiler 查看 Java 堆和内存分配</a></p>
+<p><code>Memory Profiler</code> 是<code>Android Profiler</code>中的一个组件，它可以帮助您识别内存泄漏和内存溢出，从而导致存根、冻结甚至应用程序崩溃。它显示了应用程序内存使用的实时图，让您捕获堆转储、强制垃圾收集和跟踪内存分配。</p>
+<h3 id="捕获堆转储进行分析"><a href="#捕获堆转储进行分析" class="headerlink" title="捕获堆转储进行分析"></a>捕获堆转储进行分析</h3><p><img src="https://img-blog.csdnimg.cn/20200605194608555.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="profiler-docs"></p>
+<p>在列表的顶部，您可以使用右下拉菜单在列表之间切换:</p>
+<ul>
+<li><code>Arrange by class</code>： 根据类名分配。</li>
+<li><code>Arrange by package</code>：根据包名分配。</li>
+<li><code>Arrange by callstack</code>: 根据调用堆栈排序。</li>
+</ul>
+<p>查看堆转储后的信息：</p>
+<ul>
+<li>您的应用程序分配了哪些类型的对象，以及每个对象的数量;</li>
+<li>每个对象使用多少内存;</li>
+<li>每个对象的引用被保留在你的代码中;</li>
+<li>调用堆栈，用于分配对象的位置（只有在记录分配时捕获堆转储）;</li>
+</ul>
+<h2 id="MAT安装"><a href="#MAT安装" class="headerlink" title="MAT安装"></a>MAT安装</h2><p>打开 <code>Eclipse-&gt;help-&gt;Eclipse Marketplce</code>，搜索<code>Memory Analyze</code>进行安装，安装完成后重启 <code>Eclipse</code>。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605194648980.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="marketplace-memory-analyze"></p>
+<h2 id="MAT使用"><a href="#MAT使用" class="headerlink" title="MAT使用"></a>MAT使用</h2><p>将<code>dump heap</code> 生成的 <code>hprof</code> 文件转化为<strong>MAT</strong>能处理的<code>hprof</code> 文件。</p>
+<p>执行 <code>android.os.Debug.dumpHprofData(hprofPath)</code>  生成 <code>hprof</code> 文件，<strong>执行之前记得进行GC</strong>。</p>
+<p><code>hprof-conv</code> 位于 <code>sdk/platform-tools/hprof-conv</code> 。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hprof-conv memory-android.hprof memory-mat.hprof</span><br></pre></td></tr></table></figure>
+<h3 id="MAT处理导入hprof文件"><a href="#MAT处理导入hprof文件" class="headerlink" title="MAT处理导入hprof文件"></a>MAT处理导入hprof文件</h3><p><img src="https://img-blog.csdnimg.cn/20200605194746623.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="mat-overview"></p>
+<p><code>Action</code> 有一下几个视图：</p>
+<table>
+<thead>
+<tr>
+<th>视图</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Histogram</td>
+<td>列举内存中对象存在的个数和大小，以及对于的名称</td>
+</tr>
+<tr>
+<td>Dominator Tree</td>
+<td>站在对象的角度查看他们的内存情况</td>
+</tr>
+<tr>
+<td>Top Consumers</td>
+<td>该视图会显示可能的内存泄漏点</td>
+</tr>
+<tr>
+<td>Duplicate Classes</td>
+<td>检测由多个类加载器加载的类</td>
+</tr>
+</tbody>
+</table>
+<h3 id="寻找内存泄漏的类"><a href="#寻找内存泄漏的类" class="headerlink" title="寻找内存泄漏的类"></a>寻找内存泄漏的类</h3><p>根据内存中类的对象实例数量，判断该类对象是否被泄露。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605195109947.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="mat-histogram"></p>
+<p>我们可以利用提供的多种检索方式进行目标类的检索，我这里用包名作为检索要素。</p>
+<blockquote>
+<p><strong>Shallow Size</strong></p>
+</blockquote>
+<ul>
+<li>对象自身占用的内存大小，不包括它引用的对象。</li>
+<li>针对非数组类型的对象，它的大小就是对象与它所有的成员变量大小的总和。当然这里面还会包括一些<code>java</code>语言特性的数据存储单元。</li>
+<li>针对数组类型的对象，它的大小是数组元素对象的大小总和。</li>
+</ul>
+<blockquote>
+<p><strong>Retained Size</strong></p>
+</blockquote>
+<p><code>Retained Size</code>  = <code>当前对象大小</code> + <code>当前对象可直接或间接引用到的对象的大小总和</code>。(间接引用的含义：A-&gt;B-&gt;C, C就是间接引用。如果<code>B</code> 和 <code>C</code> 没有被其他对象引用，那么 <code>RetainedSize-A = ShallowSize(A + B + C)</code> 它和 <a href="https://en.wikipedia.org/wiki/Dominator_(graph_theory" target="_blank" rel="noopener">Dominator</a>) 比较相似)<br>换句话说，<code>Retained Size</code>就是当前对象被<code>GC</code>后，从<code>Heap</code>上总共能释放掉的内存。<br>不过，释放的时候还要排除被<code>GC Roots</code>直接或间接引用的对象。他们暂时不会被被当做<code>Garbage</code>。</p>
+<p>从上图可以看出 <code>MainActivity</code> 、<code>LeakCanaryTestActivity</code> 和 <code>LeakCanaryTestActivity$a</code> 都有一个实例没有被回收。</p>
+<h3 id="分析被泄露的类的引用关系"><a href="#分析被泄露的类的引用关系" class="headerlink" title="分析被泄露的类的引用关系"></a>分析被泄露的类的引用关系</h3><p>选择没有回收的类，进行 <code>list objects -&gt; with incoming references</code> 操作得到被引用的对象。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605195136445.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="mat-histogram-list-object"></p>
+<blockquote>
+<p><code>with outgoing references</code> : 该对象内部引用了那些其他对象；</p>
+<p><code>with incoming references</code> : 该对象被谁进行了引用；</p>
+</blockquote>
+<p>得到被引用的类之后，进行 <code>Path To GC Roots -&gt; exclude all phantom/weak/soft etc. references</code>  操作，得到所有引用类型的引用。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605195159729.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="mat-histogram-list-gcroot"></p>
+<blockquote>
+<p><code>StrongReference</code>(强引用)：通常我们编写的代码都是 <code>StrongReference</code>，于此对应的是强可达性，只有去掉强可达，对象才被回收。</p>
+</blockquote>
+<blockquote>
+<p><code>SoftReference</code>(软引用)：只要有足够的内存，就一直保持对象，直到发现内存吃紧且没有<code>StrongReference</code>时才回收对象。一般可用来实现缓存,需要获取对象时，可以调用get方法。</p>
+</blockquote>
+<blockquote>
+<p><code>WeakReference</code>(弱引用)：随时可能会被垃圾回收器回收，不一定要等到虚拟机内存不足时才强制回收。要获取对象时，同样可以调用<code>get</code>方法。</p>
+</blockquote>
+<blockquote>
+<p><code>PhantomReference</code>(虚引用)：根本不会在内存中保持任何对象，你只能使用<code>PhantomReference</code>本身。一般用于在进入<code>finalize()</code>方法后进行特殊的清理过程。</p>
+</blockquote>
+<h3 id="找到最终的泄漏的地方"><a href="#找到最终的泄漏的地方" class="headerlink" title="找到最终的泄漏的地方"></a>找到最终的泄漏的地方</h3><p><img src="https://img-blog.csdnimg.cn/20200605195226342.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="mat-histogram-list-gcroot-result"></p>
+<p>从这个图中我们可以可以得到：</p>
+<ol>
+<li><code>LeakCanaryTestActivity</code> 的一个实例被它的内部类 <code>LeakCanaryTestActivity$Test</code> 的成员变量 <code>context</code> 所持有；</li>
+<li><code>LeakCanaryTestActivity$Test</code> 的一个实例又被 <code>LeakCanaryTestActivity</code> 的成员变量 <code>test</code> 所持有。</li>
+</ol>
+<h3 id="Merge对比分析"><a href="#Merge对比分析" class="headerlink" title="Merge对比分析"></a>Merge对比分析</h3><p>如果我们没有明确的目标类，我们可以将两个 <code>hprof文件（泄漏前、泄漏后）</code> 进行对比。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605195250377.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="mat-merge"></p>
+<p>选择泄漏之前的 <code>hprof文件</code> 进行对比。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605195427161.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="mat-gcroot-merge"></p>
+<p>对比会得到哪些实例对象数量的增加和减少。如上图所示对比结果为 <code>LeakCanaryTestActivity</code> 和 <code>LeakCanaryTestActivity$a</code> （此处的<code>a</code> 为混淆之后的 <code>Test</code>）两个类梳理分别增加1个。</p>
+<p>我们继续向上面<strong>MAT</strong>分析步骤一样操作：</p>
+<ol>
+<li><p>进行 <code>list objects -&gt; with incoming references</code> 操作;</p>
+</li>
+<li><p>进行 <code>Path To GC Roots -&gt; exclude all phantom/weak/soft etc. references</code>  操作;</p>
+</li>
+</ol>
+<p><img src="https://img-blog.csdnimg.cn/20200605195313781.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="mat-merge-result"></p>
+<p>最终得到的结果和之前分析的相同的。</p>
+<h2 id="Jhat-Java自带的性能监测工具"><a href="#Jhat-Java自带的性能监测工具" class="headerlink" title="Jhat-Java自带的性能监测工具"></a>Jhat-Java自带的性能监测工具</h2><p><a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jhat.html" target="_blank" rel="noopener">Java8 jhat Analyzes the Java heap docs</a></p>
+<p><code>JHat</code> 是 <code>Oracle</code> 推出的一款 <code>Hprof</code> 分析软件，它和 <code>MAT</code> 并称为 <strong>Java 内存静态分析利器</strong>。不同于 <code>MAT</code> 的单人界面式分析，<code>jHat</code> <strong>使用多人界面式分析</strong>。它被 <strong>内置在 JDK 中</strong>，在命令行中输入 <code>jhat</code> 命令可查看有没有相应的命令。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">➜  Desktop jhat</span><br><span class="line">ERROR: No arguments supplied</span><br><span class="line">Usage:  jhat [-stack &lt;bool&gt;] [-refs &lt;bool&gt;] [-port &lt;port&gt;] [-baseline &lt;file&gt;] [-debug &lt;int&gt;] [-version] [-h|-help] &lt;file&gt;</span><br><span class="line"></span><br><span class="line">	-J&lt;flag&gt;          Pass &lt;flag&gt; directly to the runtime system. For</span><br><span class="line">			  example, -J-mx512m to use a maximum heap size of 512MB</span><br><span class="line">	-stack false:     Turn off tracking object allocation call stack.</span><br><span class="line">	-refs false:      Turn off tracking of references to objects</span><br><span class="line">	-port &lt;port&gt;:     Set the port for the HTTP server.  Defaults to 7000</span><br><span class="line">	-exclude &lt;file&gt;:  Specify a file that lists data members that should</span><br><span class="line">			  be excluded from the reachableFrom query.</span><br><span class="line">	-baseline &lt;file&gt;: Specify a baseline object dump.  Objects in</span><br><span class="line">			  both heap dumps with the same ID and same class will</span><br><span class="line">			  be marked as not being "new".</span><br><span class="line">	-debug &lt;int&gt;:     Set debug level.</span><br><span class="line">			    0:  No debug output</span><br><span class="line">			    1:  Debug hprof file parsing</span><br><span class="line">			    2:  Debug hprof file parsing, no server</span><br><span class="line">	-version          Report version number</span><br><span class="line">	-h|-help          Print this help and exit</span><br><span class="line">	&lt;file&gt;            The file to read</span><br><span class="line"></span><br><span class="line">For a dump file that contains multiple heap dumps,</span><br><span class="line">you may specify which dump in the file</span><br><span class="line">by appending "#&lt;number&gt;" to the file name, i.e. "foo.hprof#3".</span><br><span class="line"></span><br><span class="line">All boolean options default to "true"</span><br></pre></td></tr></table></figure>
+<p><code>Jhat</code> 使用的 <code>hprof</code> 文件和 <code>MAT</code> 一样都需要使用 <code>hprof-conv</code> 进行 <code>hprof</code> 转化。</p>
+<p>使用 <code>Jhat</code> 分析完 <code>hprof</code> 文件后会给一个 <code>Server port</code> ，比如 <code>7000</code> 。那么我们可以访问 <code>http://localhost:7000/</code> 查看分析结果。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605195500463.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="jhat-main"></p>
+<p>以包为单位展示所有的类，我们下拉到最底部可以看到有其他的查询方式。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605195530171.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="jhat-other-queries"></p>
+<h3 id="Show-heap-histogram"><a href="#Show-heap-histogram" class="headerlink" title="Show heap histogram"></a>Show heap histogram</h3><p>我们可以看到对应的类的内存实例数量以及占用对应的内存大小。</p>
+<p><a href="http://localhost:7000/histo/" target="_blank" rel="noopener">http://localhost:7000/histo/</a></p>
+<p><img src="https://img-blog.csdnimg.cn/20200605195548301.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="jhat-histo"></p>
+<h3 id="Execute-Object-Query-Language-OQL-query"><a href="#Execute-Object-Query-Language-OQL-query" class="headerlink" title="Execute Object Query Language (OQL) query"></a>Execute Object Query Language (OQL) query</h3><p>可以使用  <code>OQL</code> 查询~!</p>
+<p><code>OQL</code> 查询语法与 <code>Visual VM</code> 的 <code>OQL</code> 类似~ 基本语法如下：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> &lt;JavaScript expression <span class="keyword">to</span> <span class="keyword">select</span>&gt;</span><br><span class="line">        [ <span class="keyword">from</span> [instanceof] &lt;<span class="keyword">class</span> <span class="keyword">name</span>&gt; &lt;identifier&gt;</span><br><span class="line">        [ <span class="keyword">where</span> &lt;JavaScript <span class="built_in">boolean</span> expression <span class="keyword">to</span> filter&gt; ] ]</span><br></pre></td></tr></table></figure>
+<p><img src="https://img-blog.csdnimg.cn/20200605195614229.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="jhat-oql-result"></p>
+<p>我们点击某个类之后可以看到该类的详细信息：</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605195634698.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="jhat-class-detail"></p>
+<ul>
+<li><p><code>Exclude subclasses</code> 相当于<strong>MAT</strong> 的 <code>with outgoing references</code> : 该对象内部引用了那些其他对象；</p>
+</li>
+<li><p><code>Include subclasses</code> 相当于MAT 的 <code>with incoming references</code> : 该对象被谁进行了引用；</p>
+</li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20200605195805208.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="jhat-class-instances"></p>
+<p>先查看类的实例，然后再查看每个实例的相关引用情况。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200605195824649.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="jhat-class-object"></p>
+<h1 id="dumpsys-meminfo"><a href="#dumpsys-meminfo" class="headerlink" title="dumpsys meminfo"></a>dumpsys meminfo</h1><p> <code>Android</code> 系统是基于 <code>Linux</code> 内核的操作系统，所以在 <code>Linux</code> 中查看内存使用情况的命令在 <code>Android</code> 手机上也能使用比如 <code>top</code> 命令。除此之外</p>
+<ul>
+<li><code>procrank</code> ：获取所有进程的内存使用情况，排序是按照 <code>Pss</code> 大小，详细输出每个 <code>PID</code> 对应的 <code>Vss</code> 、 <code>Rss</code>      <code>Pss</code>  、<code>Uss</code>  、 <code>Swap</code>  、 <code>PSwap</code> 、 <code>USwap</code> 、 <code>ZSwap</code> 和 <code>cmdline</code>。但该命令使用需要 <code>root</code> 环境。</li>
+</ul>
+<p>一般来说内存占用大小有如下规律：<code>VSS</code>  &gt;=  <code>RSS</code>  &gt;= <code>PSS</code>  &gt;= <code>USS</code></p>
+<table>
+<thead>
+<tr>
+<th>简称</th>
+<th>全称</th>
+<th>含义</th>
+<th>等价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VSS</td>
+<td>Virtual Set Size</td>
+<td>虚拟耗用内存</td>
+<td>（包含共享库占用的内存）是单个进程全部可访问的地址空间</td>
+</tr>
+<tr>
+<td>RSS</td>
+<td>Resident Set Size</td>
+<td>实际使用物理内存</td>
+<td>(包含共享库占用的内存）是单个进程实际占用的内存大小，对于单个共享库， 尽管无论多少个进程使用，实际该共享库只会被装入内存一次。</td>
+</tr>
+<tr>
+<td>PSS</td>
+<td>Proportional Set Size</td>
+<td>实际使用的物理内存</td>
+<td>（比例分配共享库占用的内存）</td>
+</tr>
+<tr>
+<td>USS</td>
+<td>Unique Set Size</td>
+<td>进程独自占用的物理内存</td>
+<td>（不包含共享库占用的内存）USS 是一个非常非常有用的数字， 因为它揭示了运行一个特定进程的真实的内存增量大小。如果进程被终止， USS 就是实际被返还给系统的内存大小。</td>
+</tr>
+</tbody>
+</table>
+<p><code>USS</code> 是针对某个进程开始有可疑内存泄露的情况，进行检测的最佳数字。怀疑某个程序有内存泄露可以查看这个值是否一直有增加。</p>
+<ul>
+<li><code>cat /proc/meminfo</code> ：展示系统整体的内存情况，按照内存类型进行分类。</li>
+<li><code>free</code> ：查看可用内存，缺省单位为<code>KB</code>。该命令比较简单、轻量，专注于查看剩余内存情况。数据来源于 <code>/proc/meminfo</code> 。</li>
+</ul>
+<p>最后一个是本次叙述的重点 <code>dumpsys</code> 。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">dumpsys [options]</span><br><span class="line">               meminfo 显示内存信息</span><br><span class="line">               cpuinfo 显示CPU信息</span><br><span class="line">               account 显示accounts信息</span><br><span class="line">               activity 显示所有的activities的信息</span><br><span class="line">               window 显示键盘，窗口和它们的关系</span><br><span class="line">               wifi 显示wifi信息</span><br></pre></td></tr></table></figure>
+<p>使用 <code>dumpysys meminfo</code> 查看内存信息,后面可以添加 <code>pid | packagename</code> 查看该应用程序的内存信息。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">~/Desktop adb shell dumpsys meminfo com.tzx.androidcode</span><br><span class="line">Applications Memory Usage (in Kilobytes):</span><br><span class="line">Uptime: 131873995 Realtime: 240892295</span><br><span class="line"></span><br><span class="line">** MEMINFO in pid 19924 [com.tzx.androidcode] **</span><br><span class="line">                   Pss  Private  Private  SwapPss     Heap     Heap     Heap</span><br><span class="line">                 Total    Dirty    Clean    Dirty     Size    Alloc     Free</span><br><span class="line">                ------   ------   ------   ------   ------   ------   ------</span><br><span class="line">  Native Heap    11062    11032        0       99    38912    21656    17255</span><br><span class="line">  Dalvik Heap     4079     3984        0        0     5638     2819     2819</span><br><span class="line"> Dalvik Other     1405     1404        0        1</span><br><span class="line">        Stack       64       64        0        0</span><br><span class="line">       Ashmem        2        0        0        0</span><br><span class="line">      Gfx dev     2052     2052        0        0</span><br><span class="line">    Other dev        8        0        8        0</span><br><span class="line">     .so mmap      959       80       64        4</span><br><span class="line">    .jar mmap     1062        0       24        0</span><br><span class="line">    .apk mmap      109        0        0        0</span><br><span class="line">    .ttf mmap       33        0        0        0</span><br><span class="line">    .dex mmap     4513       36     4392        0</span><br><span class="line">    .oat mmap      197        0        0        0</span><br><span class="line">    .art mmap     6229     5924       16        1</span><br><span class="line">   Other mmap      680      196       96        0</span><br><span class="line">   EGL mtrack    19320    19320        0        0</span><br><span class="line">    GL mtrack     6392     6392        0        0</span><br><span class="line">      Unknown     1106     1092        0       15</span><br><span class="line">        TOTAL    59392    51576     4600      120    44550    24475    20074</span><br><span class="line"></span><br><span class="line"> App Summary</span><br><span class="line">                       Pss(KB)</span><br><span class="line">                        ------</span><br><span class="line">           Java Heap:     9924</span><br><span class="line">         Native Heap:    11032</span><br><span class="line">                Code:     4596</span><br><span class="line">               Stack:       64</span><br><span class="line">            Graphics:    27764</span><br><span class="line">       Private Other:     2796</span><br><span class="line">              System:     3216</span><br><span class="line"></span><br><span class="line">               TOTAL:    59392       TOTAL SWAP PSS:      120</span><br><span class="line"></span><br><span class="line"> Objects</span><br><span class="line">               Views:       82         ViewRootImpl:        2</span><br><span class="line">         AppContexts:        8           Activities:        2</span><br><span class="line">              Assets:       11        AssetManagers:        0</span><br><span class="line">       Local Binders:       22        Proxy Binders:       41</span><br><span class="line">       Parcel memory:       10         Parcel count:       24</span><br><span class="line">    Death Recipients:        2      OpenSSL Sockets:        0</span><br><span class="line">            WebViews:        0</span><br><span class="line"></span><br><span class="line"> SQL</span><br><span class="line">         MEMORY_USED:        0</span><br><span class="line">  PAGECACHE_OVERFLOW:        0          MALLOC_SIZE:        0</span><br></pre></td></tr></table></figure>
+<p><code>Android</code> 程序内存被分为2部分：<code>native</code> 和 <code>虚拟机</code> ，<code>虚拟机</code> 就是我们平常说的 <code>java堆</code>，我们创建的对象是在这里面分配的，而 <code>bitmap</code> 是直接在 <code>native</code> 上分配的，对于内存的限制是<code>native+dalvik</code> 不能超过最大限制。以上信息可以看到该应用程序占用的 <code>native</code> 和 <code>dalvik</code>，对于分析内存泄露，内存溢出都有极大的作用。</p>
+<h2 id="读取垃圾回收消息-GC-Log"><a href="#读取垃圾回收消息-GC-Log" class="headerlink" title="读取垃圾回收消息(GC Log)"></a>读取垃圾回收消息(GC Log)</h2><p><a href="https://developer.android.com/studio/debug/am-logcat?hl=zh-cn#memory-logs" target="_blank" rel="noopener">官网：读取垃圾回收消息</a></p>
+<h3 id="Dalvik-日志消息"><a href="#Dalvik-日志消息" class="headerlink" title="Dalvik 日志消息"></a>Dalvik 日志消息</h3><p>在 <code>Dalvik</code>（而不是 <code>ART</code>）中，每个 <code>GC</code> 都会将以下信息输出到 <code>logcat</code> 中：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">D/dalvikvm(PID): GC_Reason Amount_freed, Heap_stats, External_memory_stats, Pause_time</span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">D/dalvikvm( <span class="number">9050</span>): GC_CONCURRENT freed <span class="number">2049</span>K, <span class="number">65</span>% free <span class="number">3571</span>K/<span class="number">9991</span>K, external <span class="number">4703</span>K/<span class="number">5261</span>K, paused <span class="number">2</span>ms+<span class="number">2</span>ms</span><br></pre></td></tr></table></figure>
+<h3 id="ART-日志消息"><a href="#ART-日志消息" class="headerlink" title="ART 日志消息"></a>ART 日志消息</h3><p>与 <code>Dalvik</code> 不同，<code>ART</code> 不会为未明确请求的 <code>GC</code> 记录消息。只有在系统认为 <code>GC</code> 速度较慢时才会输出 <code>GC</code> 消息。更确切地说，仅在 <code>GC</code> 暂停时间超过 5 毫秒或 <code>GC</code> 持续时间超过 100 毫秒时。如果应用未处于可察觉到暂停的状态（例如应用在后台运行时，这种情况下，用户无法察觉 <code>GC</code> 暂停），则其所有 <code>GC</code> 都不会被视为速度较慢。系统一直会记录显式 <code>GC</code>。</p>
+<p><code>ART</code> 会在其垃圾回收日志消息中包含以下信息：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">I/art: <span class="function">GC_Reason GC_Name <span class="title">Objects_freed</span><span class="params">(Size_freed)</span> AllocSpace Objects,</span></span><br><span class="line"><span class="function">        <span class="title">Large_objects_freed</span><span class="params">(Large_object_size_freed)</span> Heap_stats LOS objects, <span class="title">Pause_time</span><span class="params">(s)</span></span></span><br></pre></td></tr></table></figure>
+<p>示例：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">I/art : Explicit concurrent mark sweep GC freed <span class="number">104710</span>(<span class="number">7</span>MB) AllocSpace objects,</span><br><span class="line">        <span class="number">21</span>(<span class="number">416</span>KB) LOS objects, <span class="number">33</span>% free, <span class="number">25</span>MB/<span class="number">38</span>MB, paused <span class="number">1.230</span>ms total <span class="number">67.216</span>ms</span><br></pre></td></tr></table></figure>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+<p>想阅读作者的更多文章，可以查看我的公共号：</p>
+<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>]]></content>
+      <categories>
+        <category>Android</category>
+      </categories>
+      <tags>
+        <tag>内存泄漏</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Bitmap图片压缩，大图加载防止OOM</title>
     <url>/2020/04/22/bitmap-load-big-pic/</url>
     <content><![CDATA[<p><img src="https://img-blog.csdnimg.cn/20200422150554242.jpeg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="在这里插入图片描述"></p>
@@ -5504,6 +5749,22 @@ Looper在Android的消息机制中扮演着消息循环的角色，具体来说�
       </tags>
   </entry>
   <entry>
+    <title>python、main函数和argv参数</title>
+    <url>/2017/02/08/python-main-argvs/</url>
+    <content><![CDATA[<p>笔者学习和使用过的语言中：C语言，C++语言，C#语言，Java语言都时有main函数在的，main是程序执行的起点，Python中，也有类似的运行机制，但方式却截然不同：Python使用缩进对齐组织代码的执行，所有没有缩进的代码（非函数定义和类定义），都会在载入时自动执行，这些代码，可以认为是Python的main函数。</p>
+<p>举个列子，我们可以清楚的了解：<br><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ cat test.py </span><br><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">	print(<span class="string">'world~!'</span>)</span><br><span class="line">print(<span class="string">'hello'</span>)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	main()</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ python test.py </span><br><span class="line">hello</span><br><span class="line">world~!</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line">&gt; 这样看来是否main函数没有多大的作用呢？</span><br><span class="line"></span><br><span class="line">每个文件（模块）都可以任意写一些没有缩进的代码，并且在载入时自动执行，为了区分主执行文件还是被调用的文件，Python引入了一个变量__name__，当文件是被调用时，__name__的值为模块名，当文件被执行时，__name__为<span class="string">'__main__'</span>。这个特性，我们可以在每个模块中写上测试代码，这些测试代码仅当模块被Python直接执行时才会运行，代码和测试完美的结合在一起。</span><br><span class="line"></span><br><span class="line">```python</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ cat test.py </span><br><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">(argv)</span>:</span></span><br><span class="line">	<span class="keyword">if</span> argv == <span class="keyword">None</span>:</span><br><span class="line">		print(<span class="string">'world~!'</span>)</span><br><span class="line">	<span class="keyword">else</span>:</span><br><span class="line">		print(argv)</span><br><span class="line">print(<span class="string">'hello'</span>)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	main(sys.argv)</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ python test.py Tom</span><br><span class="line">hello</span><br><span class="line">[<span class="string">'test.py'</span>, <span class="string">'Tom'</span>]</span><br></pre></td></tr></table></figure></p>
+<p>想阅读作者的更多文章，可以查看我的公共号：</p>
+<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>python</tag>
+        <tag>mian</tag>
+        <tag>argv</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>python2 import urllib2报错</title>
     <url>/2017/02/08/python2-import-urllib2-error/</url>
     <content><![CDATA[<p>这段时间想玩玩python网页信息爬取，在使用urllib2这个库的时候导入失败，提示信息为：<br><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">im@<span class="number">58</span>user:~/PythonProjects/IOTest$ python</span><br><span class="line">Python <span class="number">2.7</span><span class="number">.6</span> (default, Oct <span class="number">26</span> <span class="number">2016</span>, <span class="number">20</span>:<span class="number">30</span>:<span class="number">19</span>) </span><br><span class="line">[GCC <span class="number">4.8</span><span class="number">.4</span>] on linux2</span><br><span class="line">Type <span class="string">"help"</span>, <span class="string">"copyright"</span>, <span class="string">"credits"</span> <span class="keyword">or</span> <span class="string">"license"</span> <span class="keyword">for</span> more information.</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="keyword">import</span> urllib2</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File <span class="string">"&lt;stdin&gt;"</span>, line <span class="number">1</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">  File <span class="string">"/usr/lib/python2.7/urllib2.py"</span>, line <span class="number">94</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">    <span class="keyword">import</span> httplib</span><br><span class="line">  File <span class="string">"/usr/lib/python2.7/httplib.py"</span>, line <span class="number">80</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">    <span class="keyword">import</span> mimetools</span><br><span class="line">  File <span class="string">"/usr/lib/python2.7/mimetools.py"</span>, line <span class="number">6</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">    <span class="keyword">import</span> tempfile</span><br><span class="line">  File <span class="string">"/usr/lib/python2.7/tempfile.py"</span>, line <span class="number">32</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">    <span class="keyword">import</span> io <span class="keyword">as</span> _io</span><br><span class="line">  File <span class="string">"io.py"</span>, line <span class="number">3</span>, <span class="keyword">in</span> &lt;module&gt;</span><br><span class="line">    os.remove(f)</span><br><span class="line">NameError: name <span class="string">'f'</span> <span class="keyword">is</span> <span class="keyword">not</span> defined</span><br></pre></td></tr></table></figure></p>
@@ -5518,22 +5779,6 @@ Looper在Android的消息机制中扮演着消息循环的角色，具体来说�
       <tags>
         <tag>python2</tag>
         <tag>urllib1L</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>python、main函数和argv参数</title>
-    <url>/2017/02/08/python-main-argvs/</url>
-    <content><![CDATA[<p>笔者学习和使用过的语言中：C语言，C++语言，C#语言，Java语言都时有main函数在的，main是程序执行的起点，Python中，也有类似的运行机制，但方式却截然不同：Python使用缩进对齐组织代码的执行，所有没有缩进的代码（非函数定义和类定义），都会在载入时自动执行，这些代码，可以认为是Python的main函数。</p>
-<p>举个列子，我们可以清楚的了解：<br><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ cat test.py </span><br><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">	print(<span class="string">'world~!'</span>)</span><br><span class="line">print(<span class="string">'hello'</span>)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	main()</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ python test.py </span><br><span class="line">hello</span><br><span class="line">world~!</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line">&gt; 这样看来是否main函数没有多大的作用呢？</span><br><span class="line"></span><br><span class="line">每个文件（模块）都可以任意写一些没有缩进的代码，并且在载入时自动执行，为了区分主执行文件还是被调用的文件，Python引入了一个变量__name__，当文件是被调用时，__name__的值为模块名，当文件被执行时，__name__为<span class="string">'__main__'</span>。这个特性，我们可以在每个模块中写上测试代码，这些测试代码仅当模块被Python直接执行时才会运行，代码和测试完美的结合在一起。</span><br><span class="line"></span><br><span class="line">```python</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ cat test.py </span><br><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">(argv)</span>:</span></span><br><span class="line">	<span class="keyword">if</span> argv == <span class="keyword">None</span>:</span><br><span class="line">		print(<span class="string">'world~!'</span>)</span><br><span class="line">	<span class="keyword">else</span>:</span><br><span class="line">		print(argv)</span><br><span class="line">print(<span class="string">'hello'</span>)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	main(sys.argv)</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ python test.py Tom</span><br><span class="line">hello</span><br><span class="line">[<span class="string">'test.py'</span>, <span class="string">'Tom'</span>]</span><br></pre></td></tr></table></figure></p>
-<p>想阅读作者的更多文章，可以查看我的公共号：</p>
-<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>python</tag>
-        <tag>mian</tag>
-        <tag>argv</tag>
       </tags>
   </entry>
   <entry>
