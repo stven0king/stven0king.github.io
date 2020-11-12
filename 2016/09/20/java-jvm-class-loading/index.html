@@ -90,13 +90,13 @@
 <meta property="og:site_name" content="下雨天要逛街">
 <meta property="og:description" content="我们都知道JVM虚拟机的可执行文件为.class文件，那么什么时候JVM虚拟机会加载自己所需要的类呢？之前自己一直有这样的问题，上网找过好多网友的解释，感觉好像理解但是自己却无法说清楚，今天看了《深入理解JVM虚拟机》一书的讲解感觉自己有些透了，在此记录下来自己的理解~！">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-b22583e65a4f6bd6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/0b37595778ff0b42f7f66e448cb9230b.png#pic_center">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2019-12-27T01:02:16.249Z">
+<meta property="og:updated_time" content="2020-11-12T11:44:55.775Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JVM虚拟机之类加载的过程">
 <meta name="twitter:description" content="我们都知道JVM虚拟机的可执行文件为.class文件，那么什么时候JVM虚拟机会加载自己所需要的类呢？之前自己一直有这样的问题，上网找过好多网友的解释，感觉好像理解但是自己却无法说清楚，今天看了《深入理解JVM虚拟机》一书的讲解感觉自己有些透了，在此记录下来自己的理解~！">
-<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/1319879-b22583e65a4f6bd6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/img_convert/0b37595778ff0b42f7f66e448cb9230b.png#pic_center">
 
 
 
@@ -407,30 +407,31 @@
 
       
         <p>我们都知道JVM虚拟机的可执行文件为.class文件，那么什么时候JVM虚拟机会加载自己所需要的类呢？之前自己一直有这样的问题，上网找过好多网友的解释，感觉好像理解但是自己却无法说清楚，今天看了《深入理解JVM虚拟机》一书的讲解感觉自己有些透了，在此记录下来自己的理解~！</p>
-<h2 id="类的生命周期"><a href="#类的生命周期" class="headerlink" title="类的生命周期"></a>类的生命周期</h2><p><img src="http://upload-images.jianshu.io/upload_images/1319879-b22583e65a4f6bd6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="绘图1.png"></p>
-<h1 id="类加载过程（主动-被动）"><a href="#类加载过程（主动-被动）" class="headerlink" title="类加载过程（主动|被动）"></a>类加载过程（主动|被动）</h1><blockquote>
+<p>我们都知道JVM虚拟机的可执行文件为.class文件，那么什么时候JVM虚拟机会加载自己所需要的类呢？之前自己一直有这样的问题，上网找过好多网友的解释，感觉好像理解但是自己却无法说清楚，今天看了《深入理解JVM虚拟机》一书的讲解感觉自己有些透了，在此记录下来自己的理解~！</p>
+<h2 id="类的生命周期"><a href="#类的生命周期" class="headerlink" title="类的生命周期"></a>类的生命周期</h2><p><img src="https://img-blog.csdnimg.cn/img_convert/0b37595778ff0b42f7f66e448cb9230b.png#pic_center" alt="绘图1.png"></p>
+<h2 id="类加载过程（主动-被动）"><a href="#类加载过程（主动-被动）" class="headerlink" title="类加载过程（主动|被动）"></a>类加载过程（主动|被动）</h2><blockquote>
 <p>类的主动引用（一定会发生类的初始化）</p>
+</blockquote>
 <ul>
 <li>new一个类的对象</li>
-<li>调用类的静态成员（除了final常量）和静态方法</li>
-<li>使用java.lang.reflect包的方法对类进行反射调用</li>
+<li>调用类的静态成员（除了<code>final</code>常量）和静态方法</li>
+<li>使用<code>java.lang.reflect</code>包的方法对类进行反射调用</li>
 <li>当初始化一个类，如果其父类没有被初始化，则先初始化他的父类</li>
-<li>当要执行某个程序时，一定先启动main方法所在的类</li>
+<li>当要执行某个程序时，一定先启动<code>main</code>方法所在的类</li>
 </ul>
-</blockquote>
 <blockquote>
 <p>类的被动引用（不会发生类的初始化）</p>
-<ul>
-<li>当访问一个静态变量时，只有真正生命这个静态变量的类才会被初始化（通过子类引用父类的静态变量，不会导致子类初始化）</li>
-<li>通过数组定义类应用，不会触发此类的初始化  A[] a = new A[10];</li>
-<li>引用常量(final类型)不会触发此类的初始化（常量在编译阶段就存入调用类的常量池中了）</li>
-</ul>
 </blockquote>
+<ul>
+<li>当访问一个静态变量时，只有真正声明这个静态变量的类才会被初始化（通过子类引用父类的静态变量，不会导致子类初始化）</li>
+<li>通过数组定义类应用，不会触发此类的初始化  <code>A[] a = new A[10]</code>;</li>
+<li>引用常量(<code>final</code>类型)不会触发此类的初始化（常量在编译阶段就存入调用类的常量池中了）</li>
+</ul>
 <h2 id="类加载的阶段之加载"><a href="#类加载的阶段之加载" class="headerlink" title="类加载的阶段之加载"></a>类加载的阶段之加载</h2><blockquote>
 <ul>
 <li>通过一个类的权限定名来获取定义此类的二进制字节流</li>
 <li>将这些二进制流所代表的静态存储结构转化为方法去的运行时数据结构</li>
-<li>在堆中生成一个代表这个类的java.lang.Class对象，作为方法去这个类的各种数据的访问入口</li>
+<li>在堆中生成一个代表这个类的<code>java.lang.Class</code>对象，作为方法去这个类的各种数据的访问入口</li>
 </ul>
 </blockquote>
 <h2 id="类加载的阶段之验证"><a href="#类加载的阶段之验证" class="headerlink" title="类加载的阶段之验证"></a>类加载的阶段之验证</h2><blockquote>
@@ -455,6 +456,7 @@
 <h2 id="类加载的阶段只类的卸载过程"><a href="#类加载的阶段只类的卸载过程" class="headerlink" title="类加载的阶段只类的卸载过程"></a>类加载的阶段只类的卸载过程</h2><blockquote>
 <p>在Java虚拟机中类的生命周期和对象的生命周期很相似。虚拟机创建并初始化对象，使程序使用对象，然后在对象变得不再被引用后可选地进行垃圾收集。同样，虚拟机装载、连接并且初始化类，使程序能使用类，当程序不再引用他们的时候可选的卸载它们。如果程序不再引用某类型，那么这个类型就变成不可触及，所以可以被垃圾收集（俗称GC）。但需要注意的是JVM自带的类加载器（PS：<a href="http://www.jianshu.com/p/a8371d26f848" target="_blank" rel="noopener">Bootstrap、ExtClassLoader、AppClassLoader</a>）装载的类型永远是可触及的，所以永远不会被卸载。只有使用用户定义的类装载器装载的类型才会变成不可触及的，从而被虚拟机回收。</p>
 </blockquote>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
 <p>想阅读作者的更多文章，可以查看我的公共号：</p>
 <center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>
       
@@ -752,7 +754,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#类的生命周期"><span class="nav-number">1.</span> <span class="nav-text">类的生命周期</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#类加载过程（主动-被动）"><span class="nav-number"></span> <span class="nav-text">类加载过程（主动|被动）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之加载"><span class="nav-number">1.</span> <span class="nav-text">类加载的阶段之加载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之验证"><span class="nav-number">2.</span> <span class="nav-text">类加载的阶段之验证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之准备"><span class="nav-number">3.</span> <span class="nav-text">类加载的阶段之准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之解析"><span class="nav-number">4.</span> <span class="nav-text">类加载的阶段之解析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之初始化"><span class="nav-number">5.</span> <span class="nav-text">类加载的阶段之初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之类的使用过程"><span class="nav-number">6.</span> <span class="nav-text">类加载的阶段之类的使用过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段只类的卸载过程"><span class="nav-number">7.</span> <span class="nav-text">类加载的阶段只类的卸载过程</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#类的生命周期"><span class="nav-number">1.</span> <span class="nav-text">类的生命周期</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载过程（主动-被动）"><span class="nav-number">2.</span> <span class="nav-text">类加载过程（主动|被动）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之加载"><span class="nav-number">3.</span> <span class="nav-text">类加载的阶段之加载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之验证"><span class="nav-number">4.</span> <span class="nav-text">类加载的阶段之验证</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之准备"><span class="nav-number">5.</span> <span class="nav-text">类加载的阶段之准备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之解析"><span class="nav-number">6.</span> <span class="nav-text">类加载的阶段之解析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之初始化"><span class="nav-number">7.</span> <span class="nav-text">类加载的阶段之初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段之类的使用过程"><span class="nav-number">8.</span> <span class="nav-text">类加载的阶段之类的使用过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类加载的阶段只类的卸载过程"><span class="nav-number">9.</span> <span class="nav-text">类加载的阶段只类的卸载过程</span></a></li></ol></div>
             
 
           </div>
