@@ -90,13 +90,13 @@
 <meta property="og:site_name" content="下雨天要逛街">
 <meta property="og:description" content="为什么要用记录呢，因为我从开始接触Android时我们的项目就在65535的边缘。不久Google就出了multidex的解决方案。我们也已经接入multidex好多年，但我自己还没有接入，所以本博文只是作者自己对multidex接入整理记录，大部分来源于Android官网~！~！">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="https://upload-images.jianshu.io/upload_images/1319879-3ab8f197df6e81e4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/415">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2019-12-27T01:02:16.251Z">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTNhYjhmMTk3ZGY2ZTgxZTQucG5n?x-oss-process=image/format,png#pic_center">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center">
+<meta property="og:updated_time" content="2020-12-30T07:39:55.726Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Multidex记录一：介绍和使用">
 <meta name="twitter:description" content="为什么要用记录呢，因为我从开始接触Android时我们的项目就在65535的边缘。不久Google就出了multidex的解决方案。我们也已经接入multidex好多年，但我自己还没有接入，所以本博文只是作者自己对multidex接入整理记录，大部分来源于Android官网~！~！">
-<meta name="twitter:image" content="https://upload-images.jianshu.io/upload_images/1319879-3ab8f197df6e81e4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/415">
+<meta name="twitter:image" content="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTNhYjhmMTk3ZGY2ZTgxZTQucG5n?x-oss-process=image/format,png#pic_center">
 
 
 
@@ -408,8 +408,7 @@
       
         <p><a href="http://dandanlove.com/2018/10/16/multidex1/" target="_blank" rel="noopener">Multidex记录一：介绍和使用</a><br><a href="http://dandanlove.com/2018/10/17/multidex2" target="_blank" rel="noopener">Multidex记录二：缺陷&amp;解决</a><br><a href="http://dandanlove.com/2018/10/18/multidex3" target="_blank" rel="noopener">Multidex记录三：源码解析</a></p>
 <h1 id="记录Multidex介绍和使用"><a href="#记录Multidex介绍和使用" class="headerlink" title="记录Multidex介绍和使用"></a>记录Multidex介绍和使用</h1><p>为什么要用记录呢，因为我从开始接触Android时我们的项目就在65535的边缘。不久Google就出了multidex的解决方案。我们也已经接入multidex好多年，但我自己还没有接入，所以本博文只是作者自己对multidex接入整理记录其中大部分来源于<a href="https://developer.android.com/studio/build/multidex?hl=zh-cn" target="_blank" rel="noopener">Google官网</a>。</p>
-<center><img src="https://upload-images.jianshu.io/upload_images/1319879-3ab8f197df6e81e4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/415" alt="image.png"></center>
-
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTNhYjhmMTk3ZGY2ZTgxZTQucG5n?x-oss-process=image/format,png#pic_center" alt="image.png"></p>
 <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>随着 Android 平台的持续成长，Android 应用的大小也在增加。当您的应用及其引用的库达到特定大小时，您会遇到构建错误，指明您的应用已达到 Android 应用构建架构的极限。早期版本的构建系统按如下方式报告这一错误：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Conversion to Dalvik format failed:Unable to execute dex: method ID not in [0, 0xffff]: 65536</span><br></pre></td></tr></table></figure>
 <blockquote>
@@ -463,7 +462,8 @@
 <figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">    buildTypes &#123;</span><br><span class="line">        release &#123;</span><br><span class="line">            multiDexKeepProguard <span class="string">'multidex-config.pro'</span></span><br><span class="line">            ...</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
 <p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：</p>
-<center>&gt;<img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>
+<p><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center" alt="振兴书城"></p>
+
       
     </div>
     
