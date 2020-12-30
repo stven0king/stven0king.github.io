@@ -18,7 +18,7 @@ description:  "为什么要用记录呢，因为我从开始接触Android时我�
 
 ## 流程图
 
-<center>![multidex-flowchart.png](https://upload-images.jianshu.io/upload_images/1319879-4e2349ad6d44d94e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/420)</center>
+![multidex-flowchart.png](https://img-blog.csdnimg.cn/img_convert/736a295b4111a8c69f8aa2c6fa0dfd1c.png#pic_center)
 
 ## 源码分析
 
@@ -442,8 +442,7 @@ public class PathClassLoader extends ClassLoader {
 
 ### apk解压结果预览
 
-<center>![image.png](https://upload-images.jianshu.io/upload_images/1319879-08ade64f6cfb7fee.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/620)</center>
-
+![image.png](https://img-blog.csdnimg.cn/img_convert/6901bcd5d42eb0d96d26e40f77ab9a1a.png#pic_center)
 
 
 
@@ -451,5 +450,5 @@ public class PathClassLoader extends ClassLoader {
 
 想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
 
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+![振兴书城](https://img-blog.csdnimg.cn/img_convert/dfe67a34f4fbdb8227296a417c1b2ca8.png#pic_center)
 

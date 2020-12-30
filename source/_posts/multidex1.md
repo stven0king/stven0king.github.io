@@ -15,7 +15,7 @@ description:  "为什么要用记录呢，因为我从开始接触Android时我�
 
 为什么要用记录呢，因为我从开始接触Android时我们的项目就在65535的边缘。不久Google就出了multidex的解决方案。我们也已经接入multidex好多年，但我自己还没有接入，所以本博文只是作者自己对multidex接入整理记录其中大部分来源于[Google官网](https://developer.android.com/studio/build/multidex?hl=zh-cn)。
 
-<center>![image.png](https://upload-images.jianshu.io/upload_images/1319879-3ab8f197df6e81e4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/415)</center>
+![image.png](https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy8xMzE5ODc5LTNhYjhmMTk3ZGY2ZTgxZTQucG5n?x-oss-process=image/format,png#pic_center)
 
 ## 背景
 随着 Android 平台的持续成长，Android 应用的大小也在增加。当您的应用及其引用的库达到特定大小时，您会遇到构建错误，指明您的应用已达到 Android 应用构建架构的极限。早期版本的构建系统按如下方式报告这一错误：
@@ -170,4 +170,4 @@ android {
 想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
 
 
-<center>>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)

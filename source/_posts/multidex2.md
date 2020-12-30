@@ -39,7 +39,7 @@ Google官方给解决办法就是混淆、混淆~！~！
 
 我们查看`dx`命令：
 
-<center>![dx.png](https://upload-images.jianshu.io/upload_images/1319879-88ce8bec026b43be.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/620)</center>
+![dx.png](https://img-blog.csdnimg.cn/img_convert/f0e3706a7f8ea86f362614f7190f7332.png#pic_center)
 
 > multidex相关参数说明：
 >- --multi-dex：多 dex 打包的开关
@@ -55,7 +55,8 @@ private int maxNumberOfIdxPerDex = DexFormat.MAX_MEMBER_IDX + 1;
 
 同时又一个隐藏的`--set-max-idx-number`参数可以用来修改`maxNumberOfIdxPerDex` 的值：
 
-<center>![--set-max-idx-number=.png](https://upload-images.jianshu.io/upload_images/1319879-6e14d5d56e970c01.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/620)</center>
+![--set-max-idx-number=.png](https://img-blog.csdnimg.cn/img_convert/0db153026a99a18a63a185a2006e2e31.png#pic_center)
+
 
 我们修改项目的`build.gradle`脚本：
 
@@ -94,7 +95,7 @@ android.applicationVariants.all {
 微信团队的方案：
 流程图：
 
-<center>![泡在网上的日子](https://upload-images.jianshu.io/upload_images/1319879-aa1f994deb5c9c3c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+![泡在网上的日子](https://img-blog.csdnimg.cn/img_convert/012a5390a9c1da43bf34534ce41f6b9a.png#pic_center)
 
 >- 对现有代码改动量最小；
 >- 该方案不关注Application被哪个组件启动。Activity ，Service ，Receiver ，ContentProvider 都满足（与美团方案都相同的问题，假如打开的不是Activity。这个时候弹出一个过渡的Activity就非常尴尬）；
@@ -161,4 +162,4 @@ public void waitForDexopt(Context base) {
 
 想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
 
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+![振兴书城](https://img-blog.csdnimg.cn/img_convert/dfe67a34f4fbdb8227296a417c1b2ca8.png#pic_center)
