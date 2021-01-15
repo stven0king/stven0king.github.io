@@ -2928,9 +2928,9 @@
         <category>Android</category>
       </categories>
       <tags>
-        <tag>byte</tag>
         <tag>Bitmap</tag>
         <tag>base64</tag>
+        <tag>byte</tag>
       </tags>
   </entry>
   <entry>
@@ -5643,9 +5643,9 @@
         <category>Android</category>
       </categories>
       <tags>
+        <tag>AIDL</tag>
         <tag>Android消息机制</tag>
         <tag>Messenger</tag>
-        <tag>AIDL</tag>
       </tags>
   </entry>
   <entry>
@@ -6526,8 +6526,8 @@ Looper在Android的消息机制中扮演着消息循环的角色，具体来说�
         <category>Android</category>
       </categories>
       <tags>
-        <tag>AIDL</tag>
         <tag>IPC</tag>
+        <tag>AIDL</tag>
       </tags>
   </entry>
   <entry>
@@ -6585,8 +6585,8 @@ Looper在Android的消息机制中扮演着消息循环的角色，具体来说�
         <category>Android</category>
       </categories>
       <tags>
-        <tag>AIDL</tag>
         <tag>IPC</tag>
+        <tag>AIDL</tag>
       </tags>
   </entry>
   <entry>
@@ -6803,42 +6803,6 @@ Looper在Android的消息机制中扮演着消息循环的角色，具体来说�
       </tags>
   </entry>
   <entry>
-    <title>Retrofit2.0中注解使用套路</title>
-    <url>/2016/07/11/retrofit-annotation/</url>
-    <content><![CDATA[<p>之前有讲过Retrofit2.0的简单使用和解析。最近在做Retrofit替换之前使用的AsyncHttpClient，在替换的过程中遇到一些之前忽视的小细节。自己感觉知道这几点在开发中灵活使用Retrofit非常有好处。</p>
-<p>#说说Retrofit中的注解</p>
-<blockquote>
-<p>@Query，@QueryMap，@Field，@FieldMap，@FormUrlEncoded，@Path，@Url<br>这七种注解应该是最常用的了。</p>
-</blockquote>
-<p>下边列举各种应用场景。</p>
-<h1 id="一、get方式请求静态url地址"><a href="#一、get方式请求静态url地址" class="headerlink" title="一、get方式请求静态url地址"></a>一、get方式请求静态url地址</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Retrofit retrofit = new Retrofit.Builder()</span><br><span class="line">	.baseUrl(&quot;https://api.github.com/&quot;)</span><br><span class="line">    .build();</span><br><span class="line">public interface GitHubService &#123;</span><br><span class="line">	//无参数</span><br><span class="line">	@GET(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos();</span><br><span class="line">	//少数参数</span><br><span class="line">	@GET(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos(@Query(&quot;time&quot;) long time);</span><br><span class="line">	//参数较多</span><br><span class="line">	@GET(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos(@QueryMap Map&lt;String, String&gt; params);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>@Query和@QueryMap也可以结合在一起使用。</p>
-<blockquote>
-<p>要是对应的url在服务端支持get/post两种类型的请求的话，那么上面的@GET变为@POST也可以执行，只不过post请求时所带的参数也会像get方式一样已？key=value&amp;key1=vaule2…的形式拼接在url的后边。</p>
-</blockquote>
-<h1 id="二、post方式请求静态url地址"><a href="#二、post方式请求静态url地址" class="headerlink" title="二、post方式请求静态url地址"></a>二、post方式请求静态url地址</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Retrofit retrofit = new Retrofit.Builder()</span><br><span class="line">    .baseUrl(&quot;https://api.github.com/&quot;)</span><br><span class="line">    .build()</span><br><span class="line">public interface GitHubService &#123;</span><br><span class="line">	//无参数</span><br><span class="line">	@POST(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos();</span><br><span class="line">	//少数参数</span><br><span class="line">	@FormUrlEncoded</span><br><span class="line">	@POST(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos(@Field(&quot;time&quot;) long time);</span><br><span class="line">	//参数较多</span><br><span class="line">	@FormUrlEncoded</span><br><span class="line">	@POST(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos(@FieldMap Map&lt;String, String&gt; params);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>@Field和@FieldMap可以结合在一起使用。</p>
-<blockquote>
-<p>另外是不是发现了比起@GET多了一个@FromUrlEncoded的注解。如果去掉@FromUrlEncoded在post请求中使用@Field和@FieldMap，那么程序会抛出 [java.lang.IllegalArgumentException: @Field parameters can only be used with form encoding. (parameter #1)]的错误异常。如果将@FromUrlEncoded添加在@GET上面呢，同样的也会抛出 [java.lang.IllegalArgumentException:FormUrlEncoded can only be specified on HTTP methods with request body (e.g., @POST).] 的错误异常。</p>
-</blockquote>
-<h1 id="三、半静态的url地址请求"><a href="#三、半静态的url地址请求" class="headerlink" title="三、半静态的url地址请求"></a>三、半静态的url地址请求</h1><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Retrofit retrofit = <span class="keyword">new</span> Retrofit.Builder()</span><br><span class="line">    .baseUrl(<span class="string">"https://api.github.com/"</span>)</span><br><span class="line">    .build()</span><br><span class="line">	</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">GitHubService</span> </span>&#123;</span><br><span class="line">  <span class="meta">@GET</span>(<span class="string">"users/&#123;user&#125;/repos"</span>)</span><br><span class="line">  Call&lt;List&lt;Repo&gt;&gt; listRepos(<span class="meta">@Path</span>(<span class="string">"user"</span>) String user);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="四、动态的url地址请求"><a href="#四、动态的url地址请求" class="headerlink" title="四、动态的url地址请求"></a>四、动态的url地址请求</h1><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Retrofit retrofit = <span class="keyword">new</span> Retrofit.Builder()</span><br><span class="line">    .baseUrl(<span class="string">"https://api.github.com/"</span>)</span><br><span class="line">    .build()</span><br><span class="line">	</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">GitHubService</span> </span>&#123;</span><br><span class="line">  <span class="meta">@GET</span></span><br><span class="line">  Call&lt;List&lt;Repo&gt;&gt; listRepos(<span class="meta">@Url</span> String user);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="五、总结小细节"><a href="#五、总结小细节" class="headerlink" title="五、总结小细节"></a>五、总结小细节</h1><ul>
-<li>当@GET或@POST注解的url为全路径时（可能和baseUrl不是一个域），会直接使用注解的url的域。</li>
-<li>如果请求为post实现，那么最好传递参数时使用@Field、@FieldMap和@FormUrlEncoded。因为@Query和或QueryMap都是将参数拼接在url后面的，而@Field或@FieldMap传递的参数时放在请求体的。</li>
-<li>使用@Path时，path对应的路径不能包含”/“，否则会将其转化为%2F。在遇到想动态的拼接多节url时，还是使用@Url吧。</li>
-</ul>
-<p>想阅读作者的更多文章，可以查看我的公共号：</p>
-<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>]]></content>
-      <categories>
-        <category>Android</category>
-      </categories>
-      <tags>
-        <tag>Retrofit2.0</tag>
-        <tag>Android网络请求框架</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Android网络之Retrofit2.0使用和解析</title>
     <url>/2016/07/11/retrofit-note/</url>
     <content><![CDATA[<h1 id="Android网络之Retrofit2-0使用和解析"><a href="#Android网络之Retrofit2-0使用和解析" class="headerlink" title="Android网络之Retrofit2.0使用和解析"></a>Android网络之Retrofit2.0使用和解析</h1><h2 id="Retrofit2在项目中的使用"><a href="#Retrofit2在项目中的使用" class="headerlink" title="Retrofit2在项目中的使用"></a>Retrofit2在项目中的使用</h2><h3 id="Android-studio项目添加依赖"><a href="#Android-studio项目添加依赖" class="headerlink" title="Android studio项目添加依赖"></a>Android studio项目添加依赖</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">compile <span class="string">'com.squareup.retrofit2:retrofit:2.0.1'</span></span><br></pre></td></tr></table></figure>
@@ -6911,6 +6875,42 @@ Looper在Android的消息机制中扮演着消息循环的角色，具体来说�
 <h4 id="请求结果的处理"><a href="#请求结果的处理" class="headerlink" title="请求结果的处理"></a>请求结果的处理</h4><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function">Response&lt;T&gt; <span class="title">parseResponse</span><span class="params">( okhttp3.Response rawResponse )</span> <span class="keyword">throws</span> IOException</span>&#123;</span><br><span class="line">	ResponseBody rawBody = rawResponse.body();</span><br><span class="line">	rawResponse = rawResponse.newBuilder()</span><br><span class="line">		      .body( <span class="keyword">new</span> NoContentResponseBody( rawBody.contentType(), rawBody.contentLength() ) )</span><br><span class="line">		      .build();</span><br><span class="line">	<span class="keyword">int</span> code = rawResponse.code();</span><br><span class="line">	<span class="keyword">if</span> ( code &lt; <span class="number">200</span> || code &gt;= <span class="number">300</span> )&#123;</span><br><span class="line">		<span class="keyword">try</span> &#123;</span><br><span class="line">			ResponseBody bufferedBody = Utils.buffer( rawBody );</span><br><span class="line">			<span class="keyword">return</span>(Response.error( bufferedBody, rawResponse ) );</span><br><span class="line">		&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">			rawBody.close();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> ( code == <span class="number">204</span> || code == <span class="number">205</span> )&#123;</span><br><span class="line">		<span class="keyword">return</span>(Response.success( <span class="keyword">null</span>, rawResponse ) );</span><br><span class="line">	&#125;</span><br><span class="line">	ExceptionCatchingRequestBody catchingBody = <span class="keyword">new</span> ExceptionCatchingRequestBody( rawBody );</span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="comment">//使用Converter将返回结果转化为接口返回的数据格式类型</span></span><br><span class="line">		T body = serviceMethod.toResponse( catchingBody );</span><br><span class="line">		<span class="comment">//包装成Response并返回</span></span><br><span class="line">		<span class="keyword">return</span>(Response.success( body, rawResponse ) );</span><br><span class="line">	&#125; <span class="keyword">catch</span> ( RuntimeException e ) &#123;</span><br><span class="line">		catchingBody.throwIfCaught();</span><br><span class="line">		<span class="keyword">throw</span> e;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>还记得创建Observable时 <code>Observable&lt;R&gt; observable = Observable.create(new CallOnSubscribe&lt;&gt;(call)).lift(OperatorMapResponseToBodyOrError.&lt;R&gt;instance());</code> ，OperatorMapResponseToBodyOrError将包装的Response中的body取出来并进行发射。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>现在随着Rxjava响应式编程越来越多的程序猿使用，自己也开始接触和使用。Retrofit+Rxjava+okhttp是时下比较受欢迎的网络请求框架，其源代码并不是很多，其底层网络通信时交由 OkHttp来完成的，但是Retrofit运用了大量的设计模式，代码逻辑很清晰，笔者以前用的是AsyncHttpClient作为app的网络请求框架，其源码也没自己的研究过。但看完Retrofit代码之后觉得收获很大，建议如果感兴趣可以抽时间仔细的阅读。</p>
+<p>想阅读作者的更多文章，可以查看我的公共号：</p>
+<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>]]></content>
+      <categories>
+        <category>Android</category>
+      </categories>
+      <tags>
+        <tag>Retrofit2.0</tag>
+        <tag>Android网络请求框架</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Retrofit2.0中注解使用套路</title>
+    <url>/2016/07/11/retrofit-annotation/</url>
+    <content><![CDATA[<p>之前有讲过Retrofit2.0的简单使用和解析。最近在做Retrofit替换之前使用的AsyncHttpClient，在替换的过程中遇到一些之前忽视的小细节。自己感觉知道这几点在开发中灵活使用Retrofit非常有好处。</p>
+<p>#说说Retrofit中的注解</p>
+<blockquote>
+<p>@Query，@QueryMap，@Field，@FieldMap，@FormUrlEncoded，@Path，@Url<br>这七种注解应该是最常用的了。</p>
+</blockquote>
+<p>下边列举各种应用场景。</p>
+<h1 id="一、get方式请求静态url地址"><a href="#一、get方式请求静态url地址" class="headerlink" title="一、get方式请求静态url地址"></a>一、get方式请求静态url地址</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Retrofit retrofit = new Retrofit.Builder()</span><br><span class="line">	.baseUrl(&quot;https://api.github.com/&quot;)</span><br><span class="line">    .build();</span><br><span class="line">public interface GitHubService &#123;</span><br><span class="line">	//无参数</span><br><span class="line">	@GET(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos();</span><br><span class="line">	//少数参数</span><br><span class="line">	@GET(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos(@Query(&quot;time&quot;) long time);</span><br><span class="line">	//参数较多</span><br><span class="line">	@GET(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos(@QueryMap Map&lt;String, String&gt; params);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>@Query和@QueryMap也可以结合在一起使用。</p>
+<blockquote>
+<p>要是对应的url在服务端支持get/post两种类型的请求的话，那么上面的@GET变为@POST也可以执行，只不过post请求时所带的参数也会像get方式一样已？key=value&amp;key1=vaule2…的形式拼接在url的后边。</p>
+</blockquote>
+<h1 id="二、post方式请求静态url地址"><a href="#二、post方式请求静态url地址" class="headerlink" title="二、post方式请求静态url地址"></a>二、post方式请求静态url地址</h1><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Retrofit retrofit = new Retrofit.Builder()</span><br><span class="line">    .baseUrl(&quot;https://api.github.com/&quot;)</span><br><span class="line">    .build()</span><br><span class="line">public interface GitHubService &#123;</span><br><span class="line">	//无参数</span><br><span class="line">	@POST(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos();</span><br><span class="line">	//少数参数</span><br><span class="line">	@FormUrlEncoded</span><br><span class="line">	@POST(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos(@Field(&quot;time&quot;) long time);</span><br><span class="line">	//参数较多</span><br><span class="line">	@FormUrlEncoded</span><br><span class="line">	@POST(&quot;users/stven0king/repos&quot;)</span><br><span class="line">	Call&lt;List&lt;Repo&gt;&gt; listRepos(@FieldMap Map&lt;String, String&gt; params);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>@Field和@FieldMap可以结合在一起使用。</p>
+<blockquote>
+<p>另外是不是发现了比起@GET多了一个@FromUrlEncoded的注解。如果去掉@FromUrlEncoded在post请求中使用@Field和@FieldMap，那么程序会抛出 [java.lang.IllegalArgumentException: @Field parameters can only be used with form encoding. (parameter #1)]的错误异常。如果将@FromUrlEncoded添加在@GET上面呢，同样的也会抛出 [java.lang.IllegalArgumentException:FormUrlEncoded can only be specified on HTTP methods with request body (e.g., @POST).] 的错误异常。</p>
+</blockquote>
+<h1 id="三、半静态的url地址请求"><a href="#三、半静态的url地址请求" class="headerlink" title="三、半静态的url地址请求"></a>三、半静态的url地址请求</h1><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Retrofit retrofit = <span class="keyword">new</span> Retrofit.Builder()</span><br><span class="line">    .baseUrl(<span class="string">"https://api.github.com/"</span>)</span><br><span class="line">    .build()</span><br><span class="line">	</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">GitHubService</span> </span>&#123;</span><br><span class="line">  <span class="meta">@GET</span>(<span class="string">"users/&#123;user&#125;/repos"</span>)</span><br><span class="line">  Call&lt;List&lt;Repo&gt;&gt; listRepos(<span class="meta">@Path</span>(<span class="string">"user"</span>) String user);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="四、动态的url地址请求"><a href="#四、动态的url地址请求" class="headerlink" title="四、动态的url地址请求"></a>四、动态的url地址请求</h1><figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Retrofit retrofit = <span class="keyword">new</span> Retrofit.Builder()</span><br><span class="line">    .baseUrl(<span class="string">"https://api.github.com/"</span>)</span><br><span class="line">    .build()</span><br><span class="line">	</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">GitHubService</span> </span>&#123;</span><br><span class="line">  <span class="meta">@GET</span></span><br><span class="line">  Call&lt;List&lt;Repo&gt;&gt; listRepos(<span class="meta">@Url</span> String user);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="五、总结小细节"><a href="#五、总结小细节" class="headerlink" title="五、总结小细节"></a>五、总结小细节</h1><ul>
+<li>当@GET或@POST注解的url为全路径时（可能和baseUrl不是一个域），会直接使用注解的url的域。</li>
+<li>如果请求为post实现，那么最好传递参数时使用@Field、@FieldMap和@FormUrlEncoded。因为@Query和或QueryMap都是将参数拼接在url后面的，而@Field或@FieldMap传递的参数时放在请求体的。</li>
+<li>使用@Path时，path对应的路径不能包含”/“，否则会将其转化为%2F。在遇到想动态的拼接多节url时，还是使用@Url吧。</li>
+</ul>
 <p>想阅读作者的更多文章，可以查看我的公共号：</p>
 <center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>]]></content>
       <categories>
