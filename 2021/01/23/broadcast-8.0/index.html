@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="Android8.0,签名权限," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="记录一下今天同事给我分享的比较有意思的Bug，在已有的已经在AndroidManifest.xml中注册的广播在部分手机上无法通过Action隐式启动。上网搜搜资料自己写了个Demo，Mark一下~！~！">
+<meta name="keywords" content="Android8.0,签名权限">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android8.0隐式广播和自定义签名权限">
+<meta property="og:url" content="http://yoursite.com/2021/01/23/broadcast-8.0/index.html">
+<meta property="og:site_name" content="下雨天要逛街">
+<meta property="og:description" content="记录一下今天同事给我分享的比较有意思的Bug，在已有的已经在AndroidManifest.xml中注册的广播在部分手机上无法通过Action隐式启动。上网搜搜资料自己写了个Demo，Mark一下~！~！">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/6346ddc0ece7034f9b69d509ed67751e.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/c161a43371831e84fbe2db7c36a2f342.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/16522b7278dc8b09f5b84e9cf029c5ed.png#pic_center">
+<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center">
+<meta property="og:updated_time" content="2021-01-26T11:44:52.541Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android8.0隐式广播和自定义签名权限">
+<meta name="twitter:description" content="记录一下今天同事给我分享的比较有意思的Bug，在已有的已经在AndroidManifest.xml中注册的广播在部分手机上无法通过Action隐式启动。上网搜搜资料自己写了个Demo，Mark一下~！~！">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/img_convert/6346ddc0ece7034f9b69d509ed67751e.png#pic_center">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2021/01/23/broadcast-8.0/"/>
+
+
+
+
+
+  <title>Android8.0隐式广播和自定义签名权限 | 下雨天要逛街</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1055a4e1d37a3a4dcb3a3e1c4f32f147";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/stven0king" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">下雨天要逛街</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/01/23/broadcast-8.0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="振兴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/jay.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="下雨天要逛街">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android8.0隐式广播和自定义签名权限</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-01-23T17:17:21+08:00">
+                2021-01-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2021/01/23/broadcast-8.0/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2021/01/23/broadcast-8.0/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  记录一下今天同事给我分享的比较有意思的Bug，在已有的已经在AndroidManifest.xml中注册的广播在部分手机上无法通过Action隐式启动。上网搜搜资料自己写了个Demo，Mark一下~！~！ 
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><img src="https://img-blog.csdnimg.cn/img_convert/6346ddc0ece7034f9b69d509ed67751e.png#pic_center" alt="我思故我在"></p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>记录一下今天同事给我分享的比较有意思的Bug，在已有的已经在<code>AndroidManifest.xml</code>中注册的广播在部分手机上无法通过<code>Action</code>隐式启动。上网搜搜资料自己写了个Demo，Mark一下~！~！</p>
+<p><a href="https://developer.android.com/about/versions/oreo/background" target="_blank" rel="noopener">Android官网：Oreo后台执行限制</a></p>
+<p>我们这里主要看对于广播的影响，摘抄一段官网上的介绍：</p>
+<h2 id="广播限制"><a href="#广播限制" class="headerlink" title="广播限制"></a>广播限制</h2><p>如果应用注册为接收广播，则在每次发送广播时，应用的接收器都会消耗资源。 如果多个应用注册为接收基于系统事件的广播，则会引发问题：触发广播的系统事件会导致所有应用快速地连续消耗资源，从而降低用户体验。 为了缓解这一问题，<code>Android 7.0</code>（API 级别 24）对广播施加了一些限制，如<a href="https://developer.android.com/topic/performance/background-optimization" target="_blank" rel="noopener">后台优化</a>中所述。 <code>Android 8.0</code>（API 级别 26）让这些限制更为严格。</p>
+<ul>
+<li>适配 <code>Android 8.0</code> 或更高版本的应用无法继续在其清单中为隐式广播注册广播接收器。 <em>隐式广播</em>是一种不专门针对该应用的广播。 例如，<code>ACTION_PACKAGE_REPLACED</code> 就是一种隐式广播，因为该广播将被发送给所有已注册侦听器，让后者知道设备上的某些软件包已被替换。 不过，<code>ACTION_MY_PACKAGE_REPLACED</code> 不是隐式广播，因为不管已为该广播注册侦听器的其他应用有多少，它都会只被发送给软件包已被替换的应用。</li>
+<li>应用可以继续在它们的清单中注册显式广播。</li>
+<li>应用可以在运行时使用 <code>Context.registerReceiver()</code> 为任意广播（不管是隐式还是显式）注册接收器。</li>
+<li>需要<a href="https://developer.android.com/guide/topics/manifest/permission-element#plevel" target="_blank" rel="noopener">签名权限</a>的广播不受此限制所限，因为这些广播只会发送到使用相同证书签名的应用，而不是发送到设备上的所有应用。</li>
+</ul>
+<p>在许多情况下，之前注册隐式广播的应用使用 <code>JobScheduler</code> 作业可以获得类似的功能。 例如，一款社交照片应用可能需要不时地执行数据清理，并且倾向于在设备连接到充电器时执行此操作。 之前，应用已经在清单中为 <code>ACTION_POWER_CONNECTED</code> 注册了一个接收器；当应用接收到该广播时，它会检查清理是否必要。 为了迁移到 <code>Android 8.0</code> 或更高版本，应用将该接收器从其清单中移除。 应用将清理作业安排在设备处于空闲状态和充电时运行。</p>
+<p><strong>请注意：</strong>很多隐式广播当前已不受此限制所限。 应用可以继续在其清单中为这些广播注册接收器，不管应用适配哪个 API 级别。 有关已豁免广播的列表，请参阅<a href="https://developer.android.com/guide/components/broadcast-exceptions" target="_blank" rel="noopener">隐式广播例外</a>。 </p>
+<p>更具上面的描述，我们可以得到一下几点：</p>
+<ol>
+<li>适配<code>Android 8.0</code>或更高版本的应用无法继续在其清单中为隐式广播注册广播接收器；</li>
+<li>应用可以继续在它们的清单中注册显式广播；</li>
+<li>推荐运行时使用<code>Context.registerReceiver()</code>注册广播；</li>
+<li>需要<strong>签名权限</strong>的广播不受此约束；</li>
+</ol>
+<h2 id="自定义权限"><a href="#自定义权限" class="headerlink" title="自定义权限"></a>自定义权限</h2><p><a href="https://developer.android.com/guide/topics/manifest/permission-element#plevel" target="_blank" rel="noopener">Android官网：permission</a></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">permission</span> <span class="attr">android:description</span>=<span class="string">"string resource"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:icon</span>=<span class="string">"drawable resource"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:label</span>=<span class="string">"string resource"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:name</span>=<span class="string">"string"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:permissionGroup</span>=<span class="string">"string"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:protectionLevel</span>=<span class="string">[</span>"<span class="attr">normal</span>" | "<span class="attr">dangerous</span>" |"<span class="attr">signature</span>" | <span class="attr">...</span>] /&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="android-protectionLevel"><a href="#android-protectionLevel" class="headerlink" title="android:protectionLevel"></a>android:protectionLevel</h3><p>说明权限中隐含的潜在风险，并指示系统在确定是否将权限授予请求授权的应用时应遵循的流程。</p>
+<p>每个保护级别都包含基本权限类型以及零个或多个标记。例如，<code>dangerous</code>保护级别没有标记。相反，保护级别 <code>signature|privileged</code>是<code>signature</code>基本权限类型和<code>privileged</code>标记的组合。</p>
+<p>下表列出了所有基本权限类型。如需查看标记列表，请参阅 <a href="https://developer.android.com/reference/android/R.attr#protectionLevel" target="_blank" rel="noopener">protectionLevel</a>。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">值</th>
+<th style="text-align:left">含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>normal</code></td>
+<td style="text-align:left">默认值。具有较低风险的权限，此类权限允许请求授权的应用访问隔离的应用级功能，对其他应用、系统或用户的风险非常小。系统会自动向在安装时请求授权的应用授予此类权限，无需征得用户的明确许可（但用户始终可以选择在安装之前查看这些权限）。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>dangerous</code></td>
+<td style="text-align:left">具有较高风险的权限，此类权限允许请求授权的应用访问用户私人数据或获取可对用户造成不利影响的设备控制权。由于此类权限会带来潜在风险，因此系统可能不会自动向请求授权的应用授予此类权限。例如，应用请求的任何危险权限都可能会向用户显示并且获得确认才会继续执行操作，或者系统会采取一些其他方法来避免用户自动允许使用此类功能。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>signature</code></td>
+<td style="text-align:left">只有在请求授权的应用使用与声明权限的应用相同的证书进行签名时系统才会授予的权限。如果证书匹配，则系统会在不通知用户或征得用户明确许可的情况下自动授予权限。</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>signatureOrSystem</code></td>
+<td style="text-align:left"><code>signature\privileged</code> 的旧同义词。在<strong>API级别23</strong>中已弃用。系统仅向位于<code>Android</code>系统映像的专用文件夹中的应用或使用与声明权限的应用相同的证书进行签名的应用授予的权限。不要使用此选项，因为 <code>signature</code> 保护级别应足以满足大多数需求，无论应用安装在何处，该保护级别都能正常发挥作用。<code>signatureOrSystem</code>权限适用于以下特殊情况：多个供应商将应用内置到一个系统映像中，并且需要明确共享特定功能，因为这些功能是一起构建的。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="自定义签名权限并使用"><a href="#自定义签名权限并使用" class="headerlink" title="自定义签名权限并使用"></a>自定义签名权限并使用</h3><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">permission</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:protectionLevel</span>=<span class="string">"signature"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:name</span>=<span class="string">"com.xx.xx.receiver"</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">uses-permission</span> <span class="attr">android:name</span>=<span class="string">"com.xx.xx.receiver"</span>/&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>我写个Demo测试一下，测试机<code>MI 8</code>，系统为<code>Android 10</code>。</p>
+<p>声明两个<code>Broadcast</code>,一个带权限，一个不带权限。<br><figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">open</span> <span class="class"><span class="keyword">class</span> <span class="title">CustomReceiver</span> : <span class="type">BroadcastReceiver</span></span>() &#123;</span><br><span class="line">    <span class="keyword">override</span> <span class="function"><span class="keyword">fun</span> <span class="title">onReceive</span><span class="params">(context: <span class="type">Context</span>?, intent: <span class="type">Intent</span>?)</span></span> &#123;</span><br><span class="line">        <span class="keyword">if</span>(intent != <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">var</span> param = intent.getStringExtra(<span class="string">"message"</span>)</span><br><span class="line">            <span class="keyword">var</span> result:String?</span><br><span class="line">            result = String.format(<span class="string">"get the receiver for %s"</span>, param)</span><br><span class="line">            XToast.show(result)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CustomReceiver2</span> : <span class="type">CustomReceiver</span></span>() &#123;&#125;</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!--带签名权限的广播--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">receiver</span> <span class="attr">android:name</span>=<span class="string">".main.receiver.CustomReceiver"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:permission</span>=<span class="string">"com.xx.xx.receiver"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">intent-filter</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">action</span> <span class="attr">android:name</span>=<span class="string">"com.xx.xx.message"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">category</span> <span class="attr">android:name</span>=<span class="string">"android.intent.category.DEFAULT"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">intent-filter</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">receiver</span>&gt;</span></span><br><span class="line"><span class="comment">&lt;!--普通的广播--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">receiver</span> <span class="attr">android:name</span>=<span class="string">".main.receiver.CustomReceiver2"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">intent-filter</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">action</span> <span class="attr">android:name</span>=<span class="string">"com.xx.xx.message2"</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">category</span> <span class="attr">android:name</span>=<span class="string">"android.intent.category.DEFAULT"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">intent-filter</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">receiver</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<ol>
+<li><blockquote>
+<p>发送权限隐式广播-不加权限</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> intent = Intent(<span class="string">"com.xx.xx.message"</span> + num++)</span><br><span class="line">intent.putExtra(<span class="string">"message"</span>,<span class="string">"custom test"</span> + num++)</span><br><span class="line">sendBroadcast(intent)</span><br></pre></td></tr></table></figure>
+</blockquote>
+</li>
+</ol>
+<p>结果：吐司无法展现。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">15:59:23.420#1635#1758#W#BroadcastQueue #Background execution not allowed: receiving Intent &#123; act=com.xx.xx.message flg=0x10 (has extras) &#125; to com.xx.xx.demo/.main.receiver.CustomReceiver</span><br></pre></td></tr></table></figure></p>
+<ol start="2">
+<li><blockquote>
+<p>发送权限隐式广播-加权限</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> intent = Intent(<span class="string">"com.xx.xx.message"</span>)</span><br><span class="line">intent.putExtra(<span class="string">"message"</span>,<span class="string">"custom test"</span>)</span><br><span class="line">sendOrderedBroadcast(intent, <span class="string">"com.xx.xx.receiver"</span>)</span><br></pre></td></tr></table></figure>
+</blockquote>
+</li>
+</ol>
+<p>结果：吐司展现。</p>
+<ol start="3">
+<li><blockquote>
+<p>发送权限隐式广播-加权限-错误</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> intent = Intent(<span class="string">"com.xx.xx.message"</span>)</span><br><span class="line">intent.putExtra(<span class="string">"message"</span>,<span class="string">"custom test"</span>)</span><br><span class="line">sendOrderedBroadcast(intent, <span class="string">"com.xx.xx.receiver.error"</span>)</span><br></pre></td></tr></table></figure>
+</blockquote>
+</li>
+</ol>
+<p>结果：吐司无法展现。<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">15:44:54.514#1696#1774#W#BroadcastQueue #Permission Denial: receiving Intent &#123; act=com.xx.xx.message flg=0x1000010 (has extras) &#125; to com.xx.xx.ztemplate/.main.receiver.CustomReceiver requires com.xx.xx.receiver.error due to sender com.xx.xx.demo (uid 10547)</span><br></pre></td></tr></table></figure></p>
+<ol start="4">
+<li><blockquote>
+<p>发送隐式广播</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> intent = Intent(<span class="string">"com.xx.xx.message2"</span>)</span><br><span class="line">intent.putExtra(<span class="string">"message"</span>,<span class="string">"custom test"</span>)</span><br><span class="line">sendBroadcast(intent)</span><br></pre></td></tr></table></figure>
+</blockquote>
+</li>
+</ol>
+<p>结果：吐司无法展现。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">15:59:23.420#1635#1758#W#BroadcastQueue #Background execution not allowed: receiving Intent &#123; act=com.xx.xx.message flg=0x10 (has extras) &#125; to com.xx.xx.demo/.main.receiver.CustomReceiver</span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li><blockquote>
+<p>发送隐式广播-添加package</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> intent = Intent(<span class="string">"com.xx.xx.message2"</span>)</span><br><span class="line">intent.`<span class="keyword">package</span>` = <span class="string">"com.xx.xx.demo"</span></span><br><span class="line">intent.putExtra(<span class="string">"message"</span>,<span class="string">"custom test"</span>)</span><br><span class="line">sendBroadcast(intent)</span><br></pre></td></tr></table></figure>
+</blockquote>
+</li>
+</ol>
+<p>结果：吐司展现。</p>
+<ol start="6">
+<li><blockquote>
+<p>发送隐式广播-setClass(等同于添加component)</p>
+<figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> intent = Intent(<span class="string">"com.xx.xx.message2"</span>)</span><br><span class="line">intent.setClass(<span class="keyword">this</span>, CustomReceiver2::<span class="class"><span class="keyword">class</span>.<span class="title">java</span>)</span></span><br><span class="line">intent.putExtra(<span class="string">"message"</span>,<span class="string">"custom test"</span>)</span><br><span class="line">sendBroadcast(intent)</span><br></pre></td></tr></table></figure>
+</blockquote>
+</li>
+</ol>
+<p>结果：吐司展现。</p>
+<p>其实第<code>5</code>和第<code>6</code>个case已经不算隐式广播了，他们都为<code>Intent</code>设置了<code>package</code>指明了当前的环境。</p>
+<h2 id="错误分析"><a href="#错误分析" class="headerlink" title="错误分析"></a>错误分析</h2><blockquote>
+<p> <code>BroadcastQueue #Permission Denial:</code></p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/img_convert/c161a43371831e84fbe2db7c36a2f342.png#pic_center" alt="BroadcastQueue-permission-denial.png"></p>
+<p>这里提示权限有问题，需要添加或修改权限。</p>
+<blockquote>
+<p><code>BroadcastQueue #Background execution not allowed:</code></p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/img_convert/16522b7278dc8b09f5b84e9cf029c5ed.png#pic_center" alt="BroadcastQueue-not-allow.png"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//android.content.Intent.java</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> FLAG_RECEIVER_INCLUDE_BACKGROUND = <span class="number">0x01000000</span>;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> FLAG_RECEIVER_EXCLUDE_BACKGROUND = <span class="number">0x00800000</span>;</span><br></pre></td></tr></table></figure>
+<p>这个代码块有一个<code>||</code>操作，我们不想让其进入到改逻辑需要使前面判断为<code>false</code>，后面判断为<code>false</code>。</p>
+<p>判断<code>r.intent.getFlags()&amp;Intent.FLAG_RECEIVER_EXCLUDE_BACKGROUND</code> 中携带了<code>FLAG_RECEIVER_EXCLUDE_BACKGROUND</code>标志位。我们一般都不会携带，所以前面逻辑为<code>false</code>。</p>
+<p>后面逻辑有三个<code>&amp;&amp;</code>操作，那么只需要让其中一个为<code>false</code>即可。</p>
+<ol start="2">
+<li><p><code>r.intent.getComponent() == null</code>， 会进入此逻辑（设置<strong>component</strong>）。</p>
+</li>
+<li><p><code>r.intent.getPackage() == null</code>，会进入此逻辑（设置<strong>component</strong>）。</p>
+</li>
+<li><p><code>r.intent.getFlags() &amp; Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND) == 0</code> 不能带有<code>FLAG_RECEIVER_INCLUDE_BACKGROUND</code>这个标志位，否则会进入此逻辑（设置<strong>FLAG_RECEIVER_INCLUDE_BACKGROUND</strong>）。</p>
+</li>
+<li>如果启动广播的时候携带了权限，那么如果不是签名权限会进入此逻辑(设置<strong>签名权限</strong>)。</li>
+</ol>
+<p>其实<code>1</code>和<code>2</code>我们上面已经测试过了（第<code>5</code>个和第<code>6</code>个case）；</p>
+<p><code>3</code>设置<code>Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND</code>，但改常量是<code>hide</code>无法通过<code>Intent</code>访问。我们只能写<code>0x01000000</code>，但不建议这么做；</p>
+<p><code>4</code>其实就是文档中说明的<strong>签名权限</strong>不受<code>Android 8.0</code>后台执行优化的控制；</p>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+<p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：<br><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center" alt="振兴书城"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/weixinpay.jpeg" alt="振兴 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpeg" alt="振兴 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    振兴
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2021/01/23/broadcast-8.0/" title="Android8.0隐式广播和自定义签名权限">http://yoursite.com/2021/01/23/broadcast-8.0/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android8-0/" rel="tag"><i class="fa fa-tag"></i> Android8.0</a>
+          
+            <a href="/tags/签名权限/" rel="tag"><i class="fa fa-tag"></i> 签名权限</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/01/22/javassist-dev/" rel="next" title="修改AAR和Jar中class文件">
+                <i class="fa fa-chevron-left"></i> 修改AAR和Jar中class文件
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2021/01/25/qigsaw-plugin/" rel="prev" title="Qigsaw源码之Gradle插件解析">
+                Qigsaw源码之Gradle插件解析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/jay.jpg"
+                alt="振兴" />
+            
+              <p class="site-author-name" itemprop="name">振兴</p>
+              <p class="site-description motion-element" itemprop="description">好好学习，天天向上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">88</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">110</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stven0king" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://me.csdn.net/stven_king" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-crosshairs"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/311540b7592b" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-book"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/56824a1900b01b9f2bd94ae8" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-spinner"></i>掘金</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/2520114671/profile?rightmod=1&wvr=6&mod=personinfo" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-weibo"></i>微博</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:stven0king@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                推荐阅读
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://gityuan.com/" title="Gityuan" target="_blank">Gityuan</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.wanandroid.com/index" title="玩Android" target="_blank">玩Android</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.wjdiankong.cn/" title="尼古拉斯.赵四" target="_blank">尼古拉斯.赵四</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#广播限制"><span class="nav-number">2.</span> <span class="nav-text">广播限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自定义权限"><span class="nav-number">3.</span> <span class="nav-text">自定义权限</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#android-protectionLevel"><span class="nav-number">3.1.</span> <span class="nav-text">android:protectionLevel</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义签名权限并使用"><span class="nav-number">3.2.</span> <span class="nav-text">自定义签名权限并使用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试"><span class="nav-number">4.</span> <span class="nav-text">测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#错误分析"><span class="nav-number">5.</span> <span class="nav-text">错误分析</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">振兴</span>
+
+  
+</div>
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+<!--
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+-->
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item=>{
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: '7mQEfpQKgyuazaGg5Q6mejuC-gzGzoHsz',
+        appKey: '0Tz7vXbTHfHnIslfjQNPbAg0',
+        placeholder: 'Just go go',
+        avatar:'wavatar',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
