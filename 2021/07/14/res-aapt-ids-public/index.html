@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="aapt," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="整片文章是围绕tinker 的TinkerResourceIdTask里的知识点进行扩展的。1. aapt和 aapt2的差异（运行环境和运行结果）；2. 资源id的固定；3. 进行PUBLIC的标记；">
+<meta name="keywords" content="aapt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="aapt与aapt2--资源id固定和PUBLIC标记">
+<meta property="og:url" content="http://yoursite.com/2021/07/14/res-aapt-ids-public/index.html">
+<meta property="og:site_name" content="下雨天要逛街">
+<meta property="og:description" content="整片文章是围绕tinker 的TinkerResourceIdTask里的知识点进行扩展的。1. aapt和 aapt2的差异（运行环境和运行结果）；2. 资源id的固定；3. 进行PUBLIC的标记；">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210714200911636.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2021071420103961.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210714201050847.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210714201102544.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210714201112658.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210714201123114.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20210714201138759.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2021-07-16T07:42:06.310Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="aapt与aapt2--资源id固定和PUBLIC标记">
+<meta name="twitter:description" content="整片文章是围绕tinker 的TinkerResourceIdTask里的知识点进行扩展的。1. aapt和 aapt2的差异（运行环境和运行结果）；2. 资源id的固定；3. 进行PUBLIC的标记；">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20210714200911636.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2021/07/14/res-aapt-ids-public/"/>
+
+
+
+
+
+  <title>aapt与aapt2--资源id固定和PUBLIC标记 | 下雨天要逛街</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1055a4e1d37a3a4dcb3a3e1c4f32f147";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/stven0king" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">下雨天要逛街</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/07/14/res-aapt-ids-public/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="振兴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/jay.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="下雨天要逛街">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">aapt与aapt2--资源id固定和PUBLIC标记</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2021-07-14T15:36:00+08:00">
+                2021-07-14
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2021/07/14/res-aapt-ids-public/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2021/07/14/res-aapt-ids-public/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  整片文章是围绕tinker 的TinkerResourceIdTask里的知识点进行扩展的。1. aapt和 aapt2的差异（运行环境和运行结果）；2. 资源id的固定；3. 进行PUBLIC的标记； 
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><img src="https://img-blog.csdnimg.cn/20210714200911636.JPG?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70#pic_center" alt="07-14"></p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>整片文章是围绕 <code>tinker</code> 的 <code>TinkerResourceIdTask</code> 里的知识点进行扩展的。</p>
+<ol>
+<li><code>aapt</code> 和 <code>aapt2</code> 的差异（运行环境和运行结果）；</li>
+<li>资源 <code>id</code> 的固定；</li>
+<li>进行 <code>PUBLIC</code> 的标记；</li>
+</ol>
+<p><code>aapt</code> 运行环境为 <code>gradle:2.2.0</code> 和 <code>gradle-wrapper:3.4.1</code></p>
+<p><code>aapt2</code> 运行环境为 <code>gradle:3.3.2</code> 和 <code>gradle-wrapper:5.6.2</code></p>
+<p><a href="https://github.com/stven0king/android-aapt-sample" target="_blank" rel="noopener">android-aapt-sample</a> 项目是我自己的实验样例。有 <code>aapt</code> 和 <code>aapt2</code> 两个分支，分别对应其实现。</p>
+<h2 id="AAPT概述"><a href="#AAPT概述" class="headerlink" title="AAPT概述"></a>AAPT概述</h2><p>从 <code>Android Studio 3.0</code> 开始，<code>google</code> 默认开启了 <code>aapt2</code> 作为资源编译的编译器，<code>aapt2</code> 的出现，为资源的增量编译提供了支持。当然使用过程中也会遇到一些问题，我们可以通过在 <strong>gradle.properties</strong> 中配置 <strong>android.enableAapt2=false</strong> 来关闭 <code>aapt2</code>。</p>
+<h3 id="资源"><a href="#资源" class="headerlink" title="资源"></a>资源</h3><p><code>Android</code> 天生为兼容各种各样不同的设备做了相当多的工作，比如屏幕大小、国际化、键盘、像素密度等等，我们能为各种各样特定的场景下使用特定的资源做兼容而不用改动一行代码，假设我们为各种各样不同的场景适配了不同的资源，如何能快速的应用上这些资源呢？<code>Android</code> 为我们提供了 <code>R</code> 这个类，指定了一个资源的索引（<code>id</code>），然后我们只需要告诉系统在不同的业务场景下，使用对应的资源就好了，至于具体是指定资源里面的哪一个具体文件，由系统根据开发者的配置决定。</p>
+<p>在这种场景下，假设我们给定的 <code>id</code> 是 <code>x</code> 值，那么当下业务需要使用这个资源的时候，手机的状态就是 <code>y</code> 值，有了(<code>x,y</code>)，在一个表里面就能迅速的定位到资源文件的具体路径了。这个表就是 <code>resources.arsc</code>，它是从 <code>aapt</code> 编译出来的。</p>
+<p>其实二进制的资源（比如图片）是不需要编译的，只不过这个“编译”的行为，是为了生成 <code>resources.arsc</code> 以及对 <code>xml</code> 文件进行二进制化等操作，<code>resources.arsc</code> 是上面说的表，<code>xml</code> 的二进制化是为了系统读取上性能更好。<code>AssetManager</code> 在我们调用 <code>R</code> 相关的 <code>id</code> 的时候，就会在这个表里面找到对应的文件，读取出来。</p>
+<p><code>Gradle</code> 在编译资源的过程中，就是调用的这些<a href="https://developer.android.com/studio/command-line/aapt2" target="_blank" rel="noopener">aapt2命令</a>，传的参数也在这个文档里都介绍了，只不过对开发者隐藏起了调用细节。</p>
+<p><code>aapt2</code> 主要分两步，一步叫 <code>compile</code>，一步叫 <code>link</code>。</p>
+<p>创建一个空工程：只写了两个<code>xml</code>，分别是 <code>AndroidManifest.xml</code> 和 <code>activity_main.xml</code>。</p>
+<h3 id="Compile"><a href="#Compile" class="headerlink" title="Compile"></a>Compile</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir compiled</span><br><span class="line">aapt2 compile src/main/res/layout/activity_main.xml -o compiled/</span><br></pre></td></tr></table></figure>
+<p>在 <code>compiled</code> 文件夹中，生成了<code>layout_activity_main.xml.flat</code> 这个文件，它是 <code>aapt2</code> 特有的，<code>aapt</code> 没有(<code>aapt</code>拷贝的是源文件)，<code>aapt2</code> 用它能进行增量编译。如果我们有很多的文件的话，需要依次调用 <code>compile</code> 才行，其实这里也可以使用 <code>–dir</code> 参数，只不过这个参数就没有增量编译的效果了。也就是说，当传递整个目录时，即使只有一个资源发生了变化，<code>AAPT2</code>也会重新编译目录中的所有文件。</p>
+<h3 id="Link"><a href="#Link" class="headerlink" title="Link"></a>Link</h3><p><code>link</code> 的工作量比 <code>compile</code> 要多一点，此处的输入是多个<code>flat</code> 的文件 和 <code>AndroidManifest.xml</code>，外部资源，输出是只包含资源的 <code>apk</code> 和 <code>R.java</code>。命令如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">aapt2 link -o out.apk \</span><br><span class="line">-I $ANDROID_HOME/platforms/android-28/android.jar \</span><br><span class="line">compiled/layout_activity_main.xml.flat \</span><br><span class="line">--java src/main/java \</span><br><span class="line">--manifest src/main/AndroidManifest.xml</span><br></pre></td></tr></table></figure>
+<ul>
+<li>第二行 <code>-I</code> 是 <code>import</code> 外部资源，此处主要是 <code>android</code> 命名空间下定义的一些属性，我们平常使用的<code>@android:xxx</code>都是放在这个<code>jar</code> 里面，其实我们也可以提供自己的资源供别人链接;</li>
+<li>第三行是输入的 <code>flat</code> 文件，如果有多个，直接在后面拼接即可;</li>
+<li>第四行是 <code>R.java</code> 生成的目录;</li>
+<li>第五行是指定 <code>AndroidManifest.xml</code>;</li>
+</ul>
+<p><code>Link</code>完成后会生成<code>out.apk</code>和<code>R.java</code>，<code>out.apk</code>中包含了一个<code>resources.arsc</code>文件。只带资源文件的可以用后缀名<code>.ap_</code>。</p>
+<h3 id="查看编译后的资源"><a href="#查看编译后的资源" class="headerlink" title="查看编译后的资源"></a>查看编译后的资源</h3><p>除了是用 <code>Android Studio</code> 去查看 <code>resources.arsc</code>，还可以直接使用 <code>aapt2 dump apk</code> 信息的方式来查看资源相关的<code>ID</code> 和状态：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aapt2 dump out.apk</span><br></pre></td></tr></table></figure>
+<p>输出的结果如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Binary APK</span><br><span class="line">Package name=com.geminiwen.hello id=7f</span><br><span class="line">  type layout id=01 entryCount=1</span><br><span class="line">    resource 0x7f010000 layout/activity_main</span><br><span class="line">      () (file) res/layout/activity_main.xml type=XML</span><br></pre></td></tr></table></figure>
+<p>可以看到<code>layout/activity_main</code> 对应的 <code>ID</code> 是 <code>0x7f010000</code>。</p>
+<h3 id="资源共享"><a href="#资源共享" class="headerlink" title="资源共享"></a>资源共享</h3><p><code>android.jar</code> 只是一个编译用的桩，真正执行的时候，<code>Android OS</code> 提供了一个运行时的库(<code>framework.jar</code>)。<code>android.jar</code>很像一个 <code>apk</code>，只不过它存在的是 <code>class</code> 文件，然后存在一个 <code>AndroidManifest.xml</code> 和 <code>resources.arsc</code>。这就意味着我们也可以对它用<code>aapt2 dump</code>，执行如下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aapt2 dump $ANDROID_HOME/platforms/android-28/android.jar &gt; test.out</span><br></pre></td></tr></table></figure>
+<p>得到很多类似如下的输出：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">resource 0x010a0000 anim/fade_in PUBLIC</span><br><span class="line">      () (file) res/anim/fade_in.xml type=XML</span><br><span class="line">    resource 0x010a0001 anim/fade_out PUBLIC</span><br><span class="line">      () (file) res/anim/fade_out.xml type=XML</span><br><span class="line">    resource 0x010a0002 anim/slide_in_left PUBLIC</span><br><span class="line">      () (file) res/anim/slide_in_left.xml type=XML</span><br><span class="line">    resource 0x010a0003 anim/slide_out_right PUBLIC</span><br><span class="line">      () (file) res/anim/slide_out_right.xml type=XML</span><br></pre></td></tr></table></figure>
+<p>它多了一些<code>PUBLIC</code>的字段，一个 <code>apk</code> 文件里面的资源，如果被加上这个标记的话，就能被其他 <code>apk</code> 所引用，引用方式是<code>@包名:类型/名字</code>，例如：<code>@android:color/red</code>。</p>
+<p>如果我们想要提供我们的资源，那么首先为我们的资源打上 <code>PUBLIC</code> 的标记，然后在 <code>xml</code> 中引用你的包名，比如：<a href="mailto:`@com.gemini.app" target="_blank" rel="noopener">`@com.gemini.app</a>:color/red<code>就能引用到你定义的</code>color/red` 了，如果你不指定包名，默认是自己。</p>
+<p>至于<code>AAPT2</code> 如何生成 <code>PUBLIC</code>，感兴趣的可以接着阅读本文。</p>
+<h2 id="ids-xml概述"><a href="#ids-xml概述" class="headerlink" title="ids.xml概述"></a>ids.xml概述</h2><p><code>ids.xml</code>：为应用的相关资源提供唯一的资源<code>id</code>。<code>id</code>是为了获得<code>xml</code>中的对象需要的参数，也就是 <code>Object = findViewById(R.id.id_name);</code> 中的<code>id_name</code>。</p>
+<p>这些值可以在代码中用<code>android.R.id</code>引用到。<br>若在<code>ids.xml</code>中定义了<strong>ID</strong>，则在<code>layout</code>中可如下定义<code>@id/price_edit</code>，否则<code>@+id/price_edit</code>。</p>
+<blockquote>
+<p>优点</p>
+</blockquote>
+<ol>
+<li>命名方便，我们可以把一些特定的控件先命好名，在使用的时候直接引用<code>id</code>即可，省去了一个命名环节。</li>
+<li>优化编译效率:<ul>
+<li>添加<code>id</code>后会在<code>R.java</code>中生成;</li>
+<li>使用<code>ids.xml</code>统一管理,一次性编译即可多次使用.<br>但使用<code>&quot;@+id/btn_next&quot;</code>的形式,每次文件保存<code>(Ctrl+s</code>)<code>后R.java</code>都会重新检测,如果存在该<code>id</code>则不生成,如果不存在就需要添加该<code>id</code>。故编译效率降低。</li>
+</ul>
+</li>
+</ol>
+<p><code>ids.xml</code>文件内容：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span><br><span class="line"><span class="tag">&lt;<span class="name">resources</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">item</span> <span class="attr">name</span>=<span class="string">"forecast_list"</span> <span class="attr">type</span>=<span class="string">"id"</span>/&gt;</span></span><br><span class="line"><span class="comment">&lt;!--    &lt;item name="app_name" type="string" /&gt;--&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">resources</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>也许有人很好奇上面有一行被注释的代码，打开注释会发现编译会报一下错误：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Execution failed <span class="keyword">for</span> task <span class="string">':app:mergeDebugResources'</span>.</span><br><span class="line">&gt; [string/app_name] /Users/tanzx/AndroidStudioProjects/AaptDemo/app/src/main/res/values/strings.xml	[string/app_name] /Users/tanzx/AndroidStudioProjects/AaptDemo/app/src/main/res/values/ids.xml: Error: Duplicate resources</span><br></pre></td></tr></table></figure>
+<p>因为<code>app_name</code>对于的资源已经在<code>value</code>中被声明了。</p>
+<h2 id="public-xml概述"><a href="#public-xml概述" class="headerlink" title="public.xml概述"></a>public.xml概述</h2><p>官方相关的说明<a href="https://developer.android.com/studio/projects/android-library#PrivateResources" target="_blank" rel="noopener">官网：选择要设为公开的资源</a>。</p>
+<blockquote>
+<p>原文翻译：库中的所有资源在默认情况下均处于公开状态。如需将所有资源隐式设为私有，您必须至少将一个特定属性定义为公开。资源包括您项目的 <code>res/</code> 目录中的所有文件，例如图像。为了防止库的用户访问仅供内部使用的资源，您应该通过声明一个或多个公开资源的方式来使用这种自动私有标识机制。或者，您也可以通过添加空的 <code>&lt;public /&gt;</code> 标记将所有资源设为私有，此标记不会将任何资源设为公开，而是会将一切（所有资源）都设为私有。</p>
+<p>通过将属性隐式设为私有，您不仅可以防止库的用户从内部库资源获得代码补全建议，还可以重命名或移除私有资源，而不会破坏库的客户端。系统会从代码补全中过滤掉私有资源，并且 <a href="https://developer.android.com/studio/write/lint" target="_blank" rel="noopener">Lint</a> 会在您尝试引用私有资源时发出警告。</p>
+<p>在构建库时，Android Gradle 插件会获取公开资源定义，并将其提取到 <code>public.txt</code> 文件中，然后系统会将此文件打包到 AAR 文件中。</p>
+</blockquote>
+<p>实测结果也仅仅是不回代码自动不全，编译器报红。如果进行<code>lint</code>检查，编译都没有警告~！</p>
+<p>现在大部分的解释为：文件<strong>RES/value/public.xml</strong>用于将固定资源 <code>ID</code> 分配给 <code>Android</code> 资源。</p>
+<p><a href="https://stackoverflow.com/questions/9348614/what-is-the-use-of-the-res-values-public-xml-file-on-android%E3%80%82" target="_blank" rel="noopener">stackoverfloew:What is the use of the res/values/public.xml file on Android?</a></p>
+<p><code>public.xml</code>文件内容：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span><br><span class="line"><span class="tag">&lt;<span class="name">resources</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">public</span> <span class="attr">name</span>=<span class="string">"forecast_list"</span> <span class="attr">id</span>=<span class="string">"0x7f040001"</span> <span class="attr">type</span>=<span class="string">"id"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">public</span> <span class="attr">name</span>=<span class="string">"app_name"</span> <span class="attr">id</span>=<span class="string">"0x7f070002"</span> <span class="attr">type</span>=<span class="string">"string"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">public</span> <span class="attr">name</span>=<span class="string">"string3"</span> <span class="attr">id</span>=<span class="string">"0x7f070003"</span> <span class="attr">type</span>=<span class="string">"string"</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">resources</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="资源id固定"><a href="#资源id固定" class="headerlink" title="资源id固定"></a>资源id固定</h2><p>资源id的固定在热修复和插件化中极其重要。在热修复中，构建<code>patch</code>时，需要保持<code>patch</code>包的资源<code>id</code>和基准包的资源<code>id</code>一致；在插件化中，如果插件需要引用宿主的资源，则需要将宿主的资源<code>id</code>进行固定，因此，资源<code>id</code>的固定在这两种场景下是尤为重要的。</p>
+<p>在<code>Android Gradle Plugin 3.0.0</code>中，默认开启了<code>aapt2</code>，原先aapt的资源固定方式<code>public.xml</code>也将失效，必须寻找一种新的资源固定的方式，而不是简单的禁用掉<code>aapt</code>2，因此本文来探讨一下<code>aapt和aapt2</code>分别如何进行资源<code>id</code>的固定。</p>
+<h3 id="aapt进行id的固定"><a href="#aapt进行id的固定" class="headerlink" title="aapt进行id的固定"></a><code>aapt</code>进行<code>id</code>的固定</h3><blockquote>
+<p>项目环境配置（PS：吐槽一下aapt已经被aapt2代替了，aapt相关资料几乎没有，环境搭建太费劲了~！）</p>
+<p><code>com.android.tools.build:gradle:2.2.0</code></p>
+<p><code>distributionUrl=https\://services.gradle.org/distributions/gradle-3.4.1-all.zip</code></p>
+<p><code>compileSdkVersion 24</code></p>
+<p><code>buildToolsVersion &#39;24.0.0&#39;</code></p>
+</blockquote>
+<p>先在<code>value</code>文件下按照上面的<code>ids.xml</code>和<code>public.xml</code>的内容以及文件名，生成对应的文件。</p>
+<blockquote>
+<p>直接编译结果</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/2021071420103961.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>通过直接编译之后的<code>R文件</code>的内容，可以看到我们想要的设置的资源<code>id</code>并没有按照我们预期的生成。</p>
+<blockquote>
+<p>将<code>public.xml</code>文件拷贝到<code>build/intermediates/res/merged</code>对应的目录</p>
+</blockquote>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">afterEvaluate &#123;</span><br><span class="line">    <span class="keyword">for</span> (variant <span class="keyword">in</span> android.applicationVariants) &#123;</span><br><span class="line">        <span class="keyword">def</span> scope = variant.getVariantData().getScope()</span><br><span class="line">        String mergeTaskName = scope.getMergeResourcesTask().name</span><br><span class="line">        <span class="keyword">def</span> mergeTask = tasks.getByName(mergeTaskName)</span><br><span class="line">        mergeTask.doLast &#123;</span><br><span class="line">            copy &#123;</span><br><span class="line">                <span class="keyword">int</span> i=<span class="number">0</span></span><br><span class="line">                from(android.sourceSets.main.res.srcDirs) &#123;</span><br><span class="line">                    include <span class="string">'values/public.xml'</span></span><br><span class="line">                    rename <span class="string">'public.xml'</span>, (i++ == <span class="number">0</span>? "public.xml": <span class="string">"public_$&#123;i&#125;.xml"</span>)</span><br><span class="line">                &#125;</span><br><span class="line">                into(mergeTask.outputDir)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://img-blog.csdnimg.cn/20210714201050847.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>这次我们可以直接看到资源<code>id</code>按照我们需要生成了。</p>
+<blockquote>
+<p>这是为什么呢？</p>
+</blockquote>
+<ol>
+<li><p><code>android gradle</code>插件<code>1.3</code>以下版本可以直接将<code>public.xml</code>放在源码<code>res</code>目录参与编译;</p>
+</li>
+<li><p><code>android gradle</code>插件<code>1.3+</code>版本在执行<code>mergeResource</code>任务时忽略了<code>public.xml</code>，所以<code>merge</code>完成后的<code>build</code>目录下的<code>res</code>目录下没有<code>public.xml</code>相关的内容。所以需要在编译时通过脚本将<code>public.xml</code>插入到<code>merge</code>完成后的<code>build</code>目录下的<code>res</code>目录下。之所以这样做可行，是因为<code>aapt</code>本身是支持<code>public.xml</code>的，只是<code>gradle</code>插件在对资源做预处<code>(merge)</code>时对<code>public.xml</code>做了过滤。</p>
+</li>
+</ol>
+<h3 id="aapt2进行id的固定"><a href="#aapt2进行id的固定" class="headerlink" title="aapt2进行id的固定"></a><code>aapt2</code>进行<code>id</code>的固定</h3><p>在<code>aapt2</code>编译（将资源文件编译为二进制格式）后，发现<code>merge</code>的资源都已经经过了预编译，产生了<code>flat</code>文件，这时候将<code>public.xml</code>文件拷贝至该目录就会产生编译错误。</p>
+<p>但在<code>aapt2</code>的<strong>链接</strong>阶段中，我们查看相关的<strong>链接选项</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--emit-ids path</code></td>
+<td>在给定的路径下生成一个文件，该文件包含资源类型的名称及其 ID 映射的列表。它适合与 <code>--stable-ids</code> 搭配使用。</td>
+</tr>
+<tr>
+<td><code>--stable-ids outputfilename.ext</code></td>
+<td>使用通过 <code>--emit-ids</code> 生成的文件，该文件包含资源类型的名称以及为其分配的 ID 的列表。此选项可以让已分配的 ID 保持稳定，即使您在链接时删除了资源或添加了新资源也是如此。</td>
+</tr>
+</tbody>
+</table>
+<p>发现<code>--emit-ids</code>和<code>--stable-ids</code>命令搭配可以实现<code>id</code>的固定。</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">  aaptOptions &#123;</span><br><span class="line">        File publicTxtFile = project.rootProject.file(<span class="string">'public.txt'</span>)</span><br><span class="line">        <span class="comment">//public文件存在，则应用，不存在则生成</span></span><br><span class="line">        <span class="keyword">if</span> (publicTxtFile.exists()) &#123;</span><br><span class="line">            project.logger.error <span class="string">"$&#123;publicTxtFile&#125; exists, apply it."</span></span><br><span class="line">            <span class="comment">//aapt2添加--stable-ids参数应用</span></span><br><span class="line">            aaptOptions.additionalParameters(<span class="string">"--stable-ids"</span>, <span class="string">"$&#123;publicTxtFile&#125;"</span>)</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            project.logger.error <span class="string">"$&#123;publicTxtFile&#125; not exists, generate it."</span></span><br><span class="line">            <span class="comment">//aapt2添加--emit-ids参数生成</span></span><br><span class="line">            aaptOptions.additionalParameters(<span class="string">"--emit-ids"</span>, <span class="string">"$&#123;publicTxtFile&#125;"</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ol>
+<li>第一次编译，先通过<code>--emit-ids</code>在项目的根目录生成<code>public.txt</code>;</li>
+<li>再将<code>public.txt</code>里面对于的<code>id</code>改为自己想要固定的<code>id</code>;</li>
+<li>再次编译，通过<code>--stable-ids</code>和根目录下的<code>public.txt</code>进行资源<code>id</code>的固定；</li>
+</ol>
+<blockquote>
+<p><code>--emit-ids</code>编译结果</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/20210714201102544.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<blockquote>
+<p>修改<code>public.txt</code>文件内容再次编译</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/20210714201112658.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h4 id="R-txt转public-txt"><a href="#R-txt转public-txt" class="headerlink" title="R.txt转public.txt"></a>R.txt转public.txt</h4><p>我们一般正常打包生成的中间产物是<code>build/intermediates/symbols/debug/R.txt</code>，需要将其转化为<code>public.txt</code>。</p>
+<blockquote>
+<p><code>R.txt</code>格式（<code>int</code>  <code>type</code>  <code>name</code>  <code>id</code>）或者（<code>int[]</code>  <code>styleable</code>  <code>name</code>  <code>{id,id,xxxx}</code>）</p>
+<p><code>public.txt</code>格式（<code>applicationId:type/name = id</code>）</p>
+</blockquote>
+<p>所以在转化过程中需要过滤掉<code>R.txt</code>文件中的<code>styleable</code>类型。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">    aaptOptions &#123;</span><br><span class="line">        File rFile = project.rootProject.file(<span class="string">'R.txt'</span>)</span><br><span class="line">        List&lt;String&gt; sortedLines = <span class="keyword">new</span> ArrayList&lt;&gt;()</span><br><span class="line">        <span class="comment">// 一行一行读取</span></span><br><span class="line">        rFile.eachLine &#123;line -&gt;</span><br><span class="line">            <span class="comment">//rLines.add(line)</span></span><br><span class="line">            String[] test = line.split(<span class="string">" "</span>)</span><br><span class="line">            String type = test[<span class="number">1</span>]</span><br><span class="line">            String name = test[<span class="number">2</span>]</span><br><span class="line">            String idValue = test[<span class="number">3</span>]</span><br><span class="line">            <span class="keyword">if</span> (<span class="string">"styleable"</span> != type) &#123;</span><br><span class="line">                sortedLines.add(<span class="string">"$&#123;applicationId&#125;:$&#123;type&#125;/$&#123;name&#125; = $&#123;idValue&#125;"</span>)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        Collections.sort(sortedLines)</span><br><span class="line">        File publicTxtFile = project.rootProject.file(<span class="string">'public.txt'</span>)</span><br><span class="line">        <span class="keyword">if</span> (!publicTxtFile.exists()) &#123;</span><br><span class="line">            publicTxtFile.createNewFile()</span><br><span class="line">            sortedLines?.each &#123;</span><br><span class="line">                publicTxtFile.append(<span class="string">"$&#123;it&#125;\n"</span>)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="PUBLIC标记"><a href="#PUBLIC标记" class="headerlink" title="PUBLIC标记"></a>PUBLIC标记</h2><p>在<code>AAPT概述</code>这部分我们讲过如果一个 <code>apk</code> 文件里面的资源，如果被加上<code>PUBLIC</code>标记的话，就能被其他 <code>apk</code> 所引用，引用方式是<code>@包名:类型/名字</code>，例如：<code>@android:color/red</code>。</p>
+<p>阅读上面《<code>aapt</code>进行<code>id</code>的固定》到《<code>aapt2</code>进行<code>id</code>的固定》这两部分，我们知道<code>aapt</code>和<code>aapt2</code>进行<code>id</code>固定的方法是不相同的。</p>
+<p>其实如果我们用<code>aapt2 dump build/intermediates/res/resources-debug.ap_</code>命令查看生成资源的相关信息。</p>
+<p><code>aapt</code>通过<code>public.xml</code>进行<code>id</code>固定的资源信息有<code>PUBLIC</code>标记：</p>
+<p><img src="https://img-blog.csdnimg.cn/20210714201123114.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>二使用上面<code>aapt2</code>进行<code>id</code>固定的方式是没有下图中的<code>PUBLIC</code>标记的。</p>
+<p>原因还是<code>aapt</code>和<code>aapt2</code>的差异造成的，<code>aapt2</code>的<code>public.txt</code>不等于<code>aapt</code>的<code>public.xml</code>，在<code>aapt2</code>中如果要添加<code>PUBLIC</code>标记，其实还是得另寻其他途径。</p>
+<h3 id="回顾思考"><a href="#回顾思考" class="headerlink" title="回顾思考"></a>回顾思考</h3><blockquote>
+<p>回顾</p>
+</blockquote>
+<ol>
+<li><code>aapt</code> 进行资源 <code>id</code> 固定和 <code>PUBLIC</code> 标价，是将<code>public.xml</code> 复制到 <code>${mergeResourceTask.outputDir}</code>;</li>
+<li><code>aapt2</code> 相比于 <code>aapt</code>  ，做了增量编译的优化。<code>AAPT2</code> 会解析该文件并生成一个扩展名为 <code>.flat</code> 的中间二进制文件。</li>
+</ol>
+<p><img src="https://img-blog.csdnimg.cn/20210714201138759.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<blockquote>
+<p>思考</p>
+</blockquote>
+<p>能否使用<code>aapt2</code>自己将<code>public.xml</code>编译为<code>public.arsc.flat</code>，并像 <code>aapt</code> 操作一样将其复制到  <code>${mergeResourceTask.outputDir}</code>;</p>
+<h3 id="动手实践"><a href="#动手实践" class="headerlink" title="动手实践"></a>动手实践</h3><figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">android &#123;</span><br><span class="line">    <span class="comment">//将public.txt转化为public.xml，并对public.xml进行aapt2的编译将结果复制到$&#123;ergeResourceTask.outputDir&#125;</span></span><br><span class="line">  <span class="comment">//下面大部分代码是copy自tinker的源码</span></span><br><span class="line">  applicationVariants.all &#123; <span class="keyword">def</span> variant -&gt;</span><br><span class="line">      <span class="keyword">def</span> mergeResourceTask = project.tasks.findByName(<span class="string">"merge$&#123;variant.getName().capitalize()&#125;Resources"</span>)</span><br><span class="line">      <span class="keyword">if</span> (mergeResourceTask) &#123;</span><br><span class="line">          mergeResourceTask.doLast &#123;</span><br><span class="line">              <span class="comment">//目标转换文件，注意public.xml上级目录必须带values目录，否则aapt2执行时会报非法文件路径</span></span><br><span class="line">              File publicXmlFile = <span class="keyword">new</span> File(project.buildDir, <span class="string">"intermediates/res/public/$&#123;variant.getDirName()&#125;/values/public.xml"</span>)</span><br><span class="line">              <span class="comment">//转换public.txt文件为publicXml文件，最后一个参数true标识固定资源id</span></span><br><span class="line">              convertPublicTxtToPublicXml(project.rootProject.file(<span class="string">'public.txt'</span>), publicXmlFile, <span class="literal">false</span>)</span><br><span class="line">              <span class="keyword">def</span> variantData = variant.getMetaClass().getProperty(variant, <span class="string">'variantData'</span>)</span><br><span class="line">              <span class="keyword">def</span> variantScope = variantData.getScope()</span><br><span class="line">              <span class="keyword">def</span> globalScope = variantScope.getGlobalScope()</span><br><span class="line">              <span class="keyword">def</span> androidBuilder = globalScope.getAndroidBuilder()</span><br><span class="line">              <span class="keyword">def</span> targetInfo = androidBuilder.getTargetInfo()</span><br><span class="line">              <span class="keyword">def</span> mBuildToolInfo = targetInfo.getBuildTools()</span><br><span class="line">              Map&lt;BuildToolInfo.PathId, String&gt; mPaths = mBuildToolInfo.getMetaClass().getProperty(mBuildToolInfo, <span class="string">"mPaths"</span>) <span class="keyword">as</span> Map&lt;BuildToolInfo.PathId, String&gt;</span><br><span class="line">                <span class="comment">//通过aapt2 compile命令自己生成public.arsc.flat并输出到$&#123;mergeResourceTask.outputDir&#125;</span></span><br><span class="line">              project.exec(<span class="keyword">new</span> Action&lt;ExecSpec&gt;() &#123;</span><br><span class="line">                  <span class="meta">@Override</span></span><br><span class="line">                  <span class="keyword">void</span> execute(ExecSpec execSpec) &#123;</span><br><span class="line">                      execSpec.executable <span class="string">"$&#123;mPaths.get(BuildToolInfo.PathId.AAPT2)&#125;"</span></span><br><span class="line">                      execSpec.args(<span class="string">"compile"</span>)</span><br><span class="line">                      execSpec.args(<span class="string">"--legacy"</span>)</span><br><span class="line">                      execSpec.args(<span class="string">"-o"</span>)</span><br><span class="line">                      execSpec.args(<span class="string">"$&#123;mergeResourceTask.outputDir&#125;"</span>)</span><br><span class="line">                      execSpec.args(<span class="string">"$&#123;publicXmlFile&#125;"</span>)</span><br><span class="line">                  &#125;</span><br><span class="line">              &#125;)</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>将<code>public.txt</code>文件转化为<code>public.xml</code>文件.</p>
+<blockquote>
+<ul>
+<li><code>public.txt</code>中存在<code>styleable</code>类型资源，<code>public.xml</code>中不存在，因此转换过程中如果遇到<code>styleable</code>类型，需要忽略;</li>
+<li><code>vector</code>矢量图资源如果存在内部资源，也需要忽略，在<code>aapt2</code>中，它的名字是以<code>$</code>开头，然后是主资源名，紧跟着__数字递增索引，这些资源外部是无法引用到的，只需要固定<code>id</code>，不需要添加<code>PUBLIC</code>标记，并且<code>$</code>符号在<code>public.xml</code>中是非法的，因此忽略它即可;</li>
+<li>由于<code>aapt2</code>有资源<code>id</code>的固定方式，因此转换过程中可直接丢掉<code>id</code>，简单声明即可（PS：这里通过<code>withId</code>参数控制是否需要固定<code>id</code>）;</li>
+<li><code>aapt2</code>编译的<code>public.xml</code>文件的上级目录必须是<code>values</code>文件夹，否则编译过程会报非法路径;</li>
+</ul>
+</blockquote>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 转换publicTxt为publicXml</span></span><br><span class="line"><span class="comment"> * copy tinker:com.tencent.tinker.build.gradle.task.TinkerResourceIdTask#convertPublicTxtToPublicXml</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@SuppressWarnings</span>(<span class="string">"GrMethodMayBeStatic"</span>)</span><br><span class="line"><span class="keyword">void</span> convertPublicTxtToPublicXml(File publicTxtFile, File publicXmlFile, <span class="keyword">boolean</span> withId) &#123;</span><br><span class="line">    <span class="keyword">if</span> (publicTxtFile == <span class="literal">null</span> || publicXmlFile == <span class="literal">null</span> || !publicTxtFile.exists() || !publicTxtFile.isFile()) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> GradleException(<span class="string">"publicTxtFile $&#123;publicTxtFile&#125; is not exist or not a file"</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    GFileUtils.deleteQuietly(publicXmlFile)</span><br><span class="line">    GFileUtils.mkdirs(publicXmlFile.getParentFile())</span><br><span class="line">    GFileUtils.touch(publicXmlFile)</span><br><span class="line"></span><br><span class="line">    project.logger.info <span class="string">"convert publicTxtFile $&#123;publicTxtFile&#125; to publicXmlFile $&#123;publicXmlFile&#125;"</span></span><br><span class="line"></span><br><span class="line">    publicXmlFile.append(<span class="string">"&lt;!-- AUTO-GENERATED FILE.  DO NOT MODIFY --&gt;"</span>)</span><br><span class="line">    publicXmlFile.append(<span class="string">"\n"</span>)</span><br><span class="line">    publicXmlFile.append(<span class="string">"&lt;resources&gt;"</span>)</span><br><span class="line">    publicXmlFile.append(<span class="string">"\n"</span>)</span><br><span class="line">    Pattern linePattern = Pattern.compile(<span class="string">".*?:(.*?)/(.*?)\\s+=\\s+(.*?)"</span>)</span><br><span class="line"></span><br><span class="line">    publicTxtFile.eachLine &#123;<span class="keyword">def</span> line -&gt;</span><br><span class="line">        Matcher matcher = linePattern.matcher(line)</span><br><span class="line">        <span class="keyword">if</span> (matcher.matches() &amp;&amp; matcher.groupCount() == <span class="number">3</span>) &#123;</span><br><span class="line">            String resType = matcher.group(<span class="number">1</span>)</span><br><span class="line">            String resName = matcher.group(<span class="number">2</span>)</span><br><span class="line">            <span class="keyword">if</span> (resName.startsWith(<span class="string">'$'</span>)) &#123;</span><br><span class="line">                project.logger.info <span class="string">"ignore to public res $&#123;resName&#125; because it's a nested resource"</span></span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (resType.equalsIgnoreCase(<span class="string">"styleable"</span>)) &#123;</span><br><span class="line">                project.logger.info <span class="string">"ignore to public res $&#123;resName&#125; because it's a styleable resource"</span></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (withId) &#123;</span><br><span class="line">                    publicXmlFile.append(<span class="string">"\t&lt;public type=\"$&#123;resType&#125;\" name=\"$&#123;resName&#125;\" id=\"$&#123;matcher.group(3)&#125;\" /&gt;\n"</span>)</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    publicXmlFile.append(<span class="string">"\t&lt;public type=\"$&#123;resType&#125;\" name=\"$&#123;resName&#125;\" /&gt;\n"</span>)</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    publicXmlFile.append(<span class="string">"&lt;/resources&gt;"</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上思考和动手实践的过程，我们不仅解决了<code>aapt2</code>进行<code>PUBLIC</code>标记的问题，还找到了一种新的<code>aapt2</code>进行<code>id</code>固定的方法。</p>
+<p>可能遇到的报错：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">no signature of method com.android.build.gradle.internal.variant.applicationvariantdata.getscope() is applicable <span class="keyword">for</span> argument types: () values: []</span><br></pre></td></tr></table></figure>
+<p>解决方法为修改<code>gradle</code> 版本为 <code>gradle:3.3.2</code> 和 <code>gradle-wrapper:5.6.2</code> ，毕竟 <code>tinker</code> 也不支持最新版的 <code>gradle</code> .</p>
+<h2 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h2><p><a href="https://github.com/Tencent/tinker.git" target="_blank" rel="noopener">Github:tinker</a></p>
+<p><a href="https://www.cnblogs.com/linghu-java/p/9548039.html" target="_blank" rel="noopener">android public.xml 用法</a></p>
+<p><a href="https://ljd1996.github.io/2019/08/21/Android-Gradle%E7%AC%94%E8%AE%B0/" target="_blank" rel="noopener">Android-Gradle笔记</a></p>
+<p><a href="https://fucknmb.com/2017/11/15/aapt2%E9%80%82%E9%85%8D%E4%B9%8B%E8%B5%84%E6%BA%90id%E5%9B%BA%E5%AE%9A/" target="_blank" rel="noopener">aapt2 适配之资源 id 固定</a></p>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+<p>想阅读作者的更多文章，可以查看我的公共号：</p>
+<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/weixinpay.jpeg" alt="振兴 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpeg" alt="振兴 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    振兴
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2021/07/14/res-aapt-ids-public/" title="aapt与aapt2--资源id固定和PUBLIC标记">http://yoursite.com/2021/07/14/res-aapt-ids-public/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/aapt/" rel="tag"><i class="fa fa-tag"></i> aapt</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2021/06/28/gradle-kotlin-dsl/" rel="next" title="将构建配置从 Groovy 迁移到 KTS">
+                <i class="fa fa-chevron-left"></i> 将构建配置从 Groovy 迁移到 KTS
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/jay.jpg"
+                alt="振兴" />
+            
+              <p class="site-author-name" itemprop="name">振兴</p>
+              <p class="site-description motion-element" itemprop="description">好好学习，天天向上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">92</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">117</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stven0king" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://me.csdn.net/stven_king" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-crosshairs"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/311540b7592b" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-book"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/56824a1900b01b9f2bd94ae8" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-spinner"></i>掘金</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/2520114671/profile?rightmod=1&wvr=6&mod=personinfo" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-weibo"></i>微博</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:stven0king@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                推荐阅读
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://gityuan.com/" title="Gityuan" target="_blank">Gityuan</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.wanandroid.com/index" title="玩Android" target="_blank">玩Android</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.wjdiankong.cn/" title="尼古拉斯.赵四" target="_blank">尼古拉斯.赵四</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AAPT概述"><span class="nav-number">2.</span> <span class="nav-text">AAPT概述</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#资源"><span class="nav-number">2.1.</span> <span class="nav-text">资源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Compile"><span class="nav-number">2.2.</span> <span class="nav-text">Compile</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Link"><span class="nav-number">2.3.</span> <span class="nav-text">Link</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查看编译后的资源"><span class="nav-number">2.4.</span> <span class="nav-text">查看编译后的资源</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#资源共享"><span class="nav-number">2.5.</span> <span class="nav-text">资源共享</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ids-xml概述"><span class="nav-number">3.</span> <span class="nav-text">ids.xml概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#public-xml概述"><span class="nav-number">4.</span> <span class="nav-text">public.xml概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#资源id固定"><span class="nav-number">5.</span> <span class="nav-text">资源id固定</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#aapt进行id的固定"><span class="nav-number">5.1.</span> <span class="nav-text">aapt进行id的固定</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#aapt2进行id的固定"><span class="nav-number">5.2.</span> <span class="nav-text">aapt2进行id的固定</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#R-txt转public-txt"><span class="nav-number">5.2.1.</span> <span class="nav-text">R.txt转public.txt</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PUBLIC标记"><span class="nav-number">6.</span> <span class="nav-text">PUBLIC标记</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#回顾思考"><span class="nav-number">6.1.</span> <span class="nav-text">回顾思考</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#动手实践"><span class="nav-number">6.2.</span> <span class="nav-text">动手实践</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考："><span class="nav-number">7.</span> <span class="nav-text">参考：</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">振兴</span>
+
+  
+</div>
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+<!--
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+-->
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item=>{
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: '7mQEfpQKgyuazaGg5Q6mejuC-gzGzoHsz',
+        appKey: '0Tz7vXbTHfHnIslfjQNPbAg0',
+        placeholder: 'Just go go',
+        avatar:'wavatar',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
