@@ -91,8 +91,7 @@
 <meta property="og:description" content="前年的这个时候我们项目将网络框架替换为`okhttp+retrofit` ，然后我对 `retrofit` 源码进行了学习和分享，写了几篇相关的文章同时更新了项目的网络框架。需求是推动任何事物向前发展的动力，这次我们项目需要对网络接口进行加密了，开发过程涉及到了okhttp的网路层的处理，所以我又将其源码翻了一番。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://img-blog.csdnimg.cn/20181125171234514.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3N0dmVuX2tpbmc=,size_16,color_FFFFFF,t_70">
-<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center">
-<meta property="og:updated_time" content="2019-12-27T01:02:16.000Z">
+<meta property="og:updated_time" content="2022-02-09T08:42:05.382Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Okhttp拦截器Interceptor学习和使用">
 <meta name="twitter:description" content="前年的这个时候我们项目将网络框架替换为`okhttp+retrofit` ，然后我对 `retrofit` 源码进行了学习和分享，写了几篇相关的文章同时更新了项目的网络框架。需求是推动任何事物向前发展的动力，这次我们项目需要对网络接口进行加密了，开发过程涉及到了okhttp的网路层的处理，所以我又将其源码翻了一番。">
@@ -477,9 +476,6 @@
 <p>有关每个拦截器的具体代码分析：<a href="https://www.jianshu.com/u/8173f323f5bb" target="_blank" rel="noopener">https://www.jianshu.com/u/8173f323f5bb</a></p>
 <h2 id="拦截器中的骚操作"><a href="#拦截器中的骚操作" class="headerlink" title="拦截器中的骚操作"></a>拦截器中的骚操作</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line">HttpUrl httpurl = request.url();</span><br><span class="line"><span class="comment">//获取request中的原始url地址</span></span><br><span class="line">String requestUrl = httpurl.url().toString();</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 获取url中的参数</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> httpUrl</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> Map&lt;String, String&gt; <span class="title">getHttpUrlParams</span><span class="params">(HttpUrl httpUrl)</span> </span>&#123;</span><br><span class="line">    Set&lt;String&gt; paramsSet = httpUrl.queryParameterNames();</span><br><span class="line">    Map&lt;String, String&gt; paramMap = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">    <span class="keyword">if</span> (paramsSet != <span class="keyword">null</span> &amp;&amp; paramsSet.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (String s: paramsSet) &#123;</span><br><span class="line">            paramMap.put(s, httpUrl.queryParameter(s));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> paramMap;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//一般POST请求参数都是放在RequestBody中,使用时需要判断RequestBody是否为子类FormBody的实例</span></span><br><span class="line">RequestBody requestBody = request.body();</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 获取请求form中的参数</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> formBody</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> Map&lt;String, String&gt; <span class="title">getHttpUrlParams</span><span class="params">(FormBody formBody)</span> </span>&#123;</span><br><span class="line">    Map&lt;String, String&gt; paramMap = <span class="keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">    <span class="keyword">if</span> (formBody != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; formBody.size(); i++) &#123;</span><br><span class="line">            paramMap.put(formBody.name(i), formBody.value(i));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> paramMap;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//构造新的POST表单</span></span><br><span class="line">FormBody.Builder formBuilder = <span class="keyword">new</span> FormBody.Builder();</span><br><span class="line"><span class="keyword">for</span> (String key: map.keySet()) &#123;</span><br><span class="line">    formBuilder.add(key, map.get(key));</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//构造新的HttpUrl，动态修改请求url地址</span></span><br><span class="line">HttpUrl httpUrl = HttpUrl.parse(requestUrlTrue);</span><br><span class="line"><span class="comment">//构造新的request请求</span></span><br><span class="line">request = request.newBuilder()</span><br><span class="line">        .method(POST, formBuilder.build())</span><br><span class="line">        .url(httpUrl)</span><br><span class="line">        .build();</span><br><span class="line"><span class="comment">//获取相应体对应的请求体，请求和返回一一对应</span></span><br><span class="line">Request request = response.request()</span><br><span class="line"><span class="comment">//获取请求的相应体</span></span><br><span class="line">ResponseBody responseBody = response.body();</span><br><span class="line"><span class="comment">//获取返回值类型</span></span><br><span class="line">MediaType mediaType = responseBody.contentType();</span><br><span class="line"><span class="comment">//获取相应体重的数据流，只能获取一次，在获取之后数据流会关闭，再次获取会有异常抛出</span></span><br><span class="line"><span class="keyword">byte</span>[] responseBytes = responseBytes = responseBody.bytes();</span><br><span class="line"><span class="comment">//利用修改后的返回值，构造新的相应体</span></span><br><span class="line">response = response.newBuilder()</span><br><span class="line">        .body(ResponseBody.create(mediaType, responseBytes))</span><br><span class="line">        .build();</span><br></pre></td></tr></table></figure>
 <p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
-<p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：</p>
-<center><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center" alt="振兴书城"></center>
-
 
       
     </div>
@@ -487,6 +483,14 @@
     
     
 
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/dskb-dhz-icon-0.5.jpg" alt="振兴 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎您扫一扫上面的微信公众号，订阅我的博客！</div>
+</div>
+
+      </div>
     
 
     
@@ -655,7 +659,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">92</span>
+                  <span class="site-state-item-count">95</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -666,7 +670,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">17</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -677,7 +681,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">117</span>
+                  <span class="site-state-item-count">120</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -793,7 +797,7 @@
     <footer id="footer" class="footer">
       <div class="footer-inner">
         <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

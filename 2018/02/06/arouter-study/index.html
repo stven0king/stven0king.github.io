@@ -91,8 +91,7 @@
 <meta property="og:description" content="随着业务量的增长，客户端必然随之越来越业务和功能模块耦合越来越生，开发人员代码维护成本越来越高。App一般都会走向组件化、插件化的道路，而组件化、插件化的前提就是解耦。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-1cd8adf59a67340d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/620">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2019-12-27T01:02:16.000Z">
+<meta property="og:updated_time" content="2022-02-09T08:39:12.082Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Android项目解耦--路由框架ARouter的使用">
 <meta name="twitter:description" content="随着业务量的增长，客户端必然随之越来越业务和功能模块耦合越来越生，开发人员代码维护成本越来越高。App一般都会走向组件化、插件化的道路，而组件化、插件化的前提就是解耦。">
@@ -477,14 +476,21 @@
 <h4 id="通过依赖注入解耦-服务管理-二-发现服务"><a href="#通过依赖注入解耦-服务管理-二-发现服务" class="headerlink" title="通过依赖注入解耦:服务管理(二) 发现服务"></a>通过依赖注入解耦:服务管理(二) 发现服务</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Test</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    HelloService helloService;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Autowired</span>(name = <span class="string">"/service/hello"</span>)</span><br><span class="line">    HelloService helloService2;</span><br><span class="line"></span><br><span class="line">    HelloService helloService3;</span><br><span class="line"></span><br><span class="line">    HelloService helloService4;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Test</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	ARouter.getInstance().inject(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testService</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	 <span class="comment">// 1. (推荐)使用依赖注入的方式发现服务,通过注解标注字段,即可使用，无需主动获取</span></span><br><span class="line">	 <span class="comment">// Autowired注解中标注name之后，将会使用byName的方式注入对应的字段，不设置name属性，会默认使用byType的方式发现服务(当同一接口有多个实现的时候，必须使用byName的方式发现服务)</span></span><br><span class="line">	helloService.sayHello(<span class="string">"Vergil"</span>);</span><br><span class="line">	helloService2.sayHello(<span class="string">"Vergil"</span>);</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 2. 使用依赖查找的方式发现服务，主动去发现服务并使用，下面两种方式分别是byName和byType</span></span><br><span class="line">	helloService3 = ARouter.getInstance().navigation(HelloService.class);</span><br><span class="line">	helloService4 = (HelloService) ARouter.getInstance().build(<span class="string">"/service/hello"</span>).navigation();</span><br><span class="line">	helloService3.sayHello(<span class="string">"Vergil"</span>);</span><br><span class="line">	helloService4.sayHello(<span class="string">"Vergil"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h4 id="重写跳转URL"><a href="#重写跳转URL" class="headerlink" title="重写跳转URL"></a>重写跳转URL</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 实现PathReplaceService接口，并加上一个Path内容任意的注解即可</span></span><br><span class="line"><span class="meta">@Route</span>(path = <span class="string">"/xxx/xxx"</span>) <span class="comment">// 必须标明注解</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PathReplaceServiceImpl</span> <span class="keyword">implements</span> <span class="title">PathReplaceService</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * For normal path.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> path raw path</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function">String <span class="title">forString</span><span class="params">(String path)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> path;    <span class="comment">// 按照一定的规则处理之后返回处理后的结果</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">   <span class="comment">/**</span></span><br><span class="line"><span class="comment">    * For uri type.</span></span><br><span class="line"><span class="comment">    *</span></span><br><span class="line"><span class="comment">    * <span class="doctag">@param</span> uri raw uri</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">   <span class="function">Uri <span class="title">forUri</span><span class="params">(Uri uri)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> url;    <span class="comment">// 按照一定的规则处理之后返回处理后的结果</span></span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
-<p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：</p>
-<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>
+
       
     </div>
     
     
     
 
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/dskb-dhz-icon-0.5.jpg" alt="振兴 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎您扫一扫上面的微信公众号，订阅我的博客！</div>
+</div>
+
+      </div>
     
 
     
@@ -651,7 +657,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">92</span>
+                  <span class="site-state-item-count">95</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -662,7 +668,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">17</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -673,7 +679,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">117</span>
+                  <span class="site-state-item-count">120</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -789,7 +795,7 @@
     <footer id="footer" class="footer">
       <div class="footer-inner">
         <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

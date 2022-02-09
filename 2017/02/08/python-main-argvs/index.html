@@ -90,12 +90,10 @@
 <meta property="og:site_name" content="下雨天要逛街">
 <meta property="og:description" content="Python家的main函数">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2019-12-27T01:02:16.000Z">
+<meta property="og:updated_time" content="2022-02-09T08:42:21.350Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="python、main函数和argv参数">
 <meta name="twitter:description" content="Python家的main函数">
-<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 
 
 
@@ -417,14 +415,22 @@
       
         <p>笔者学习和使用过的语言中：C语言，C++语言，C#语言，Java语言都时有main函数在的，main是程序执行的起点，Python中，也有类似的运行机制，但方式却截然不同：Python使用缩进对齐组织代码的执行，所有没有缩进的代码（非函数定义和类定义），都会在载入时自动执行，这些代码，可以认为是Python的main函数。</p>
 <p>举个列子，我们可以清楚的了解：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ cat test.py </span><br><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></span><br><span class="line">	print(<span class="string">'world~!'</span>)</span><br><span class="line">print(<span class="string">'hello'</span>)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	main()</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ python test.py </span><br><span class="line">hello</span><br><span class="line">world~!</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line">&gt; 这样看来是否main函数没有多大的作用呢？</span><br><span class="line"></span><br><span class="line">每个文件（模块）都可以任意写一些没有缩进的代码，并且在载入时自动执行，为了区分主执行文件还是被调用的文件，Python引入了一个变量__name__，当文件是被调用时，__name__的值为模块名，当文件被执行时，__name__为<span class="string">'__main__'</span>。这个特性，我们可以在每个模块中写上测试代码，这些测试代码仅当模块被Python直接执行时才会运行，代码和测试完美的结合在一起。</span><br><span class="line"></span><br><span class="line">```python</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ cat test.py </span><br><span class="line"><span class="comment">#!/usr/bin/python</span></span><br><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">(argv)</span>:</span></span><br><span class="line">	<span class="keyword">if</span> argv == <span class="keyword">None</span>:</span><br><span class="line">		print(<span class="string">'world~!'</span>)</span><br><span class="line">	<span class="keyword">else</span>:</span><br><span class="line">		print(argv)</span><br><span class="line">print(<span class="string">'hello'</span>)</span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">	main(sys.argv)</span><br><span class="line">im@<span class="number">58</span>user:~/PythonProjects$ python test.py Tom</span><br><span class="line">hello</span><br><span class="line">[<span class="string">'test.py'</span>, <span class="string">'Tom'</span>]</span><br></pre></td></tr></table></figure></p>
-<p>想阅读作者的更多文章，可以查看我的公共号：</p>
-<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+
       
     </div>
     
     
     
 
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/dskb-dhz-icon-0.5.jpg" alt="振兴 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎您扫一扫上面的微信公众号，订阅我的博客！</div>
+</div>
+
+      </div>
     
 
     
@@ -586,7 +592,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">92</span>
+                  <span class="site-state-item-count">95</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -597,7 +603,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">17</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -608,7 +614,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">117</span>
+                  <span class="site-state-item-count">120</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -708,7 +714,7 @@
     <footer id="footer" class="footer">
       <div class="footer-inner">
         <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

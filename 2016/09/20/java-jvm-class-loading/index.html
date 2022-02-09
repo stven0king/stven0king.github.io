@@ -91,8 +91,7 @@
 <meta property="og:description" content="我们都知道JVM虚拟机的可执行文件为.class文件，那么什么时候JVM虚拟机会加载自己所需要的类呢？之前自己一直有这样的问题，上网找过好多网友的解释，感觉好像理解但是自己却无法说清楚，今天看了《深入理解JVM虚拟机》一书的讲解感觉自己有些透了，在此记录下来自己的理解~！">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/0b37595778ff0b42f7f66e448cb9230b.png#pic_center">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2020-11-12T11:44:55.000Z">
+<meta property="og:updated_time" content="2022-02-09T08:29:42.537Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JVM虚拟机之类加载的过程">
 <meta name="twitter:description" content="我们都知道JVM虚拟机的可执行文件为.class文件，那么什么时候JVM虚拟机会加载自己所需要的类呢？之前自己一直有这样的问题，上网找过好多网友的解释，感觉好像理解但是自己却无法说清楚，今天看了《深入理解JVM虚拟机》一书的讲解感觉自己有些透了，在此记录下来自己的理解~！">
@@ -467,14 +466,21 @@
 <p>在Java虚拟机中类的生命周期和对象的生命周期很相似。虚拟机创建并初始化对象，使程序使用对象，然后在对象变得不再被引用后可选地进行垃圾收集。同样，虚拟机装载、连接并且初始化类，使程序能使用类，当程序不再引用他们的时候可选的卸载它们。如果程序不再引用某类型，那么这个类型就变成不可触及，所以可以被垃圾收集（俗称GC）。但需要注意的是JVM自带的类加载器（PS：<a href="http://www.jianshu.com/p/a8371d26f848" target="_blank" rel="noopener">Bootstrap、ExtClassLoader、AppClassLoader</a>）装载的类型永远是可触及的，所以永远不会被卸载。只有使用用户定义的类装载器装载的类型才会变成不可触及的，从而被虚拟机回收。</p>
 </blockquote>
 <p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
-<p>想阅读作者的更多文章，可以查看我的公共号：</p>
-<center><img src="http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="振兴书城"></center>
+
       
     </div>
     
     
     
 
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/dskb-dhz-icon-0.5.jpg" alt="振兴 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎您扫一扫上面的微信公众号，订阅我的博客！</div>
+</div>
+
+      </div>
     
 
     
@@ -643,7 +649,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">92</span>
+                  <span class="site-state-item-count">95</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -654,7 +660,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">17</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -665,7 +671,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">117</span>
+                  <span class="site-state-item-count">120</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -781,7 +787,7 @@
     <footer id="footer" class="footer">
       <div class="footer-inner">
         <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

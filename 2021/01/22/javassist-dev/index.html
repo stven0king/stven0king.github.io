@@ -93,8 +93,7 @@
 <meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/cb84db57e4f6bbcf2c70c0bf9740d8ed.png#pic_center">
 <meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/60faeadb5a7c3cbbe60255c0198cc86d.png#pic_center">
 <meta property="og:image" content="https://img-blog.csdnimg.cn/img_convert/8c9a841fee6b7bb598bdac9ec03a5377.png#pic_center">
-<meta property="og:image" content="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center">
-<meta property="og:updated_time" content="2021-01-26T11:46:56.000Z">
+<meta property="og:updated_time" content="2022-02-09T08:28:07.391Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="修改AAR和Jar中class文件">
 <meta name="twitter:description" content="最近帮助同事解决了一个比较棘手的问题，一路采坑的过程比较有意思。在此记录下来。（PS：主要原因是项目比较大，我们只有整个Android项目部分业务侧代码的开发权限。所以解决问题的一些解决问题的常规手段无法使用。）">
@@ -484,7 +483,6 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread "main" javassist.CannotCompileException: [source error] no such class: android.os.Message</span><br><span class="line">	at javassist.CtNewMethod.make(CtNewMethod.java:<span class="number">78</span>)</span><br><span class="line">	at javassist.CtNewMethod.make(CtNewMethod.java:<span class="number">44</span>)</span><br><span class="line">	at com.test.pattern.Test.main(Test.java:<span class="number">13</span>)</span><br></pre></td></tr></table></figure>
 <h3 id="注意点"><a href="#注意点" class="headerlink" title="注意点"></a>注意点</h3><p>替换或者删除<code>jar</code>中的<code>class</code>的时候最好不要解压然后再使用命名打包，我自己在<code>Max</code>电脑上使用命令打<code>jar</code>包的时候会有一个<code>.DS_Store</code>文件。我使用的<code>BetterZip</code><strong>压缩&amp;解压</strong>工具，在不解压的情况下进行<code>jar</code>包中的<code>class</code>的<strong>添加和删除</strong>操作非常方便。</p>
 <p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
-<p>想阅读作者的更多文章，可以查看我 <a href="http://dandanlove.com/" target="_blank" rel="noopener">个人博客</a> 和公共号：<br><img src="https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center" alt="振兴书城"></p>
 
       
     </div>
@@ -492,6 +490,14 @@
     
     
 
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/dskb-dhz-icon-0.5.jpg" alt="振兴 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎您扫一扫上面的微信公众号，订阅我的博客！</div>
+</div>
+
+      </div>
     
 
     
@@ -664,7 +670,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">92</span>
+                  <span class="site-state-item-count">95</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -675,7 +681,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-count">17</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -686,7 +692,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">117</span>
+                  <span class="site-state-item-count">120</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -802,7 +808,7 @@
     <footer id="footer" class="footer">
       <div class="footer-inner">
         <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
