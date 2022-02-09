@@ -571,5 +571,4 @@ private void initContentStream(InputStream transferStream) throws IOException {
 
 默默肃立的路灯，像等待检阅的哨兵，站姿笔挺，瞪着炯炯有神的眼睛，时刻守护着这城市的安宁。一排排、一行行路灯不断向远方延伸，汇聚成了一支支流光溢彩的河流，偶尔有汽车疾驰而去，也是一尾尾鱼儿在河里游动。夜已深~！~！~！
 
-想阅读作者的更多文章，可以查看我的公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！

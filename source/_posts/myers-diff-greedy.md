@@ -182,7 +182,3 @@ for ( int d = vs.Count - 1 ; p.X > 0 || p.Y > 0 ; d-- )
 [Myers diff alogrithm:part 2](https://www.codeproject.com/Articles/42280/Investigating-Myers-Diff-Algorithm-Part-2-of-2)
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我的公共号：
-
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>

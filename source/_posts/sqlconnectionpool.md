@@ -897,7 +897,3 @@ private void closeConnectionAndLogExceptionsLocked(SQLiteConnection connection) 
 - 数据库的关闭先状态，然后关闭所有的空闲链接，使用中的连接回归连接池后被关闭；
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-
-![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)

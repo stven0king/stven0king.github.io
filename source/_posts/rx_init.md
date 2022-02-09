@@ -275,7 +275,3 @@ new OnSubscribe<T>() {
 本篇文章只是一个 `RxJava` 简单的基础开篇，`观察者：Observer`  、 `订阅操作：subscribe()`  、`订阅：Subscription` 、`订阅者：Subscriber`  以及 `Observer` 和 `Subscription` 的订阅关系，之后我会慢慢的学习和分享关于 `RxJava` 更多的知识。
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>

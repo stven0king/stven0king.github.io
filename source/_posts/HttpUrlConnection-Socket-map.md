@@ -11,5 +11,4 @@ description: 多年以前Android的网络请求只有Apache开源的HttpClient�
 先直接上图，明天再写源码分析吧
 ![HttpUrlConnection和Socket关系图解](http://img.blog.csdn.net/20160714225325530)
 
-想阅读作者的更多文章，可以查看我的公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！

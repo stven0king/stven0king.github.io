@@ -135,6 +135,3 @@ Exception in thread "main" javassist.CannotCompileException: [source error] no s
 替换或者删除`jar`中的`class`的时候最好不要解压然后再使用命名打包，我自己在`Max`电脑上使用命令打`jar`包的时候会有一个`.DS_Store`文件。我使用的`BetterZip`**压缩&解压**工具，在不解压的情况下进行`jar`包中的`class`的**添加和删除**操作非常方便。
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)

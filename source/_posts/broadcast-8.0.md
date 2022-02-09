@@ -210,6 +210,3 @@ public static final int FLAG_RECEIVER_EXCLUDE_BACKGROUND = 0x00800000;
 `4`其实就是文档中说明的**签名权限**不受`Android 8.0`后台执行优化的控制；
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)

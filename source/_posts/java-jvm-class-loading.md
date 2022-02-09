@@ -62,7 +62,3 @@ description: "我们都知道JVM虚拟机的可执行文件为.class文件，那
 >在Java虚拟机中类的生命周期和对象的生命周期很相似。虚拟机创建并初始化对象，使程序使用对象，然后在对象变得不再被引用后可选地进行垃圾收集。同样，虚拟机装载、连接并且初始化类，使程序能使用类，当程序不再引用他们的时候可选的卸载它们。如果程序不再引用某类型，那么这个类型就变成不可触及，所以可以被垃圾收集（俗称GC）。但需要注意的是JVM自带的类加载器（PS：[Bootstrap、ExtClassLoader、AppClassLoader](http://www.jianshu.com/p/a8371d26f848)）装载的类型永远是可触及的，所以永远不会被卸载。只有使用用户定义的类装载器装载的类型才会变成不可触及的，从而被虚拟机回收。
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我的公共号：
-
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>

@@ -706,6 +706,4 @@ Response<T> parseResponse( okhttp3.Response rawResponse ) throws IOException{
 ## 总结 ##
 现在随着Rxjava响应式编程越来越多的程序猿使用，自己也开始接触和使用。Retrofit+Rxjava+okhttp是时下比较受欢迎的网络请求框架，其源代码并不是很多，其底层网络通信时交由 OkHttp来完成的，但是Retrofit运用了大量的设计模式，代码逻辑很清晰，笔者以前用的是AsyncHttpClient作为app的网络请求框架，其源码也没自己的研究过。但看完Retrofit代码之后觉得收获很大，建议如果感兴趣可以抽时间仔细的阅读。
 
-想阅读作者的更多文章，可以查看我的公共号：
-
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！

@@ -88,5 +88,4 @@ public interface GitHubService {
 *  如果请求为post实现，那么最好传递参数时使用@Field、@FieldMap和@FormUrlEncoded。因为@Query和或QueryMap都是将参数拼接在url后面的，而@Field或@FieldMap传递的参数时放在请求体的。
 * 使用@Path时，path对应的路径不能包含"/"，否则会将其转化为%2F。在遇到想动态的拼接多节url时，还是使用@Url吧。
 
-想阅读作者的更多文章，可以查看我的公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！

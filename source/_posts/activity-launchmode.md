@@ -240,6 +240,3 @@ singleInstance
 Activity启动模式到这里就结束了么，然而并没有。之前看过其他类似文章或者书籍的同学都知道还有Activity的Flags和 ```android:taskAffinity``` 标签对Activity的启动有影响。这些内容我们放在下一张[深入理解Activity启动模式之大结局](http://www.jianshu.com/p/8bc28d794e11)中讲述，有兴趣的同学可以点击阅读～！
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>

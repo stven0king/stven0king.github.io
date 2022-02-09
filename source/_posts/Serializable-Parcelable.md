@@ -135,5 +135,4 @@ Parcelable内部包装了可序列化的数据，可以在Biander中自由的传
 
 文章部分摘自任玉刚的《Android开发艺术探索》
 
-想阅读作者的更多文章，可以查看我的公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！

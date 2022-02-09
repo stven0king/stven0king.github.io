@@ -647,11 +647,3 @@ void doTraversal() {
 确定以上三点，我们就容易理解多了。多个线程编程中，当多个线程只拥有一个Handler实例时，无论消息在哪个线程里发送出来，消息都会在这个Handler的handleMessage方法中做处理（举例：若在主线程中创建一个Handler对象并且该Handler对象绑定的是主线程的Looper对象实例，那么我们在异步线程中使用该handler发送的消息，最终都会将在主线程中进行处理。eg：网络请求，文件读写。。）。
 
 现在我们终于可以清空我们所有的疑问愉快的结束本文章的阅读啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-
-<center>
-
-![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)
-
-</center>

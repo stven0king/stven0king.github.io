@@ -447,8 +447,3 @@ public class PathClassLoader extends ClassLoader {
 
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-
-![振兴书城](https://img-blog.csdnimg.cn/img_convert/dfe67a34f4fbdb8227296a417c1b2ca8.png#pic_center)
-

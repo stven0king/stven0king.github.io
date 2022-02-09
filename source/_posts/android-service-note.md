@@ -92,6 +92,4 @@ Service的声明周期
 上面流程图只是方法的调用，关于具体方法的实现还没有进行仔细的研究所以这里就不贴了。
 看到这里关于Service的基础知识应该回顾的差不多，我们一起期待新的一年的开始吧~！~！~！
 
-想阅读作者的更多文章，可以查看我的公共号：
-
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！

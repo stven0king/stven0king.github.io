@@ -51,7 +51,4 @@ jd-gui使用
 可能遇到的问题：
 jd-gui程序执行的时候可能没有任何反应，那是因为操作系统可能缺少某些环境。执行该命令：```sudo apt-get install gtk2-engines-murrine:i386 libgtk2.0-0:i386 libcanberra-gtk-module:i386 libgtk2.0-0:i386 libxxf86vm1:i386 libsm6:i386 lib32stdc++6 lib32ncurses5 lib32bz2-1.0 libgtk2.0-0:i386 libxxf86vm1:i386 libsm-dev:i386 libcanberra-gtk3-module:i386```后然再运行jd-gui程序，画面即将展现～！～！
 
-<center>![dex2jar.png](http://upload-images.jianshu.io/upload_images/1319879-c8cc40591a38075b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
-想阅读作者的更多文章，可以查看我的公共号：
-
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
+文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！

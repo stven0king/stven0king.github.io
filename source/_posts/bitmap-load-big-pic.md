@@ -213,4 +213,4 @@ try {
 
 这里需要注意的是 `mRect` 的宽高不能太大，否则加载得到的 `Bitmap` 的时候也会出现 `OOM` 的异常。
 
-![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)
+文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！

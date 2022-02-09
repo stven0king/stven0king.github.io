@@ -659,6 +659,3 @@ new Thread(new Runnable() {
 通过分析`Activity`、`Dialog`、`Toast`通过对 `ViewRootImpl` 的更细节的分析，所有添加在窗口上的 `View` 都有一个 `ViewRootImpl` 作为它的 `Parent` ，处理View的布局、事件处理等。
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-![振兴书城](https://imgconvert.csdnimg.cn/aHR0cDovL3VwbG9hZC1pbWFnZXMuamlhbnNodS5pby91cGxvYWRfaW1hZ2VzLzEzMTk4NzktNjEyYzRjNjZkNDBjZTg1NS5qcGc?x-oss-process=image/format,png#pic_center)

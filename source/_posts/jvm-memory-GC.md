@@ -148,6 +148,3 @@ Full GC:标记-整理算法(Mark-Compact)
 在发生MinorGC之前，虚拟机会先检查老年代最大可用的连续空间是否大于新手代所有对象总空间，如果这个条件成立，那么Minor GC可以确保是安全的。如果不成立，则虚拟机会查看HandlePromotionFailure设置值是否允许担保失败。如果允许，那么会继续检查老年代最大可用的连续空间是否大于历次晋升到老年代对象的平均大小，如果大于，将会尝试着一次Minor GC，尽管这次Minor GC是有风险的；如果小于，或者HandlePromotionFailure设置不允许冒险（冒险：当出现大量对象在Minor GC后任然存活的情况，就需要老年代进行分配担保 ，把Survivor无法容纳的对象直接进入老年代），那这时改为进行一次Full GC。
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>

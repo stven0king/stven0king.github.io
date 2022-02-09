@@ -826,6 +826,3 @@ public final class ViewRootImpl implements ViewParent,
 整片文章单独看起来留下的印象不是很深刻，以前阅读过 [Android的16ms和垂直同步以及三重缓存](http://dandanlove.com/2018/04/13/android-16ms/) 这篇文章之后就会知道本文章是对  [Android的16ms和垂直同步以及三重缓存](http://dandanlove.com/2018/04/13/android-16ms/)  这篇文章其中的一些疑问进行解答。从代码的角度讲述了android的屏幕绘制部分知识。
 
 文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！
-
-想阅读作者的更多文章，可以查看我 [个人博客](http://dandanlove.com/) 和公共号：
-<center>![振兴书城](http://upload-images.jianshu.io/upload_images/1319879-612c4c66d40ce855.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)</center>
