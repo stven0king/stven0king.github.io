@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+
+
+
+
+  <meta name="keywords" content="JNI,安全," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="文章指在学会使用JNI方法动态注册，静态注册，方法替换，且在这个过程中稍微了解一下`native`层的动态库加载，方法加载等知识。">
+<meta name="keywords" content="JNI,安全">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JNI方法注册源码分析(JNI_OnLoad|动态注册|静态注册|方法替换)">
+<meta property="og:url" content="http://yoursite.com/2022/04/29/native-function-confound/index.html">
+<meta property="og:site_name" content="下雨天要逛街">
+<meta property="og:description" content="文章指在学会使用JNI方法动态注册，静态注册，方法替换，且在这个过程中稍微了解一下`native`层的动态库加载，方法加载等知识。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/0cdffc517b1c4ae285389c4ff3680283.webp#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/b219f30b022c4126b9e838035cf2524c.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/b76d7d8f046a49dca396edab9ecd3ce0.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/16db414936974630b76c563ef24ab1a6.png#pic_center">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/5309107116df4b5ab21ec322e045fdfb.png#pic_center">
+<meta property="og:updated_time" content="2022-04-29T02:21:00.005Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="JNI方法注册源码分析(JNI_OnLoad|动态注册|静态注册|方法替换)">
+<meta name="twitter:description" content="文章指在学会使用JNI方法动态注册，静态注册，方法替换，且在这个过程中稍微了解一下`native`层的动态库加载，方法加载等知识。">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/0cdffc517b1c4ae285389c4ff3680283.webp#pic_center">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2022/04/29/native-function-confound/"/>
+
+
+
+
+
+  <title>JNI方法注册源码分析(JNI_OnLoad|动态注册|静态注册|方法替换) | 下雨天要逛街</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?1055a4e1d37a3a4dcb3a3e1c4f32f147";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+    <a href="https://github.com/stven0king" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">下雨天要逛街</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2022/04/29/native-function-confound/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="振兴">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/jay.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="下雨天要逛街">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">JNI方法注册源码分析(JNI_OnLoad|动态注册|静态注册|方法替换)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2022-04-29T10:17:58+08:00">
+                2022-04-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android/" itemprop="url" rel="index">
+                    <span itemprop="name">Android</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2022/04/29/native-function-confound/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2022/04/29/native-function-confound/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+              <div class="post-description">
+                  文章指在学会使用JNI方法动态注册，静态注册，方法替换，且在这个过程中稍微了解一下`native`层的动态库加载，方法加载等知识。
+              </div>
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><img src="https://img-blog.csdnimg.cn/0cdffc517b1c4ae285389c4ff3680283.webp#pic_center" alt="请添加图片描述"></p>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>开发<code>Android</code>应用时，有时候Java层的编码不能满足实际需求，需要通过JNI的方式利用C/C++实现重要功能并生成SO文件，再通过<code>System.loadLibrary()</code>加载进行调用。常见的场景如：加解密算法、音视频编解码、数据采集、设备指纹等。通常核心代码都封装在SO文件中，也自然成为“黑客”攻击的目标对象，利用IDA Pro等逆向工具，可以轻松反编译未采取任何保护措施的SO文件，生成近似源代码的C代码，业务逻辑、核心技术将直接暴露在攻击者的眼前。进一步造成核心技术泄漏、隐私数据泄漏、业务逻辑恶意篡改等危害。</p>
+<p>高级选手可以编译链加固，采用花指令等方案。入门选手可以采用Native方法动态注册，混淆方名。</p>
+<p>文章指在学会使用JNI方法动态注册，静态注册，方法替换，且在这个过程中稍微了解一下<code>native</code>层的动态库加载，方法加载等知识。</p>
+<h2 id="举例说明"><a href="#举例说明" class="headerlink" title="举例说明"></a>举例说明</h2><p>通过<code>javah</code>,获取一组带签名函数，然后实现这些函数。对应的<code>native</code>层的函数是：<code>Java_类名_方法名</code>，样式如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">JNIEXPORT jstring JNICALL <span class="title">Java_com_jni_tzx_utils_JNIUitls_getNameString</span><span class="params">(JNIEnv *env,jclass type)</span></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> env-&gt;NewStringUTF(<span class="string">"JNIApplication"</span>);</span><br><span class="line">&#125;</span><br><span class="line">JNIEXPORT jint JNICALL</span><br><span class="line">Java_com_jni_tzx_utils_JNIUitls_getNumber(JNIEnv *env,jobject instance,jint num)&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但这样存在两个问题：</p>
+<ul>
+<li>第一个问题是在IDA工具查看so文件，或者执行<code>nm -D libxxx.so</code></li>
+</ul>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">00000000000006</span>d8 T Java_com_jni_tzx_utils_JNIUitls_getNameString</span><br><span class="line"><span class="number">000000000000073</span>c T Java_com_jni_tzx_utils_JNIUitls_getNumber</span><br><span class="line"><span class="number">0000000000000708</span> W _ZN7_JNIEnv12NewStringUTFEPKc</span><br><span class="line">                 U __cxa_atexit@LIBC</span><br><span class="line">                 U __cxa_finalize@LIBC</span><br></pre></td></tr></table></figure>
+<p>我们会得到类似上面的输出结果。可以明显的看到该so是对应的那个Java类的那个方法。</p>
+<ul>
+<li>第二个问题是恶意攻击者可以得到这个so文件之后，查看这个native方法的参数和返回类型，也就是方法的签名，然后自己在<code>Java</code>层写个Demo程序，然后构造一个和so文件中对应的native方法，就可以执行这个<code>native</code>方法，如果有一个校验密码或者是获取密码的方法是个<code>native</code>的，那么这个时候就会很容易被攻击者执行方法后获取结果。</li>
+</ul>
+<p>上面的两个问题可以看到，如果<code>native</code>层的函数遵循了这样的格式，无疑给破解提供的简单的一种方式。</p>
+<h2 id="手动注册native方法"><a href="#手动注册native方法" class="headerlink" title="手动注册native方法"></a>手动注册native方法</h2><p>先看结果：</p>
+<p>原有的<code>native</code>方法：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">JNIEXPORT jstring JNICALL <span class="title">Java_com_jni_tzx_MainActivity_stringFromJNI</span><span class="params">(JNIEnv *env, jobject <span class="comment">/* this */</span>)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> env-&gt;NewStringUTF(<span class="string">"Hello from C++ dynamic\n"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>经过动态注册之后：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0000000000000</span>a2c T JNI_OnLoad</span><br><span class="line"><span class="number">00000000000009f</span>8 W _ZN7_JNIEnv12NewStringUTFEPKc</span><br><span class="line"><span class="number">0000000000000b</span>b8 W _ZN7_JNIEnv15RegisterNativesEP7_jclassPK15JNINativeMethodi</span><br><span class="line"><span class="number">0000000000000b</span>84 W _ZN7_JNIEnv9FindClassEPKc</span><br><span class="line"><span class="number">0000000000000b</span>48 W _ZN7_JavaVM6GetEnvEPPvi</span><br><span class="line">                 U __android_log_print</span><br><span class="line">                 U __cxa_atexit@LIBC</span><br><span class="line">                 U __cxa_finalize@LIBC</span><br><span class="line">                 U __stack_chk_fail@LIBC</span><br><span class="line"><span class="number">00000000000009</span>c8 T test</span><br></pre></td></tr></table></figure>
+<p><code>test</code> 是动态注册的方法名，对应<code>com.jni.tzx.MainActivity#stringFromJNI</code>方法。</p>
+<p><strong>手动注册native方法</strong>这个手段其实不太常用，因为它的安全措施不是很强大，但是也可以起到一定的作用。聊这个知识点之前，先了解一下so加载的流程。</p>
+<h2 id="so方法加载"><a href="#so方法加载" class="headerlink" title="so方法加载"></a>so方法加载</h2><p><img src="https://img-blog.csdnimg.cn/b219f30b022c4126b9e838035cf2524c.png#pic_center" alt="请添加图片描述"></p>
+<blockquote>
+<p>在Android中，当程序在Java成运行<code>System.loadLibrary(&quot;jnitest&quot;);</code>这行代码后，程序会去载入<code>libjnitset.so</code>文件。于此同时，产生一个Load事件，这个事件触发后，程序默认会在载入的<code>.so</code>文件的函数列表中查找<code>JNI_OnLoad</code>函数并执行，与Load事件相对，在载入的.so文件被卸载时，Unload事件被触发。此时，程序默认会去载入的.so文件的函数列表中查找<code>JNI_OnLoad</code>函数并执行，然后卸载.so文件。</p>
+<p>需要注意的是<code>JNI_OnLoad</code>和<code>JNI_OnUnLoad</code>这两个函数在.so组件中并不是强制要求的，可以不用去实现。</p>
+<p>我们可以将<code>JNI_OnLoad</code>函数看做<strong>构造函数</strong>在初始化时候调用，可以将<code>JNI_OnUnLoad</code>函数看做<strong>析构函数</strong>在被卸载的时候调用；</p>
+<p>应用层的<code>Java</code>程序需要调用本地方法时，虚拟机在加载的动态文件中定位并链接该本地方法，从而得以执行本地方法。这中定位<code>native</code>方法是按照命名规范来的。如果找不到就会崩溃。</p>
+</blockquote>
+<h3 id="jni方法查找失败"><a href="#jni方法查找失败" class="headerlink" title="jni方法查找失败"></a>jni方法查找失败</h3><p>//这个是找到方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Process: com.jni.tzx, PID: <span class="number">1598</span></span><br><span class="line">java.lang.UnsatisfiedLinkError: No implementation found <span class="keyword">for</span> java.lang.String com.jni.tzx.utils.JNIUitls.test() (tried Java_com_jni_tzx_utils_JNIUitls_test and Java_com_jni_tzx_utils_JNIUitls_test__)</span><br><span class="line">	at com.jni.tzx.utils.JNIUitls.test(Native Method)</span><br><span class="line">	at com.jni.tzx.MainActivity.onCreate(MainActivity.java:<span class="number">24</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="加载so文件"><a href="#加载so文件" class="headerlink" title="加载so文件"></a>加载so文件</h3><p>//java.lang.System.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">loadLibrary</span><span class="params">(String libname)</span> </span>&#123;</span><br><span class="line">    Runtime.getRuntime().loadLibrary0(VMStack.getCallingClassLoader(), libname);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>//java.lang.Runtime.java<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">loadLibrary0</span><span class="params">(ClassLoader loader, String libname)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (libname.indexOf((<span class="keyword">int</span>)File.separatorChar) != -<span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> UnsatisfiedLinkError(</span><br><span class="line"><span class="string">"Directory separator should not appear in library name: "</span> + libname);</span><br><span class="line">    &#125;</span><br><span class="line">    String libraryName = libname;</span><br><span class="line">    <span class="keyword">if</span> (loader != <span class="keyword">null</span>) &#123;</span><br><span class="line">        String filename = loader.findLibrary(libraryName);</span><br><span class="line">        <span class="keyword">if</span> (filename == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="comment">// It's not necessarily true that the ClassLoader used</span></span><br><span class="line">            <span class="comment">// System.mapLibraryName, but the default setup does, and it's</span></span><br><span class="line">            <span class="comment">// misleading to say we didn't find "libMyLibrary.so" when we</span></span><br><span class="line">            <span class="comment">// actually searched for "liblibMyLibrary.so.so".</span></span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UnsatisfiedLinkError(loader + <span class="string">" couldn't find \""</span> +</span><br><span class="line">                                            System.mapLibraryName(libraryName) + <span class="string">"\""</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        String error = nativeLoad(filename, loader);</span><br><span class="line">        <span class="keyword">if</span> (error != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> UnsatisfiedLinkError(error);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">native</span> String <span class="title">nativeLoad</span><span class="params">(String filename, ClassLoader loader)</span></span>;</span><br></pre></td></tr></table></figure></p>
+<h3 id="so文件所在目录"><a href="#so文件所在目录" class="headerlink" title="so文件所在目录"></a>so文件所在目录</h3><p><img src="https://img-blog.csdnimg.cn/b76d7d8f046a49dca396edab9ecd3ce0.png#pic_center" alt="请添加图片描述"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseDexClassLoader</span> <span class="keyword">extends</span> <span class="title">ClassLoader</span> </span>&#123;</span><br><span class="line">  	<span class="keyword">private</span> <span class="keyword">final</span> DexPathList pathList;</span><br><span class="line">  	<span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">findLibrary</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> pathList.findLibrary(name);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">DexPathList</span> </span>&#123;</span><br><span class="line">  	<span class="function"><span class="keyword">public</span> <span class="title">DexPathList</span><span class="params">(ClassLoader definingContext, String dexPath,</span></span></span><br><span class="line"><span class="function"><span class="params">       String libraryPath, File optimizedDirectory)</span> </span>&#123;</span><br><span class="line">		    <span class="comment">/********部分代码省略*******/</span></span><br><span class="line">    		<span class="keyword">this</span>.nativeLibraryDirectories = splitLibraryPath(libraryPath);</span><br><span class="line">		&#125;</span><br><span class="line">  	<span class="keyword">private</span> <span class="keyword">static</span> File[] splitLibraryPath(String path) &#123;</span><br><span class="line">			  <span class="comment">//System.getProperty("java.library.path")=/system/lib:/system/product/lib</span></span><br><span class="line">		  	ArrayList&lt;File&gt; result = splitPaths(path, System.getProperty(<span class="string">"java.library.path"</span>), <span class="keyword">true</span>);</span><br><span class="line">    		<span class="keyword">return</span> result.toArray(<span class="keyword">new</span> File[result.size()]);</span><br><span class="line">		&#125;</span><br><span class="line">  	<span class="function"><span class="keyword">public</span> String <span class="title">findLibrary</span><span class="params">(String libraryName)</span> </span>&#123;</span><br><span class="line">        <span class="comment">//前面添加lib，后面添加.so。具体实现可以参考下面的so名称获取</span></span><br><span class="line">        String fileName = System.mapLibraryName(libraryName);</span><br><span class="line">       <span class="keyword">for</span> (File directory : nativeLibraryDirectories) &#123;</span><br><span class="line">            String path = <span class="keyword">new</span> File(directory, fileName).getPath();</span><br><span class="line">               <span class="keyword">if</span> (IoUtils.canOpenReadOnly(path)) &#123;</span><br><span class="line">                   <span class="keyword">return</span> path;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//java_lang_System.cpp</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> jstring <span class="title">System_mapLibraryName</span><span class="params">(JNIEnv* env, jclass, jstring javaName)</span> </span>&#123;</span><br><span class="line">    <span class="function">ScopedUtfChars <span class="title">name</span><span class="params">(env, javaName)</span></span>;</span><br><span class="line">    <span class="keyword">if</span> (name.c_str() == NULL) &#123;</span><br><span class="line">        <span class="keyword">return</span> NULL;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">char</span>* mappedName = NULL;</span><br><span class="line">  	<span class="comment">//#define OS_SHARED_LIB_FORMAT_STR    "lib%s.so"</span></span><br><span class="line">    asprintf(&amp;mappedName, OS_SHARED_LIB_FORMAT_STR, name.c_str());</span><br><span class="line">    jstring result = env-&gt;NewStringUTF(mappedName);</span><br><span class="line">    free(mappedName);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过反射获取出<code>BaseDexClassLoader</code>的<code>getLdLibraryPath</code>是<code>/data/app/com.jni.tzx--DSAI2wgWJ3_R3i0iUUeJA==/lib/arm64:/data/app/com.jni.tzx--DSAI2wgWJ3_R3i0iUUeJA==/base.apk!/lib/arm64-v8a</code></p>
+<p><code>LoadedApk</code> 的<code>getClassLoader</code>方法调用<code>ApplicationLoaders.getClassLoader</code>方法创建<code>PathClassLoader</code>。</p>
+<p>构造<code>PathClassLoader</code>的<code>libraryDir</code>是来自<code>ApplicationInfo.nativeLibraryDir</code>。</p>
+<p><img src="https://img-blog.csdnimg.cn/16db414936974630b76c563ef24ab1a6.png#pic_center" alt="请添加图片描述"></p>
+<p><code>nativeLibararyDir</code>的赋值主要是在<code>PackageManagerService</code>中，通过<code>apkRoot也就是sourceDir</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">VMRuntime.is64BitInstructionSet(getPrimaryInstructionSet(info));</span><br></pre></td></tr></table></figure>
+<p>再判断是否为<code>64</code>位，确定是安装包的<code>lib</code>目录。最后根据<code>AIB</code>确定<code>nativeLibararyDir</code>。</p>
+<p><code>ABI</code>相关初始化流程可以参考：<a href="https://zhuanlan.zhihu.com/p/29801087" target="_blank" rel="noopener">Android中app进程ABI确定过程</a></p>
+<h3 id="nativeLoad"><a href="#nativeLoad" class="headerlink" title="nativeLoad"></a>nativeLoad</h3><p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/native/java_lang_Runtime.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/native/java_lang_Runtime.cpp</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * static String nativeLoad(String filename, ClassLoader loader)</span></span><br><span class="line"><span class="comment"> * 将指定的完整路径加载为动态库 JNI 兼容的方法。 成功或失败返回 null 失败消息。</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Dalvik_java_lang_Runtime_nativeLoad</span><span class="params">(<span class="keyword">const</span> u4* args,</span></span></span><br><span class="line"><span class="function"><span class="params">    JValue* pResult)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    StringObject* fileNameObj = (StringObject*) args[<span class="number">0</span>];</span><br><span class="line">    Object* classLoader = (Object*) args[<span class="number">1</span>];</span><br><span class="line">    <span class="keyword">char</span>* fileName = <span class="literal">NULL</span>;</span><br><span class="line">    StringObject* result = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">char</span>* reason = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">bool</span> success;</span><br><span class="line">    assert(fileNameObj != <span class="literal">NULL</span>);</span><br><span class="line">    fileName = dvmCreateCstrFromString(fileNameObj);</span><br><span class="line">    success = dvmLoadNativeCode(fileName, classLoader, &amp;reason);</span><br><span class="line">    <span class="keyword">if</span> (!success) &#123;</span><br><span class="line">        <span class="keyword">const</span> <span class="keyword">char</span>* msg = (reason != <span class="literal">NULL</span>) ? reason : <span class="string">"unknown failure"</span>;</span><br><span class="line">        result = dvmCreateStringFromCstr(msg);</span><br><span class="line">        dvmReleaseTrackedAlloc((Object*) result, <span class="literal">NULL</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">free</span>(reason);</span><br><span class="line">    <span class="built_in">free</span>(fileName);</span><br><span class="line">    RETURN_PTR(result);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Native.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Native.cpp</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">dvmLoadNativeCode</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span>* pathName, Object* classLoader,</span></span></span><br><span class="line"><span class="function"><span class="params">        <span class="keyword">char</span>** detail)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    SharedLib* pEntry;</span><br><span class="line">    <span class="keyword">void</span>* handle;</span><br><span class="line">    <span class="keyword">bool</span> verbose;</span><br><span class="line">    <span class="comment">/********部分代码省略***********/</span></span><br><span class="line">    Thread* self = dvmThreadSelf();</span><br><span class="line">    ThreadStatus oldStatus = dvmChangeStatus(self, THREAD_VMWAIT);</span><br><span class="line">    <span class="comment">//打开pathName对应的动态链接库，配合dlsym函数使用</span></span><br><span class="line">    handle = dlopen(pathName, RTLD_LAZY);</span><br><span class="line">    dvmChangeStatus(self, oldStatus);</span><br><span class="line">    <span class="keyword">if</span> (handle == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        *detail = strdup(dlerror());</span><br><span class="line">        ALOGE(<span class="string">"dlopen(\"%s\") failed: %s"</span>, pathName, *detail);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  </span><br><span class="line">    <span class="comment">/* create a new entry */</span></span><br><span class="line">    SharedLib* pNewEntry;</span><br><span class="line">    pNewEntry = (SharedLib*) <span class="built_in">calloc</span>(<span class="number">1</span>, <span class="keyword">sizeof</span>(SharedLib));</span><br><span class="line">    pNewEntry-&gt;pathName = strdup(pathName);</span><br><span class="line">    pNewEntry-&gt;handle = handle;</span><br><span class="line">    pNewEntry-&gt;classLoader = classLoader;</span><br><span class="line">    dvmInitMutex(&amp;pNewEntry-&gt;onLoadLock);</span><br><span class="line">    pthread_cond_init(&amp;pNewEntry-&gt;onLoadCond, <span class="literal">NULL</span>);</span><br><span class="line">    pNewEntry-&gt;onLoadThreadId = self-&gt;threadId;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* try to add it to the list */</span></span><br><span class="line">    SharedLib* pActualEntry = addSharedLibEntry(pNewEntry);</span><br><span class="line">    <span class="keyword">if</span> (pNewEntry != pActualEntry) &#123;</span><br><span class="line">        ALOGI(<span class="string">"WOW: we lost a race to add a shared lib (%s CL=%p)"</span>,</span><br><span class="line">            pathName, classLoader);</span><br><span class="line">        freeSharedLibEntry(pNewEntry);</span><br><span class="line">        <span class="keyword">return</span> checkOnLoadResult(pActualEntry);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (verbose)</span><br><span class="line">            ALOGD(<span class="string">"Added shared lib %s %p"</span>, pathName, classLoader);</span><br><span class="line">        <span class="keyword">bool</span> result = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">void</span>* vonLoad;</span><br><span class="line">        <span class="keyword">int</span> version;</span><br><span class="line">        <span class="comment">//获取JNI_OnLoad的地址</span></span><br><span class="line">        vonLoad = dlsym(handle, <span class="string">"JNI_OnLoad"</span>);</span><br><span class="line">        <span class="comment">//这是用javah风格的代码了，推迟native方法的解析，相当于构造为空不需要进行初始化</span></span><br><span class="line">        <span class="keyword">if</span> (vonLoad == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            ALOGD(<span class="string">"No JNI_OnLoad found in %s %p, skipping init"</span>,</span><br><span class="line">                pathName, classLoader);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * Call JNI_OnLoad.  We have to override the current class</span></span><br><span class="line"><span class="comment">             * loader, which will always be "null" since the stuff at the</span></span><br><span class="line"><span class="comment">             * top of the stack is around Runtime.loadLibrary().  (See</span></span><br><span class="line"><span class="comment">             * the comments in the JNI FindClass function.)</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            OnLoadFunc func = (OnLoadFunc)vonLoad;</span><br><span class="line">            Object* prevOverride = self-&gt;classLoaderOverride;</span><br><span class="line">            self-&gt;classLoaderOverride = classLoader;</span><br><span class="line">            oldStatus = dvmChangeStatus(self, THREAD_NATIVE);</span><br><span class="line">            <span class="keyword">if</span> (gDvm.verboseJni) &#123;</span><br><span class="line">                ALOGI(<span class="string">"[Calling JNI_OnLoad for \"%s\"]"</span>, pathName);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">//调用JNI_OnLoad，并获取返回的版本信息</span></span><br><span class="line">            version = (*func)(gDvmJni.jniVm, <span class="literal">NULL</span>);</span><br><span class="line">            dvmChangeStatus(self, oldStatus);</span><br><span class="line">            self-&gt;classLoaderOverride = prevOverride;</span><br><span class="line">            <span class="comment">//对版本进行判断，这是为什么要返回正确版本的原因。现在一般都是JNI_VERSION_1_6</span></span><br><span class="line">            <span class="keyword">if</span> (version != JNI_VERSION_1_2 &amp;&amp; version != JNI_VERSION_1_4 &amp;&amp;</span><br><span class="line">                version != JNI_VERSION_1_6)</span><br><span class="line">            &#123;</span><br><span class="line">                ALOGW(<span class="string">"JNI_OnLoad returned bad version (%d) in %s %p"</span>,</span><br><span class="line">                    version, pathName, classLoader);</span><br><span class="line">                <span class="comment">/*</span></span><br><span class="line"><span class="comment">                 * It's unwise to call dlclose() here, but we can mark it</span></span><br><span class="line"><span class="comment">                 * as bad and ensure that future load attempts will fail.</span></span><br><span class="line"><span class="comment">                 *</span></span><br><span class="line"><span class="comment">                 * We don't know how far JNI_OnLoad got, so there could</span></span><br><span class="line"><span class="comment">                 * be some partially-initialized stuff accessible through</span></span><br><span class="line"><span class="comment">                 * newly-registered native method calls.  We could try to</span></span><br><span class="line"><span class="comment">                 * unregister them, but that doesn't seem worthwhile.</span></span><br><span class="line"><span class="comment">                 */</span></span><br><span class="line">                result = <span class="literal">false</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (gDvm.verboseJni) &#123;</span><br><span class="line">                    ALOGI(<span class="string">"[Returned from JNI_OnLoad for \"%s\"]"</span>, pathName);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (result)</span><br><span class="line">            pNewEntry-&gt;onLoadResult = kOnLoadOkay;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            pNewEntry-&gt;onLoadResult = kOnLoadFailed;</span><br><span class="line">        pNewEntry-&gt;onLoadThreadId = <span class="number">0</span>;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * Broadcast a wakeup to anybody sleeping on the condition variable.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        dvmLockMutex(&amp;pNewEntry-&gt;onLoadLock);</span><br><span class="line">        pthread_cond_broadcast(&amp;pNewEntry-&gt;onLoadCond);</span><br><span class="line">        dvmUnlockMutex(&amp;pNewEntry-&gt;onLoadLock);</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>JNI_OnLoad</code> 需要返回值，但是只能选择返回后三个 <code>JNI_VERSION_1_2</code> ,<code>JNI_VERSION_1_4</code>, <code>JNI_VERSION_1_6</code> , 返回上述三个值任意一个没有区别 ;</li>
+</ul>
+<p>返回 JNI_VERSION_1_1 会报错 ：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> JNI_VERSION_1_1 0x00010001</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> JNI_VERSION_1_2 0x00010002</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> JNI_VERSION_1_4 0x00010004</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> JNI_VERSION_1_6 0x00010006</span></span><br></pre></td></tr></table></figure>
+<p>讲<code>so</code>库加载之后，补充两个函数分别是：<code>dlopen</code>和<code>dlsym</code>函数。</p>
+<h3 id="dlopen函数"><a href="#dlopen函数" class="headerlink" title="dlopen函数"></a>dlopen函数</h3><blockquote>
+<p>功能：打开一个动态链接库</p>
+</blockquote>
+<ul>
+<li>包含头文件：<code>#include &lt;dlfcn.h&gt;</code></li>
+<li>函数定义：<code>void * dlopen( const char * pathname, int mode );</code></li>
+<li>函数描述：在<code>dlopen()</code>函数以指定模式打开指定的动态连接库文件，并返回一个句柄给调用进程。通过这个句柄来使用库中的函数和类。使用<code>dlclose()</code>来卸载打开的库。</li>
+<li><code>mode</code>：分为这两种<ul>
+<li><code>RTLD_LAZY</code> 暂缓决定，等有需要时再解出符号;</li>
+<li><code>RTLD_NOW</code> 立即决定，返回前解除所有未决定的符号;</li>
+<li><code>RTLD_LOCAL</code></li>
+<li><code>RTLD_GLOBAL</code> 允许导出符号;</li>
+<li><code>RTLD_GROUP</code></li>
+<li><code>RTLD_WORLD</code></li>
+</ul>
+</li>
+<li><p>返回值:</p>
+<ul>
+<li><p>打开错误返回NULL；</p>
+</li>
+<li><p>成功，返回库引用；</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="dlsym函数"><a href="#dlsym函数" class="headerlink" title="dlsym函数"></a>dlsym函数</h3><p> 函数原型是<code>void* dlsym(void* handle,const char* symbol)</code>, 该函数在<code>&lt;dlfcn.h&gt;</code>文件中。</p>
+<p><code>handle</code>是由<code>dlopen</code>打开动态链接库后返回的指针，<code>symbol</code>就是要求获取的函数的名称，函数返回值是<code>void*</code>,指向函数的地址，供调用使用。</p>
+<h3 id="so方法延迟解析"><a href="#so方法延迟解析" class="headerlink" title="so方法延迟解析"></a>so方法延迟解析</h3><p>上面的代码说明，<code>JNI_OnLoad</code>是一种更加灵活，而且处理及时的机制。用<code>javah</code>风格的代码，则推迟解析，直到需要调用的时候才会解析。这样的函数，是<code>dvmResolveNativeMethod(dalvik/vm/Native.cpp)</code>。</p>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Native.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Native.cpp</a><br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Resolve a native method and invoke it.</span></span><br><span class="line"><span class="comment"> * //解析native方法并调用它。</span></span><br><span class="line"><span class="comment"> * This is executed as if it were a native bridge or function.  If the</span></span><br><span class="line"><span class="comment"> * resolution succeeds, method-&gt;insns is replaced, and we don't go through</span></span><br><span class="line"><span class="comment"> * here again unless the method is unregistered.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Initializes method's class if necessary.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * An exception is thrown on resolution failure.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * (This should not be taking "const Method*", because it modifies the</span></span><br><span class="line"><span class="comment"> * structure, but the declaration needs to match the DalvikBridgeFunc</span></span><br><span class="line"><span class="comment"> * type definition.)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dvmResolveNativeMethod</span><span class="params">(<span class="keyword">const</span> u4* args, JValue* pResult,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> Method* method, Thread* self)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ClassObject* clazz = method-&gt;clazz;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * If this is a static method, it could be called before the class</span></span><br><span class="line"><span class="comment">     * has been initialized.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">if</span> (dvmIsStaticMethod(method)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!dvmIsClassInitialized(clazz) &amp;&amp; !dvmInitClass(clazz)) &#123;</span><br><span class="line">            assert(dvmCheckException(dvmThreadSelf()));</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        assert(dvmIsClassInitialized(clazz) ||</span><br><span class="line">               dvmIsClassInitializing(clazz));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* start with our internal-native methods */</span></span><br><span class="line">    DalvikNativeFunc infunc = dvmLookupInternalNativeMethod(method);</span><br><span class="line">    <span class="keyword">if</span> (infunc != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="comment">/* resolution always gets the same answer, so no race here */</span></span><br><span class="line">        IF_LOGVV() &#123;</span><br><span class="line">            <span class="keyword">char</span>* desc = dexProtoCopyMethodDescriptor(&amp;method-&gt;prototype);</span><br><span class="line">            LOGVV(<span class="string">"+++ resolved native %s.%s %s, invoking"</span>,</span><br><span class="line">                clazz-&gt;descriptor, method-&gt;name, desc);</span><br><span class="line">            <span class="built_in">free</span>(desc);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (dvmIsSynchronizedMethod(method)) &#123;</span><br><span class="line">            ALOGE(<span class="string">"ERROR: internal-native can't be declared 'synchronized'"</span>);</span><br><span class="line">            ALOGE(<span class="string">"Failing on %s.%s"</span>, method-&gt;clazz-&gt;descriptor, method-&gt;name);</span><br><span class="line">            dvmAbort();     <span class="comment">// harsh, but this is VM-internal problem</span></span><br><span class="line">        &#125;</span><br><span class="line">        DalvikBridgeFunc dfunc = (DalvikBridgeFunc) infunc;</span><br><span class="line">        dvmSetNativeFunc((Method*) method, dfunc, <span class="literal">NULL</span>);</span><br><span class="line">        dfunc(args, pResult, method, self);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* now scan any DLLs we have loaded for JNI signatures */</span></span><br><span class="line">  	<span class="comment">//根据signature在所有已经打开的.so中寻找此函数实现</span></span><br><span class="line">    <span class="keyword">void</span>* func = lookupSharedLibMethod(method);</span><br><span class="line">    <span class="keyword">if</span> (func != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="comment">/* found it, point it at the JNI bridge and then call it */</span></span><br><span class="line">      	<span class="comment">//找到方法，并执行调用</span></span><br><span class="line">        dvmUseJNIBridge((Method*) method, func);</span><br><span class="line">        (*method-&gt;nativeFunc)(args, pResult, method, self);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    IF_ALOGW() &#123;</span><br><span class="line">        <span class="keyword">char</span>* desc = dexProtoCopyMethodDescriptor(&amp;method-&gt;prototype);</span><br><span class="line">        ALOGW(<span class="string">"No implementation found for native %s.%s:%s"</span>,</span><br><span class="line">            clazz-&gt;descriptor, method-&gt;name, desc);</span><br><span class="line">        <span class="built_in">free</span>(desc);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//抛出java.lang.UnsatisfiedLinkError异常</span></span><br><span class="line">    dvmThrowUnsatisfiedLinkError(<span class="string">"Native method not found"</span>, method);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>根据方法的<code>signature</code>在所有已经打开的<code>.so</code>中寻找此函数实现；</li>
+</ul>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Native.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Native.cpp</a></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * See if the requested method lives in any of the currently-loaded</span></span><br><span class="line"><span class="comment"> * shared libraries.  We do this by checking each of them for the expected</span></span><br><span class="line"><span class="comment"> * method signature.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span>* <span class="title">lookupSharedLibMethod</span><span class="params">(<span class="keyword">const</span> Method* method)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (gDvm.nativeLibs == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        ALOGE(<span class="string">"Unexpected init state: nativeLibs not ready"</span>);</span><br><span class="line">        dvmAbort();</span><br><span class="line">    &#125;</span><br><span class="line">  	<span class="comment">//从已经加载的nativeLibs中轮询执行findMethodInLib方法寻找method</span></span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">void</span>*) dvmHashForeach(gDvm.nativeLibs, findMethodInLib,</span><br><span class="line">        (<span class="keyword">void</span>*) method);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>对哈希表中的每个条目执行一个函数。如果<code>func</code>返回一个非零值，提前终止并返回该值。</li>
+</ul>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Hash.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Hash.cpp</a></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Execute a function on every entry in the hash table.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * If "func" returns a nonzero value, terminate early and return the value.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">dvmHashForeach</span><span class="params">(HashTable* pHashTable, HashForeachFunc func, <span class="keyword">void</span>* arg)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i, val;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; pHashTable-&gt;tableSize; i++) &#123;</span><br><span class="line">        HashEntry* pEnt = &amp;pHashTable-&gt;pEntries[i];</span><br><span class="line">        <span class="keyword">if</span> (pEnt-&gt;data != <span class="literal">NULL</span> &amp;&amp; pEnt-&gt;data != HASH_TOMBSTONE) &#123;</span><br><span class="line">            val = (*func)(pEnt-&gt;data, arg);</span><br><span class="line">            <span class="keyword">if</span> (val != <span class="number">0</span>)</span><br><span class="line">                <span class="keyword">return</span> val;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在讲从依赖库中搜索匹配的方法之前，先看一下<code>Method</code>结构体的定义：</p>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/oo/Object.h" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/oo/Object.h</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Method</span> &#123;</span></span><br><span class="line">    ClassObject*    clazz;</span><br><span class="line">    u4              accessFlags;</span><br><span class="line">    u2             methodIndex;</span><br><span class="line">    u2              registersSize;</span><br><span class="line">    u2              outsSize;</span><br><span class="line">    u2              insSize;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span>*     name;</span><br><span class="line">    DexProto        prototype;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span>*     shorty;</span><br><span class="line">    <span class="keyword">const</span> u2*       insns;</span><br><span class="line">    <span class="keyword">int</span>             jniArgInfo;</span><br><span class="line">    DalvikBridgeFunc nativeFunc;</span><br><span class="line">    <span class="keyword">bool</span> fastJni;</span><br><span class="line">    <span class="keyword">bool</span> noRef;</span><br><span class="line">    <span class="keyword">bool</span> shouldTrace;</span><br><span class="line">    <span class="keyword">const</span> RegisterMap* registerMap;</span><br><span class="line">    <span class="keyword">bool</span>            inProfile;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Native.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Native.cpp</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * (This is a dvmHashForeach callback.)</span></span><br><span class="line"><span class="comment"> * //在依赖库中搜索匹配的方法</span></span><br><span class="line"><span class="comment"> * Search for a matching method in this shared library.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">TODO:</span> we may want to skip libraries for which JNI_OnLoad failed.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">findMethodInLib</span><span class="params">(<span class="keyword">void</span>* vlib, <span class="keyword">void</span>* vmethod)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">const</span> SharedLib* pLib = (<span class="keyword">const</span> SharedLib*) vlib;</span><br><span class="line">    <span class="keyword">const</span> Method* meth = (<span class="keyword">const</span> Method*) vmethod;</span><br><span class="line">    <span class="keyword">char</span>* preMangleCM = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">char</span>* mangleCM = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">char</span>* mangleSig = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">char</span>* mangleCMSig = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">void</span>* func = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">int</span> len;</span><br><span class="line">    <span class="keyword">if</span> (meth-&gt;clazz-&gt;classLoader != pLib-&gt;classLoader) &#123;</span><br><span class="line">        ALOGV(<span class="string">"+++ not scanning '%s' for '%s' (wrong CL)"</span>,</span><br><span class="line">            pLib-&gt;pathName, meth-&gt;name);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span></span><br><span class="line">        ALOGV(<span class="string">"+++ scanning '%s' for '%s'"</span>, pLib-&gt;pathName, meth-&gt;name);</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * First, we try it without the signature.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">  	<span class="comment">//把java的native方法的名字进行转换，生成和javah一致的名字</span></span><br><span class="line">    preMangleCM =</span><br><span class="line">        createJniNameString(meth-&gt;clazz-&gt;descriptor, meth-&gt;name, &amp;len);</span><br><span class="line">    <span class="keyword">if</span> (preMangleCM == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">goto</span> bail;</span><br><span class="line">    mangleCM = mangleString(preMangleCM, len);</span><br><span class="line">    <span class="keyword">if</span> (mangleCM == <span class="literal">NULL</span>)</span><br><span class="line">        <span class="keyword">goto</span> bail;</span><br><span class="line">    ALOGV(<span class="string">"+++ calling dlsym(%s)"</span>, mangleCM);</span><br><span class="line">		<span class="comment">//dlsym清晰的表明，这里才是获取函数的地方。</span></span><br><span class="line">    func = dlsym(pLib-&gt;handle, mangleCM);</span><br><span class="line">    <span class="keyword">if</span> (func == <span class="literal">NULL</span>) &#123;</span><br><span class="line">      	<span class="comment">//获取native方法的返回类型和参数类型</span></span><br><span class="line">        mangleSig = createMangledSignature(&amp;meth-&gt;prototype);</span><br><span class="line">        <span class="keyword">if</span> (mangleSig == <span class="literal">NULL</span>)</span><br><span class="line">            <span class="keyword">goto</span> bail;</span><br><span class="line">        mangleCMSig = (<span class="keyword">char</span>*) <span class="built_in">malloc</span>(<span class="built_in">strlen</span>(mangleCM) + <span class="built_in">strlen</span>(mangleSig) +<span class="number">3</span>);</span><br><span class="line">        <span class="keyword">if</span> (mangleCMSig == <span class="literal">NULL</span>)</span><br><span class="line">            <span class="keyword">goto</span> bail;</span><br><span class="line">       <span class="comment">//将native的方法名和方法的返回类型和参数类型通过__进行拼接</span></span><br><span class="line">        <span class="built_in">sprintf</span>(mangleCMSig, <span class="string">"%s__%s"</span>, mangleCM, mangleSig);</span><br><span class="line">        ALOGV(<span class="string">"+++ calling dlsym(%s)"</span>, mangleCMSig);</span><br><span class="line">        func = dlsym(pLib-&gt;handle, mangleCMSig);</span><br><span class="line">        <span class="keyword">if</span> (func != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            ALOGV(<span class="string">"Found '%s' with dlsym"</span>, mangleCMSig);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        ALOGV(<span class="string">"Found '%s' with dlsym"</span>, mangleCM);</span><br><span class="line">    &#125;</span><br><span class="line">bail:</span><br><span class="line">    <span class="built_in">free</span>(preMangleCM);</span><br><span class="line">    <span class="built_in">free</span>(mangleCM);</span><br><span class="line">    <span class="built_in">free</span>(mangleSig);</span><br><span class="line">    <span class="built_in">free</span>(mangleCMSig);</span><br><span class="line">    <span class="keyword">return</span> (<span class="keyword">int</span>) func;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面看到一般通过VM去寻找<code>*.so</code>里的<code>native</code>函数。如果需连续调用很多次，每次度需要寻找一遍，回花很多时间。</p>
+<p>此时，C组件开发者可以将本地函数向VM进行注册，以便能加快后续调用<code>native</code>函数的效率。可以这么想象一下，假设VM内部一个<code>native</code>函数链表，初始时是空的，在未显示注册之前，此<code>native</code>数链表是空的，每次<code>java</code>调用<code>native</code>函数之前会首先在此链表中查找需要调用的<code>native</code>函数，如果找到就直接调用，如果未找到，得再通过载入的<code>.so</code>文件中的函数列表中去查找，且每次<code>Java</code>调用<code>native</code>函数都是进行这样的流程。因此，效率就自然会下降。</p>
+<p>为了客服这个问题，我们可以通过在<code>.so</code>文件载入初始化时，即<code>JNI_OnLoad</code>函数中，先行将<code>native</code>函数注册VM的<code>native</code>函数链表中去，这样一来，后续每次<code>Java</code>调用<code>native</code>函数都会在VM中<code>native</code>函数链表中找到对应的函数，从而加快速度。</p>
+<h4 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h4><p>简单明了</p>
+<h3 id="so方法动态注册"><a href="#so方法动态注册" class="headerlink" title="so方法动态注册"></a>so方法动态注册</h3><p>这种方式，写的代码稍微多点，但好处很明显，函数映射关系配置灵活，执行效率要比第一种方式高。</p>
+<p>先看一个简单的动态注册实现Demo：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">package com.jni.tzx;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MainActivity</span> <span class="title">extends</span> <span class="title">Activity</span> &#123;</span></span><br><span class="line">    <span class="comment">// Used to load the 'native-lib' library on application startup.</span></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        System.loadLibrary(<span class="string">"native-lib"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*****部分代码删除********/</span></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * A native method that is implemented by the 'native-lib' native library,</span></span><br><span class="line"><span class="comment">     * which is packaged with this application.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> native String <span class="title">stringFromJNI</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> native String <span class="title">testNative</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对应的<code>natieve-lib.cpp</code>文件：</p>
+<p>注册<code>navtive</code>方法之前我们需要了解<code>JavaVM</code>,<code>JNIEnv</code>:</p>
+<p><code>JavaVM</code> 和 <code>JNIEnv</code> 是<code>JNI</code>提供的结构体.</p>
+<p><code>JavaVM</code> 提供了允许你创建和销毁<code>JavaVM</code>的<code>invokation interface</code>。理论上在每个进程中你可以创建多个<code>JavaVM</code>， 但是<code>Android</code>只允许创造一个。</p>
+<p><code>JNIEnv</code> 提供了大部分<code>JNI</code>中的方法。在你的<code>Native</code>方法中的第一个参数就是<code>JNIEnv</code>.</p>
+<p><code>JNIEnv</code> 用于线程内部存储。 因此， 不能多个线程共享一个<code>JNIEnv</code>. 在一段代码中如果无法获取<code>JNIEnv</code>， 你可以通过共享<code>JavaVM</code>并调用<code>GetEnv()</code>方法获取。</p>
+<p><code>JNINativeMethod</code>是动态注册方法需要的结构体：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">		<span class="keyword">const</span> <span class="keyword">char</span>* name;<span class="comment">//在java中声明的native函数名</span></span><br><span class="line">	  <span class="keyword">const</span> <span class="keyword">char</span>* signature;<span class="comment">//函数的签名，可以通过javah获取</span></span><br><span class="line">  	<span class="keyword">void</span>* fnPtr;<span class="comment">//对应的native函数名</span></span><br><span class="line">&#125;JNINativeMethod</span><br></pre></td></tr></table></figure>
+<p><img src="https://img-blog.csdnimg.cn/5309107116df4b5ab21ec322e045fdfb.png#pic_center" alt="请添加图片描述"></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;jni.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"><span class="comment">//作用：避免编绎器按照C++的方式去编绎C函数</span></span><br><span class="line"><span class="keyword">extern</span> <span class="string">"C"</span></span><br><span class="line"><span class="comment">//用来表示该函数是否可导出（即：方法的可见性）</span></span><br><span class="line">JNIEXPORT jstring</span><br><span class="line"><span class="comment">//用来表示函数的调用规范（如：__stdcall）</span></span><br><span class="line">JNICALL</span><br><span class="line">Java_com_jni_tzx_MainActivity_stringFromJNI(</span><br><span class="line">        JNIEnv *env,</span><br><span class="line">        jobject <span class="comment">/* this */</span>) &#123;<span class="comment">////非static的方法参数类型是jobject instance,而static的方法参数类型是jclass type</span></span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">string</span> hello = <span class="string">"Hello from C++ dynamic\n"</span>;</span><br><span class="line">    <span class="keyword">return</span> env-&gt;NewStringUTF(hello.c_str());</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">extern</span> <span class="string">"C"</span></span><br><span class="line">JNIEXPORT jstring JNICALL</span><br><span class="line"><span class="comment">//Java_com_jni_tzx_MainActivity_test(JNIEnv *env, jobject thiz) &#123;</span></span><br><span class="line">test(JNIEnv *env, jobject thiz) &#123;</span><br><span class="line">    <span class="keyword">return</span> env-&gt;NewStringUTF(<span class="string">"Java_com_jni_tzx_MainActivity_test"</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">extern</span> <span class="string">"C"</span></span><br><span class="line">JNIEXPORT jint JNICALL</span><br><span class="line"><span class="comment">//System.loadLibrary方法会调用载入的.so文件的函数列表中查找JNI_OnLoad函数并执行</span></span><br><span class="line">JNI_OnLoad(JavaVM* vm, <span class="keyword">void</span>* reserved) &#123;</span><br><span class="line">    <span class="keyword">static</span> JNINativeMethod methods[] = &#123;</span><br><span class="line">            &#123;</span><br><span class="line">              <span class="string">"testNative"</span>, <span class="comment">//在java中声明的native函数名</span></span><br><span class="line">              <span class="string">"()Ljava/lang/String;"</span>, <span class="comment">//函数的签名，可以通过javah获取</span></span><br><span class="line">              (<span class="keyword">void</span> *)test<span class="comment">//对应的native函数名</span></span><br><span class="line">            &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    JNIEnv *env = <span class="literal">NULL</span>;</span><br><span class="line">    jint result = <span class="number">-1</span>;</span><br><span class="line">    <span class="comment">// 获取JNI env变量</span></span><br><span class="line">    <span class="keyword">if</span> (vm-&gt;GetEnv((<span class="keyword">void</span>**) &amp;env, JNI_VERSION_1_6) != JNI_OK) &#123;</span><br><span class="line">        <span class="comment">// 失败返回-1</span></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 获取native方法所在Java类，包名和类名之间使用“/”风格</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span>* className = <span class="string">"com/jni/tzx/MainActivity"</span>;</span><br><span class="line">    <span class="comment">//这个可以找到要注册的类，提前是这个类已经加载到Java虚拟机中；</span></span><br><span class="line">    <span class="comment">//这里说明，动态库和有native方法的类之间，没有任何关系。</span></span><br><span class="line">    jclass clazz = env-&gt;FindClass(className);</span><br><span class="line">    <span class="keyword">if</span> (clazz == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 动态注册native方法</span></span><br><span class="line">    <span class="keyword">if</span> (env-&gt;RegisterNatives(clazz, methods, <span class="keyword">sizeof</span>(methods) / <span class="keyword">sizeof</span>(methods[<span class="number">0</span>])) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 返回成功</span></span><br><span class="line">    result = JNI_VERSION_1_6;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果使用<code>C</code>语言，那么需要有几个地方进行修改：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(*vm)-&gt;GetEnv(vm, (<span class="keyword">void</span> **)&amp;env, JNI_VERSION_1_4)</span><br><span class="line">(*env)-&gt;FindClass(env, kClassName);</span><br><span class="line">(*env)-&gt;RegisterNatives(env, clazz, gMethods, <span class="keyword">sizeof</span>(gMethods) / <span class="keyword">sizeof</span>(gMethods[<span class="number">0</span>]))</span><br></pre></td></tr></table></figure>
+<h4 id="FindClass"><a href="#FindClass" class="headerlink" title="FindClass"></a>FindClass</h4><p>这个可以找到要注册的类，提前是这个类已经加载到<code>Java虚拟机</code>中；</p>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Jni.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Jni.cpp</a></p>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Misc.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Misc.cpp</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Find a class by name.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * We have to use the "no init" version of FindClass here, because we might</span></span><br><span class="line"><span class="comment"> * be getting the class prior to registering native methods that will be</span></span><br><span class="line"><span class="comment"> * used in &lt;clinit&gt;.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * We need to get the class loader associated with the current native</span></span><br><span class="line"><span class="comment"> * method.  If there is no native method, e.g. we're calling this from native</span></span><br><span class="line"><span class="comment"> * code right after creating the VM, the spec says we need to use the class</span></span><br><span class="line"><span class="comment"> * loader returned by "ClassLoader.getBaseClassLoader".  There is no such</span></span><br><span class="line"><span class="comment"> * method, but it's likely they meant ClassLoader.getSystemClassLoader.</span></span><br><span class="line"><span class="comment"> * We can't get that until after the VM has initialized though.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> jclass <span class="title">FindClass</span><span class="params">(JNIEnv* env, <span class="keyword">const</span> <span class="keyword">char</span>* name)</span> </span>&#123;</span><br><span class="line">    <span class="function">ScopedJniThreadState <span class="title">ts</span><span class="params">(env)</span></span>;</span><br><span class="line">  	<span class="comment">//通过检查堆栈获取当前正在执行的方法。</span></span><br><span class="line">    <span class="keyword">const</span> Method* thisMethod = dvmGetCurrentJNIMethod();</span><br><span class="line">    assert(thisMethod != <span class="literal">NULL</span>);</span><br><span class="line">    Object* loader;</span><br><span class="line">    Object* trackedLoader = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">//获取当前的类加载器</span></span><br><span class="line">    <span class="keyword">if</span> (ts.self()-&gt;classLoaderOverride != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="comment">/* hack for JNI_OnLoad */</span></span><br><span class="line">        assert(<span class="built_in">strcmp</span>(thisMethod-&gt;name, <span class="string">"nativeLoad"</span>) == <span class="number">0</span>);</span><br><span class="line">        loader = ts.self()-&gt;classLoaderOverride;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (thisMethod == gDvm.methDalvikSystemNativeStart_main ||</span><br><span class="line">               thisMethod == gDvm.methDalvikSystemNativeStart_run) &#123;</span><br><span class="line">        <span class="comment">/* start point of invocation interface */</span></span><br><span class="line">        <span class="keyword">if</span> (!gDvm.initializing) &#123;</span><br><span class="line">            loader = trackedLoader = dvmGetSystemClassLoader();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            loader = <span class="literal">NULL</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        loader = thisMethod-&gt;clazz-&gt;classLoader;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//获取类的描述符，它是类的完整名称（包名+类名）,将原来的 . 分隔符换成 / 分隔符。</span></span><br><span class="line">    <span class="keyword">char</span>* descriptor = dvmNameToDescriptor(name);</span><br><span class="line">    <span class="keyword">if</span> (descriptor == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//获取已经加载的类，或者使用类加载加载该类</span></span><br><span class="line">    ClassObject* clazz = dvmFindClassNoInit(descriptor, loader);</span><br><span class="line">    <span class="built_in">free</span>(descriptor);</span><br><span class="line">    jclass jclazz = (jclass) addLocalReference(ts.self(), (Object*) clazz);</span><br><span class="line">    dvmReleaseTrackedAlloc(trackedLoader, ts.self());</span><br><span class="line">    <span class="keyword">return</span> jclazz;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/oo/Class.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/oo/Class.cpp</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Find the named class (by descriptor), using the specified</span></span><br><span class="line"><span class="comment"> * initiating ClassLoader.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The class will be loaded if it has not already been, as will its</span></span><br><span class="line"><span class="comment"> * superclass.  It will not be initialized.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * If the class can't be found, returns NULL with an appropriate exception</span></span><br><span class="line"><span class="comment"> * raised.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">ClassObject* <span class="title">dvmFindClassNoInit</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span>* descriptor,</span></span></span><br><span class="line"><span class="function"><span class="params">        Object* loader)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    assert(descriptor != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="comment">//assert(loader != NULL);</span></span><br><span class="line">    LOGVV(<span class="string">"FindClassNoInit '%s' %p"</span>, descriptor, loader);</span><br><span class="line">    <span class="keyword">if</span> (*descriptor == <span class="string">'['</span>) &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * Array class.  Find in table, generate if not found.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">return</span> dvmFindArrayClass(descriptor, loader);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * Regular class.  Find in table, load if not found.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">if</span> (loader != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> findClassFromLoaderNoInit(descriptor, loader);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> dvmFindSystemClassNoInit(descriptor);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Load the named class (by descriptor) from the specified class</span></span><br><span class="line"><span class="comment"> * loader.  This calls out to let the ClassLoader object do its thing.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Returns with NULL and an exception raised on error.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> ClassObject* <span class="title">findClassFromLoaderNoInit</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span>* descriptor,</span></span></span><br><span class="line"><span class="function"><span class="params">    Object* loader)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//ALOGI("##### findClassFromLoaderNoInit (%s,%p)",</span></span><br><span class="line">    <span class="comment">//        descriptor, loader);</span></span><br><span class="line">    Thread* self = dvmThreadSelf();</span><br><span class="line">    assert(loader != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="comment">//是否已经加载过该类</span></span><br><span class="line">    ClassObject* clazz = dvmLookupClass(descriptor, loader, <span class="literal">false</span>);</span><br><span class="line">    <span class="keyword">if</span> (clazz != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        LOGVV(<span class="string">"Already loaded: %s %p"</span>, descriptor, loader);</span><br><span class="line">        <span class="keyword">return</span> clazz;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        LOGVV(<span class="string">"Not already loaded: %s %p"</span>, descriptor, loader);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">char</span>* dotName = <span class="literal">NULL</span>;</span><br><span class="line">    StringObject* nameObj = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="comment">/* convert "Landroid/debug/Stuff;" to "android.debug.Stuff" */</span></span><br><span class="line">    dotName = dvmDescriptorToDot(descriptor);</span><br><span class="line">    <span class="keyword">if</span> (dotName == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        dvmThrowOutOfMemoryError(<span class="literal">NULL</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    nameObj = dvmCreateStringFromCstr(dotName);</span><br><span class="line">    <span class="keyword">if</span> (nameObj == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        assert(dvmCheckException(self));</span><br><span class="line">        <span class="keyword">goto</span> bail;</span><br><span class="line">    &#125;</span><br><span class="line">    dvmMethodTraceClassPrepBegin();</span><br><span class="line">   	<span class="comment">//调用 loadClass()。 这可能会导致几个抛出异</span></span><br><span class="line">  	<span class="comment">//因为 ClassLoader.loadClass()实现最终调用 VMClassLoader.loadClass 看是否引导类加载器可以在自己加载之前找到它。</span></span><br><span class="line">    LOGVV(<span class="string">"--- Invoking loadClass(%s, %p)"</span>, dotName, loader);</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">const</span> Method* loadClass =</span><br><span class="line">            loader-&gt;clazz-&gt;vtable[gDvm.voffJavaLangClassLoader_loadClass];</span><br><span class="line">        JValue result;</span><br><span class="line">        dvmCallMethod(self, loadClass, loader, &amp;result, nameObj);</span><br><span class="line">        clazz = (ClassObject*) result.l;</span><br><span class="line">        dvmMethodTraceClassPrepEnd();</span><br><span class="line">        Object* excep = dvmGetException(self);</span><br><span class="line">        <span class="keyword">if</span> (excep != <span class="literal">NULL</span>) &#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> DVM_SHOW_EXCEPTION &gt;= 2</span></span><br><span class="line">            ALOGD(<span class="string">"NOTE: loadClass '%s' %p threw exception %s"</span>,</span><br><span class="line">                 dotName, loader, excep-&gt;clazz-&gt;descriptor);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">            dvmAddTrackedAlloc(excep, self);</span><br><span class="line">            dvmClearException(self);</span><br><span class="line">            dvmThrowChainedNoClassDefFoundError(descriptor, excep);</span><br><span class="line">            dvmReleaseTrackedAlloc(excep, self);</span><br><span class="line">            clazz = <span class="literal">NULL</span>;</span><br><span class="line">            <span class="keyword">goto</span> bail;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (clazz == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            ALOGW(<span class="string">"ClassLoader returned NULL w/o exception pending"</span>);</span><br><span class="line">            dvmThrowNullPointerException(<span class="string">"ClassLoader returned null"</span>);</span><br><span class="line">            <span class="keyword">goto</span> bail;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* not adding clazz to tracked-alloc list, because it's a ClassObject */</span></span><br><span class="line">    dvmAddInitiatingLoader(clazz, loader);</span><br><span class="line">    LOGVV(<span class="string">"--- Successfully loaded %s %p (thisldr=%p clazz=%p)"</span>,</span><br><span class="line">        descriptor, clazz-&gt;classLoader, loader, clazz);</span><br><span class="line">bail:</span><br><span class="line">    dvmReleaseTrackedAlloc((Object*)nameObj, <span class="literal">NULL</span>);</span><br><span class="line">    <span class="built_in">free</span>(dotName);</span><br><span class="line">    <span class="keyword">return</span> clazz;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="RegisterNatives"><a href="#RegisterNatives" class="headerlink" title="RegisterNatives"></a>RegisterNatives</h4><p>注册一个类的一个或者多个<code>native</code>方法。</p>
+<ul>
+<li><p><code>clazz</code>：指定的类，即 native 方法所属的类</p>
+</li>
+<li><p><code>methods</code>：方法数组，这里需要了解一下 JNINativeMethod 结构体</p>
+</li>
+<li><p><code>nMethods</code>：方法数组的长度</p>
+</li>
+</ul>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Jni.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Jni.cpp</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Register one or more native functions in one class.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * This can be called multiple times on the same method, allowing the</span></span><br><span class="line"><span class="comment"> * caller to redefine the method implementation at will.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> jint <span class="title">RegisterNatives</span><span class="params">(JNIEnv* env, jclass jclazz,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> JNINativeMethod* methods, jint nMethods)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">ScopedJniThreadState <span class="title">ts</span><span class="params">(env)</span></span>;</span><br><span class="line">    ClassObject* clazz = (ClassObject*) dvmDecodeIndirectRef(ts.self(), jclazz);</span><br><span class="line">    <span class="keyword">if</span> (gDvm.verboseJni) &#123;</span><br><span class="line">        ALOGI(<span class="string">"[Registering JNI native methods for class %s]"</span>,</span><br><span class="line">            clazz-&gt;descriptor);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; nMethods; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!dvmRegisterJNIMethod(clazz, methods[i].name,</span><br><span class="line">                methods[i].signature, methods[i].fnPtr))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> JNI_ERR;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> JNI_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>老罗的Android之旅：<a href="http://blog.csdn.net/luoshengyang/article/details/8923483" target="_blank" rel="noopener">Dalvik虚拟机JNI方法的注册过程分析</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Register a method that uses JNI calling conventions.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">dvmRegisterJNIMethod</span><span class="params">(ClassObject* clazz, <span class="keyword">const</span> <span class="keyword">char</span>* methodName,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> <span class="keyword">char</span>* signature, <span class="keyword">void</span>* fnPtr)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (fnPtr == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// If a signature starts with a '!', we take that as a sign that the native code doesn't</span></span><br><span class="line">    <span class="comment">// need the extra JNI arguments (the JNIEnv* and the jclass).</span></span><br><span class="line">    <span class="keyword">bool</span> fastJni = <span class="literal">false</span>;</span><br><span class="line">  	<span class="comment">//如果签名以'!’时，我们认为这表明native代码没有</span></span><br><span class="line">    <span class="keyword">if</span> (*signature == <span class="string">'!'</span>) &#123;</span><br><span class="line">        fastJni = <span class="literal">true</span>;</span><br><span class="line">        ++signature;</span><br><span class="line">        ALOGV(<span class="string">"fast JNI method %s.%s:%s detected"</span>, clazz-&gt;descriptor, methodName, signature);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//检查methodName是否是clazz的一个非虚成员函数</span></span><br><span class="line">    Method* method = dvmFindDirectMethodByDescriptor(clazz, methodName, signature);</span><br><span class="line">    <span class="keyword">if</span> (method == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="comment">//检查methodName是否是clazz的一个虚成员函数。</span></span><br><span class="line">        method = dvmFindVirtualMethodByDescriptor(clazz, methodName, signature);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//方法没找到</span></span><br><span class="line">    <span class="keyword">if</span> (method == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        dumpCandidateMethods(clazz, methodName, signature);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//确保类clazz的成员函数methodName确实是声明为JNI方法，即带有native修饰符</span></span><br><span class="line">    <span class="keyword">if</span> (!dvmIsNativeMethod(method)) &#123;</span><br><span class="line">        ALOGW(<span class="string">"Unable to register: not native: %s.%s:%s"</span>, clazz-&gt;descriptor, methodName, signature);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (fastJni) &#123;</span><br><span class="line">      	<span class="comment">//一个JNI方法如果声明为同步方法，即带有synchronized修饰符</span></span><br><span class="line">        <span class="comment">// In this case, we have extra constraints to check...</span></span><br><span class="line">        <span class="keyword">if</span> (dvmIsSynchronizedMethod(method)) &#123;</span><br><span class="line">            <span class="comment">// Synchronization is usually provided by the JNI bridge,</span></span><br><span class="line">            <span class="comment">// but we won't have one.</span></span><br><span class="line">            ALOGE(<span class="string">"fast JNI method %s.%s:%s cannot be synchronized"</span>,</span><br><span class="line">                    clazz-&gt;descriptor, methodName, signature);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (!dvmIsStaticMethod(method)) &#123;</span><br><span class="line">            <span class="comment">// There's no real reason for this constraint, but since we won't</span></span><br><span class="line">            <span class="comment">// be supplying a JNIEnv* or a jobject 'this', you're effectively</span></span><br><span class="line">            <span class="comment">// static anyway, so it seems clearer to say so.</span></span><br><span class="line">            ALOGE(<span class="string">"fast JNI method %s.%s:%s cannot be non-static"</span>,</span><br><span class="line">                    clazz-&gt;descriptor, methodName, signature);</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  	<span class="comment">//获得Method对象method，用来描述要注册的JNI方法所对应的Java类成员函数。</span></span><br><span class="line">  	<span class="comment">//当一个Method对象method描述的是一个JNI方法的时候，它的成员变量nativeFunc保存的就是该JNI方法的地址，但是在对应的JNI方法注册进来之前，该成员变量的值被统一设置为dvmResolveNativeMethod。</span></span><br><span class="line">    <span class="comment">//函数dvmResolveNativeMethod此时会在Dalvik虚拟内部以及当前所有已经加载的共享库中检查是否存在对应的JNI方法。</span></span><br><span class="line">    <span class="keyword">if</span> (method-&gt;nativeFunc != dvmResolveNativeMethod) &#123;</span><br><span class="line">        <span class="comment">/* this is allowed, but unusual */</span></span><br><span class="line">        ALOGV(<span class="string">"Note: %s.%s:%s was already registered"</span>, clazz-&gt;descriptor, methodName, signature);</span><br><span class="line">    &#125;</span><br><span class="line">    method-&gt;fastJni = fastJni;</span><br><span class="line">    <span class="comment">//一个JNI方法是可以重复注册的，无论如何，函数dvmRegisterJNIMethod都是调用另外一个函数dvmUseJNIBridge来继续执行注册JNI的操作。</span></span><br><span class="line">    dvmUseJNIBridge(method, fnPtr);</span><br><span class="line">    ALOGV(<span class="string">"JNI-registered %s.%s:%s"</span>, clazz-&gt;descriptor, methodName, signature);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//如果我们在Dalvik虚拟机启动的时候，通过-Xjnitrace选项来指定了要跟踪参数method所描述的JNI方法，那么函数dvmUseJNIBridge为该JNI方法选择的Bridge函数就为dvmTraceCallJNIMethod，否则的话，就再通过另外一个函数dvmSelectJNIBridge来进一步选择一个合适的Bridge函数。</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span> <span class="title">shouldTrace</span><span class="params">(Method* method)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span>* className = method-&gt;clazz-&gt;descriptor;</span><br><span class="line">    <span class="comment">// Return true if the -Xjnitrace setting implies we should trace 'method'.</span></span><br><span class="line">    <span class="keyword">if</span> (gDvm.jniTrace &amp;&amp; <span class="built_in">strstr</span>(className, gDvm.jniTrace)) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Return true if we're trying to log all third-party JNI activity and 'method' doesn't look</span></span><br><span class="line">    <span class="comment">// like part of Android.</span></span><br><span class="line">    <span class="keyword">if</span> (gDvmJni.logThirdPartyJni) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">size_t</span> i = <span class="number">0</span>; i &lt; NELEM(builtInPrefixes); ++i) &#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="built_in">strstr</span>(className, builtInPrefixes[i]) == className) &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Point "method-&gt;nativeFunc" at the JNI bridge, and overload "method-&gt;insns"</span></span><br><span class="line"><span class="comment"> * to point at the actual function.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="comment">//它主要就是根据Dalvik虚拟机的启动选项来为即将要注册的JNI选择一个合适的Bridge函数。</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dvmUseJNIBridge</span><span class="params">(Method* method, <span class="keyword">void</span>* func)</span> </span>&#123;</span><br><span class="line">    method-&gt;shouldTrace = shouldTrace(method);</span><br><span class="line">    <span class="comment">// Does the method take any reference arguments?</span></span><br><span class="line">    method-&gt;noRef = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span>* cp = method-&gt;shorty;</span><br><span class="line">    <span class="keyword">while</span> (*++cp != <span class="string">'\0'</span>) &#123; <span class="comment">// Pre-increment to skip return type.</span></span><br><span class="line">        <span class="keyword">if</span> (*cp == <span class="string">'L'</span>) &#123;</span><br><span class="line">            method-&gt;noRef = <span class="literal">false</span>;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    DalvikBridgeFunc bridge = gDvmJni.useCheckJni ? dvmCheckCallJNIMethod : dvmCallJNIMethod;</span><br><span class="line">  	<span class="comment">//选择好Bridge函数之后，函数dvmUseJNIBridge最终就调用函数dvmSetNativeFunc来执行真正的JNI方法注册操作。</span></span><br><span class="line">    dvmSetNativeFunc(method, bridge, (<span class="keyword">const</span> u2*) func);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/oo/Class.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/oo/Class.cpp</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//参数method表示要注册JNI方法的Java类成员函数</span></span><br><span class="line"><span class="comment">//参数func表示JNI方法的Bridge函数</span></span><br><span class="line"><span class="comment">//参数insns表示要注册的JNI方法的函数地址。</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dvmSetNativeFunc</span><span class="params">(Method* method, DalvikBridgeFunc func,</span></span></span><br><span class="line"><span class="function"><span class="params">    <span class="keyword">const</span> u2* insns)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ClassObject* clazz = method-&gt;clazz;</span><br><span class="line">    assert(func != <span class="literal">NULL</span>);</span><br><span class="line">    <span class="comment">/* just open up both; easier that way */</span></span><br><span class="line">    dvmLinearReadWrite(clazz-&gt;classLoader, clazz-&gt;virtualMethods);</span><br><span class="line">    dvmLinearReadWrite(clazz-&gt;classLoader, clazz-&gt;directMethods);</span><br><span class="line">    <span class="comment">//当参数insns的值不等于NULL的时候，函数dvmSetNativeFunc就分别将参数insns和func的值分别保存在参数method所指向的一个Method对象的成员变量insns和nativeFunc中</span></span><br><span class="line">    <span class="keyword">if</span> (insns != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="comment">/* update both, ensuring that "insns" is observed first */</span></span><br><span class="line">        method-&gt;insns = insns;</span><br><span class="line">        android_atomic_release_store((<span class="keyword">int32_t</span>) func,</span><br><span class="line">            (<span class="keyword">volatile</span> <span class="keyword">int32_t</span>*)(<span class="keyword">void</span>*) &amp;method-&gt;nativeFunc);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      	<span class="comment">//当insns的值等于NULL的时候，函数dvmSetNativeFunc就只将参数func的值保存在参数method所指向的一个Method对象成员变量nativeFunc中。</span></span><br><span class="line">        <span class="comment">/* only update nativeFunc */</span></span><br><span class="line">        method-&gt;nativeFunc = func;</span><br><span class="line">    &#125;</span><br><span class="line">    dvmLinearReadOnly(clazz-&gt;classLoader, clazz-&gt;virtualMethods);</span><br><span class="line">    dvmLinearReadOnly(clazz-&gt;classLoader, clazz-&gt;directMethods);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>动态注册阅读到这里就可以了。</p>
+<h3 id="so方法延迟解析出错"><a href="#so方法延迟解析出错" class="headerlink" title="so方法延迟解析出错"></a>so方法延迟解析出错</h3><p>上面抛出的<code>UnsatisfiedLinkError</code>也许会有人疑问，为什么是<code>Native method not found</code>而不是我们开始遇到的崩溃 <code>No implementation found for</code>。可能是因为系统版本不一致导致的，但因为目前没有找到<code>Android10</code>这块的代码所有没有办法一查到底。</p>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Exception.cpp" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.2.2_r1/vm/Exception.cpp</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dvmThrowUnsatisfiedLinkError</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span>* msg)</span> </span>&#123;</span><br><span class="line">    dvmThrowException(gDvm.exUnsatisfiedLinkError, msg);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">dvmThrowUnsatisfiedLinkError</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span>* msg, <span class="keyword">const</span> Method* method)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">char</span>* desc = dexProtoCopyMethodDescriptor(&amp;method-&gt;prototype);</span><br><span class="line">    <span class="keyword">char</span>* className = dvmDescriptorToDot(method-&gt;clazz-&gt;descriptor);</span><br><span class="line">    dvmThrowExceptionFmt(gDvm.exUnsatisfiedLinkError, <span class="string">"%s: %s.%s:%s"</span>,</span><br><span class="line">        msg, className, method-&gt;name, desc);</span><br><span class="line">    <span class="built_in">free</span>(className);</span><br><span class="line">    <span class="built_in">free</span>(desc);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><a href="https://android.googlesource.com/platform/dalvik.git/+/android-4.3_r3/vm/Globals.h" target="_blank" rel="noopener">https://android.googlesource.com/platform/dalvik.git/+/android-4.3_r3/vm/Globals.h</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * All fields are initialized to zero.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Storage allocated here must be freed by a subsystem shutdown function.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">DvmGlobals</span> &#123;</span></span><br><span class="line">    <span class="comment">/******部分代码省略*****/</span></span><br><span class="line">    ClassObject* exUnsatisfiedLinkError;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>DvmGlobals</code> 这个是<code>Dalvik</code>虚拟机在进行初始化的时候所加载的一些基础类，它们在Java的Libcore里面定义。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">struct</span> &#123;</span> ClassObject** ref; <span class="keyword">const</span> <span class="keyword">char</span>* name; &#125; classes[] = &#123;</span><br><span class="line">		<span class="comment">/*</span></span><br><span class="line"><span class="comment">     * Note: The class Class gets special treatment during initial</span></span><br><span class="line"><span class="comment">     * VM startup, so there is no need to list it here.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    &#123; &amp;gDvm.exUnsatisfiedLinkError,            <span class="string">"Ljava/lang/UnsatisfiedLinkError;"</span> &#125;,</span><br><span class="line">    <span class="comment">/******部分代码省略*****/</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="利用JNI-OnLoad替换系统的native方法"><a href="#利用JNI-OnLoad替换系统的native方法" class="headerlink" title="利用JNI_OnLoad替换系统的native方法"></a>利用JNI_OnLoad替换系统的native方法</h2><p>目标：尝试替换<code>android/util/Log</code>的<code>isLoggable</code>放方法；</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;jni.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;android/log.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> TAG <span class="meta-string">"tanzhenxing22-jni"</span> <span class="comment">// 这个是自定义的LOG的标识</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,TAG ,__VA_ARGS__) <span class="comment">// 定义LOGD类型</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">extern</span> <span class="string">"C"</span></span><br><span class="line">JNIEXPORT jboolean JNICALL</span><br><span class="line">isLoggable(JNIEnv *env, jclass clazz, jstring tag, jint level) &#123;</span><br><span class="line">    LOGD(<span class="string">"call isLoggable"</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">extern</span> <span class="string">"C"</span></span><br><span class="line">JNIEXPORT jint JNICALL</span><br><span class="line"><span class="comment">//System.loadLibrary方法会调用载入的.so文件的函数列表中查找JNI_OnLoad函数并执行</span></span><br><span class="line">JNI_OnLoad(JavaVM* vm, <span class="keyword">void</span>* reserved) &#123;</span><br><span class="line">    LOGD(<span class="string">"JNI_OnLoad"</span>);</span><br><span class="line">    <span class="keyword">static</span> JNINativeMethod methodsLog[] = &#123;</span><br><span class="line">            &#123;<span class="string">"isLoggable"</span>, <span class="string">"(Ljava/lang/String;I)Z"</span>, (<span class="keyword">void</span> *)isLoggable&#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    JNIEnv *env = <span class="literal">NULL</span>;</span><br><span class="line">    jint result = <span class="number">-1</span>;</span><br><span class="line">    <span class="comment">// 获取JNI env变量</span></span><br><span class="line">    <span class="keyword">if</span> (vm-&gt;GetEnv((<span class="keyword">void</span>**) &amp;env, JNI_VERSION_1_6) != JNI_OK) &#123;</span><br><span class="line">        <span class="comment">// 失败返回-1</span></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取native方法所在类</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span>* classNameLog = <span class="string">"android/util/Log"</span>;</span><br><span class="line">    jclass clazzLog = env-&gt;FindClass(classNameLog);</span><br><span class="line">    <span class="keyword">if</span> (clazzLog == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 动态注册native方法</span></span><br><span class="line">    <span class="keyword">if</span> (env-&gt;RegisterNatives(clazzLog, methodsLog, <span class="keyword">sizeof</span>(methodsLog) / <span class="keyword">sizeof</span>(methodsLog[<span class="number">0</span>])) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 返回成功</span></span><br><span class="line">    result = JNI_VERSION_1_6;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Demo地址：<a href="https://github.com/stven0king/JNIApplication" target="_blank" rel="noopener">https://github.com/stven0king/JNIApplication</a></p>
+<p>参考文章：</p>
+<p><a href="https://blog.csdn.net/fireroll/article/details/50102009" target="_blank" rel="noopener">https://blog.csdn.net/fireroll/article/details/50102009</a></p>
+<p><a href="https://www.kancloud.cn/alex_wsc/androids/473614" target="_blank" rel="noopener">https://www.kancloud.cn/alex_wsc/androids/473614</a></p>
+<p>文章到这里就全部讲述完啦，若有其他需要交流的可以留言哦~！~！</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/dskb-dhz-icon-0.5.jpg" alt="振兴 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>欢迎您扫一扫上面的微信公众号，订阅我的博客！</div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作！</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/weixinpay.jpeg" alt="振兴 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpeg" alt="振兴 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者：</strong>
+    振兴
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://yoursite.com/2022/04/29/native-function-confound/" title="JNI方法注册源码分析(JNI_OnLoad|动态注册|静态注册|方法替换)">http://yoursite.com/2022/04/29/native-function-confound/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>
+    本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/JNI/" rel="tag"><i class="fa fa-tag"></i> JNI</a>
+          
+            <a href="/tags/安全/" rel="tag"><i class="fa fa-tag"></i> 安全</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2022/02/09/adnroid-audio-focus-change/" rel="next" title="实测Android音频的焦点获取和归还">
+                <i class="fa fa-chevron-left"></i> 实测Android音频的焦点获取和归还
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+    </div>
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/jay.jpg"
+                alt="振兴" />
+            
+              <p class="site-author-name" itemprop="name">振兴</p>
+              <p class="site-description motion-element" itemprop="description">好好学习，天天向上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">96</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">17</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">121</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/stven0king" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://me.csdn.net/stven_king" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-crosshairs"></i>CSDN</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/311540b7592b" target="_blank" title="简书">
+                      
+                        <i class="fa fa-fw fa-book"></i>简书</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://juejin.im/user/56824a1900b01b9f2bd94ae8" target="_blank" title="掘金">
+                      
+                        <i class="fa fa-fw fa-spinner"></i>掘金</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://weibo.com/2520114671/profile?rightmod=1&wvr=6&mod=personinfo" target="_blank" title="微博">
+                      
+                        <i class="fa fa-fw fa-weibo"></i>微博</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:stven0king@gmail.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+            <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+              <div class="links-of-blogroll-title">
+                <i class="fa  fa-fw fa-link"></i>
+                推荐阅读
+              </div>
+              <ul class="links-of-blogroll-list">
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://gityuan.com/" title="Gityuan" target="_blank">Gityuan</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="https://www.wanandroid.com/index" title="玩Android" target="_blank">玩Android</a>
+                  </li>
+                
+                  <li class="links-of-blogroll-item">
+                    <a href="http://www.wjdiankong.cn/" title="尼古拉斯.赵四" target="_blank">尼古拉斯.赵四</a>
+                  </li>
+                
+              </ul>
+            </div>
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#举例说明"><span class="nav-number">2.</span> <span class="nav-text">举例说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#手动注册native方法"><span class="nav-number">3.</span> <span class="nav-text">手动注册native方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#so方法加载"><span class="nav-number">4.</span> <span class="nav-text">so方法加载</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#jni方法查找失败"><span class="nav-number">4.1.</span> <span class="nav-text">jni方法查找失败</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#加载so文件"><span class="nav-number">4.2.</span> <span class="nav-text">加载so文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#so文件所在目录"><span class="nav-number">4.3.</span> <span class="nav-text">so文件所在目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#nativeLoad"><span class="nav-number">4.4.</span> <span class="nav-text">nativeLoad</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dlopen函数"><span class="nav-number">4.5.</span> <span class="nav-text">dlopen函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dlsym函数"><span class="nav-number">4.6.</span> <span class="nav-text">dlsym函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#so方法延迟解析"><span class="nav-number">4.7.</span> <span class="nav-text">so方法延迟解析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#优点"><span class="nav-number">4.7.1.</span> <span class="nav-text">优点</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#so方法动态注册"><span class="nav-number">4.8.</span> <span class="nav-text">so方法动态注册</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#FindClass"><span class="nav-number">4.8.1.</span> <span class="nav-text">FindClass</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#RegisterNatives"><span class="nav-number">4.8.2.</span> <span class="nav-text">RegisterNatives</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#so方法延迟解析出错"><span class="nav-number">4.9.</span> <span class="nav-text">so方法延迟解析出错</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#利用JNI-OnLoad替换系统的native方法"><span class="nav-number">5.</span> <span class="nav-text">利用JNI_OnLoad替换系统的native方法</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">振兴</span>
+
+  
+</div>
+
+
+
+<div class="powered-by">
+<i class="fa fa-user-md"></i><span id="busuanzi_container_site_uv">
+  本站总访问量<span id="busuanzi_value_site_pv"></span>次
+</span>
+</div>
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+<!--
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+-->
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item=>{
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: '7mQEfpQKgyuazaGg5Q6mejuC-gzGzoHsz',
+        appKey: '0Tz7vXbTHfHnIslfjQNPbAg0',
+        placeholder: 'Just go go',
+        avatar:'wavatar',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
